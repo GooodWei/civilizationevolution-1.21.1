@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.menu;
 
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;

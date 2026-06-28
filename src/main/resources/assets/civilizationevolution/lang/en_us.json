@@ -8,6 +8,8 @@
   "item.civilizationevolution.civilization_core": "Civilization Core",
   "item.civilizationevolution.civilization_core.uuid": "UUID: %s",
   "item.civilizationevolution.civilization_core.empty": "§7Not initialized",
+  "item.civilizationevolution.civilization_core_extractor": "Civilization Core Extractor",
+  "tooltip.civilizationevolution.civilization_core_extractor": "§7Shift+right-click a bound machine to extract the core",
 
   "tooltip.civilizationevolution.population.career": "Career: %s",
   "tooltip.civilizationevolution.population.age": "Age: %s",
@@ -73,5 +75,12 @@
   "msg.civilizationevolution.connector.no_target": "§7No core recorded, Shift+right-click a controller block first",
   "msg.civilizationevolution.connector.core_not_found": "§cCore data file not found, record cleared",
   "msg.civilizationevolution.connector.unbind_success": "§eUnbound machine at (%d, %d, %d)",
-  "msg.civilizationevolution.connector.switch_success": "§aSwitched machine (%d, %d, %d) binding to new core"
+  "msg.civilizationevolution.connector.switch_success": "§aSwitched machine (%d, %d, %d) binding to new core",
+
+  "msg.civilizationevolution.extractor.success": "§aCore extracted, UUID: %s",
+  "msg.civilizationevolution.extractor.not_bound": "§cThis machine is not bound to any civilization core",
+
+  "jade.civilizationevolution.tier": "§9Era: %s (Lv.%d)",
+  "jade.civilizationevolution.bound": "§9Controller: %s",
+  "jade.civilizationevolution.not_bound": "§7Not bound"
 }

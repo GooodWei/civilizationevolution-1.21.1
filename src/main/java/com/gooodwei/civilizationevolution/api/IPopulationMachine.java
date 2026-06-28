@@ -186,6 +186,12 @@ public interface IPopulationMachine {
     /** 设置此机器绑定的核心 UUID（绑定/解绑时由控制器调用） */
     void setBoundCoreUuid(String uuid);
 
+    /** 获取绑定的控制器所在维度 ID（如 "minecraft:overworld"），未绑定时返回 null */
+    String getBoundControllerDimension();
+
+    /** 设置绑定的控制器所在维度 ID（绑定/解绑时由控制器调用） */
+    void setBoundControllerDimension(String dimension);
+
     /**
      * 检查是否满足工作条件。
      * 未绑定控制器时一定返回 false；绑定后默认检查所有人口槽位均非空且为 {@link PopulationItem}，

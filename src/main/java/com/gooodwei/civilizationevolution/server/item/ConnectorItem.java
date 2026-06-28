@@ -217,6 +217,7 @@ public class ConnectorItem extends Item {
             }
             machine.setBound(false);
             machine.setBoundCoreUuid(null);
+            machine.setBoundControllerDimension(null);
             machineBe.setChanged();
         }
         player.sendSystemMessage(Component.translatable(
@@ -302,6 +303,7 @@ public class ConnectorItem extends Item {
 
             machine.setBound(true);
             machine.setBoundCoreUuid(coreUuid);
+            machine.setBoundControllerDimension(level.dimension().location().toString());
             String machineType = "";
             if (machineBe instanceof BlockEntity be) {
                 machineType = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType()).toString();

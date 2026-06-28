@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.block;
 
+import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
@@ -69,6 +70,10 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
                                                         Player player, InteractionHand hand, BlockHitResult hit) {
         // 连接器已记录目标 → 跳过方块 GUI，交给连接器处理绑定
         if (stack.getItem() instanceof ConnectorItem) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        // 文明核心提取器 Shift+右键 → 跳过方块 GUI，交给提取器处理
+        if (stack.getItem() instanceof CivilizationCoreExtractorItem && player.isShiftKeyDown()) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         // Shift+右键 时不打开 GUI（允许放置方块等操作）

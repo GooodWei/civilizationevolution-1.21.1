@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.block;
 
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;

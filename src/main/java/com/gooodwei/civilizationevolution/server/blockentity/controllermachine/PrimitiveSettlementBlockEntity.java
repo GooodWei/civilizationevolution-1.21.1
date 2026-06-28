@@ -1,4 +1,4 @@
-package com.gooodwei.civilizationevolution.server.blockentity.machine;
+package com.gooodwei.civilizationevolution.server.blockentity.controllermachine;
 
 import com.gooodwei.civilizationevolution.api.tier.ModTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;

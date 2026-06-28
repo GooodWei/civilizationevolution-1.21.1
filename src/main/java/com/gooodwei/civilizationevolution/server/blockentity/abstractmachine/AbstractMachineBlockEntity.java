@@ -41,6 +41,8 @@ public abstract class AbstractMachineBlockEntity
     protected boolean isBound = false;
     /** 绑定的核心 UUID，未绑定时为 null */
     protected String boundCoreUuid = null;
+    /** 绑定的控制器所在维度 ID（如 "minecraft:overworld"），未绑定时为 null */
+    protected String boundControllerDimension = null;
 
     // ==================== 构造器 ====================
 
@@ -95,6 +97,16 @@ public abstract class AbstractMachineBlockEntity
     @Override
     public void setBoundCoreUuid(String uuid) {
         this.boundCoreUuid = uuid;
+    }
+
+    @Override
+    public String getBoundControllerDimension() {
+        return this.boundControllerDimension;
+    }
+
+    @Override
+    public void setBoundControllerDimension(String dimension) {
+        this.boundControllerDimension = dimension;
     }
 
     /**
@@ -152,6 +164,9 @@ public abstract class AbstractMachineBlockEntity
         if (boundCoreUuid != null) {
             tag.putString("BoundCoreUuid", boundCoreUuid);
         }
+        if (boundControllerDimension != null) {
+            tag.putString("BoundControllerDimension", boundControllerDimension);
+        }
         ContainerHelper.saveAllItems(tag, items, registries);
     }
 
@@ -165,6 +180,8 @@ public abstract class AbstractMachineBlockEntity
         isBound = tag.getBoolean("IsBound");
         String uuid = tag.getString("BoundCoreUuid");
         boundCoreUuid = uuid.isEmpty() ? null : uuid;
+        String dimension = tag.getString("BoundControllerDimension");
+        boundControllerDimension = dimension.isEmpty() ? null : dimension;
         ContainerHelper.loadAllItems(tag, items, registries);
     }
 }

@@ -40,6 +40,7 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.HUNTING_GROUND.get());
                         output.accept(ItemRegistry.PRIMITIVE_SETTLEMENT.get());
                         output.accept(ItemRegistry.CIVILIZATION_CORE.get());
+                        output.accept(ItemRegistry.CIVILIZATION_CORE_EXTRACTOR.get());
                         output.accept(ItemRegistry.PRIMITIVE_RANCH.get());
                         output.accept(ItemRegistry.VILLAGE_CONTROLLER.get());
                     }).build());

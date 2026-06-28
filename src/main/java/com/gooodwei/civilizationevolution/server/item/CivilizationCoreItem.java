@@ -23,7 +23,7 @@ import java.util.List;
 public class CivilizationCoreItem extends Item {
 
     public CivilizationCoreItem(Properties properties) {
-        super(properties.stacksTo(1));
+        super(properties.stacksTo(1).fireResistant());
     }
 
     /**

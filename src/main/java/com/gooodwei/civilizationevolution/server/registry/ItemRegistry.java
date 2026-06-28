@@ -3,6 +3,7 @@ package com.gooodwei.civilizationevolution.server.registry;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.api.tier.ModTiers;
 import com.gooodwei.civilizationevolution.server.block.PrimitiveRanch;
+import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
@@ -50,6 +51,10 @@ public class ItemRegistry {
     /** 文明核心 —— 控制器的数据存储介质，携带 UUID，最大堆叠 1 */
     public static final DeferredItem<CivilizationCoreItem> CIVILIZATION_CORE =
             ITEMS.registerItem("civilization_core", CivilizationCoreItem::new);
+
+    /** 文明核心提取器 —— 从已绑定核心的机器中提取核心 UUID，最大堆叠 1 */
+    public static final DeferredItem<CivilizationCoreExtractorItem> CIVILIZATION_CORE_EXTRACTOR =
+            ITEMS.registerItem("civilization_core_extractor", CivilizationCoreExtractorItem::new);
 
     /** 连接器 —— 将人口机器与文明核心绑定/解绑/切换，最大堆叠 1 */
     public static final DeferredItem<ConnectorItem> CONNECTOR =

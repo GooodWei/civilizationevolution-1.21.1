@@ -8,6 +8,8 @@
   "item.civilizationevolution.civilization_core": "文明核心",
   "item.civilizationevolution.civilization_core.uuid": "UUID: %s",
   "item.civilizationevolution.civilization_core.empty": "§7未初始化",
+  "item.civilizationevolution.civilization_core_extractor": "文明核心提取器",
+  "tooltip.civilizationevolution.civilization_core_extractor": "§7Shift+右键已绑定核心的机器来提取文明核心",
 
   "tooltip.civilizationevolution.population.career": "职业: %s",
   "tooltip.civilizationevolution.population.age": "年龄: %s",
@@ -73,5 +75,12 @@
   "msg.civilizationevolution.connector.no_target": "§7连接器中未记录文明核心，请先 Shift+右键一个控制器方块",
   "msg.civilizationevolution.connector.core_not_found": "§c找不到该核心对应的数据文件，已清除记录",
   "msg.civilizationevolution.connector.unbind_success": "§e已断开机器 (%d, %d, %d) 的绑定",
-  "msg.civilizationevolution.connector.switch_success": "§a已将机器 (%d, %d, %d) 切换绑定到新核心"
+  "msg.civilizationevolution.connector.switch_success": "§a已将机器 (%d, %d, %d) 切换绑定到新核心",
+
+  "msg.civilizationevolution.extractor.success": "§a已提取文明核心，UUID: %s",
+  "msg.civilizationevolution.extractor.not_bound": "§c该机器未绑定任何文明核心",
+
+  "jade.civilizationevolution.tier": "§9时代：%s (Lv.%d)",
+  "jade.civilizationevolution.bound": "§9控制器：%s",
+  "jade.civilizationevolution.not_bound": "§7未绑定控制器"
 }

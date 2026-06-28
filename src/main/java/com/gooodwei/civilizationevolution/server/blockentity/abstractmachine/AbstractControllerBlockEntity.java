@@ -4,8 +4,8 @@ import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.api.IPMController;
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveSettlementBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.VillageControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.VillageControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
@@ -15,7 +15,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -399,6 +398,7 @@ public abstract class AbstractControllerBlockEntity
 
         machine.setBound(true);
         machine.setBoundCoreUuid(currentUuid);
+        machine.setBoundControllerDimension(getLevel().dimension().location().toString());
         int next = (workProgress + machine.getWorkTotalTime()) % DAY_TICKS;
         // 记录机器 BlockEntityType 注册名，用于后续验证
         String machineType = "";
@@ -418,6 +418,7 @@ public abstract class AbstractControllerBlockEntity
         if (level.getBlockEntity(pos) instanceof IPopulationMachine machine) {
             machine.setBound(false);
             machine.setBoundCoreUuid(null);
+            machine.setBoundControllerDimension(null);
         }
         coreData.removeMachine(pos);
         CoreDataManager.markDirty(currentUuid);
@@ -590,6 +591,7 @@ public abstract class AbstractControllerBlockEntity
             if (level.getBlockEntity(pos) instanceof IPopulationMachine machine) {
                 machine.setBound(false);
                 machine.setBoundCoreUuid(null);
+                machine.setBoundControllerDimension(null);
             }
             coreData.removeMachine(pos);
         }

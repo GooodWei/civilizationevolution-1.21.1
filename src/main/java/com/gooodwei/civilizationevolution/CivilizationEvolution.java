@@ -6,6 +6,7 @@ import com.gooodwei.civilizationevolution.api.tier.ModTiers;
 import com.gooodwei.civilizationevolution.api.tier.TierRegistry;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.server.career.initial.*;
+import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,6 +28,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 import java.nio.file.Path;
@@ -134,5 +137,26 @@ public class CivilizationEvolution {
     public void onServerStopping(ServerStoppingEvent event) {
         CoreDataManager.saveAll();
         LOGGER.info("CoreDataManager 已保存所有数据");
+    }
+
+    /**
+     * 实体加入世界事件：为文明核心掉落物设置保护。
+     *
+     * <p>三个层次的保护：
+     * <ul>
+     *   <li>{@code fireResistant()} 在物品层面免疫火焰和岩浆</li>
+     *   <li>{@code setInvulnerable(true)} 在实体层面免疫仙人掌、铁砧、爆炸等伤害</li>
+     *   <li>{@code lifespan = Integer.MAX_VALUE} 阻止游戏 5 分钟后自动清理掉落物</li>
+     * </ul>
+     *
+     * @param event 实体加入世界事件
+     */
+    @SubscribeEvent
+    public void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof ItemEntity itemEntity
+                && itemEntity.getItem().getItem() instanceof CivilizationCoreItem) {
+            itemEntity.setInvulnerable(true);
+            itemEntity.lifespan = Integer.MAX_VALUE;
+        }
     }
 }

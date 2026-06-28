@@ -63,8 +63,8 @@ neoForge {
         minecraftVersion = project.parchment_minecraft_version
     }
 
-    // This line is optional. Access Transformers are automatically detected
-    // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+    // Access Transformer for exposing ItemEntity.lifespan (anti-cleanup for civilization cores)
+    accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
@@ -142,7 +142,8 @@ dependencies {
     // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
     // JEI — runtime-only for testing, not shipped with the mod
     localRuntime "mezz.jei:jei-1.21.1-neoforge:19.25.1.334"
-    // Jade — runtime-only for testing, not shipped with the mod
+    // Jade — compileOnly for integration code, localRuntime for testing
+    compileOnly "curse.maven:jade-324717:6155158"
     localRuntime "curse.maven:jade-324717:6155158"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
