@@ -1,0 +1,23 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "civilizationevolution:item/population"
+  },
+  "overrides": [
+    {"predicate": {"career": 0.00}, "model": "civilizationevolution:item/population_unemployed"},
+    {"predicate": {"career": 0.01}, "model": "civilizationevolution:item/population_nitwit"},
+    {"predicate": {"career": 0.02}, "model": "civilizationevolution:item/population_armorer"},
+    {"predicate": {"career": 0.03}, "model": "civilizationevolution:item/population_butcher"},
+    {"predicate": {"career": 0.04}, "model": "civilizationevolution:item/population_cartographer"},
+    {"predicate": {"career": 0.05}, "model": "civilizationevolution:item/population_cleric"},
+    {"predicate": {"career": 0.06}, "model": "civilizationevolution:item/population_farmer"},
+    {"predicate": {"career": 0.07}, "model": "civilizationevolution:item/population_fisherman"},
+    {"predicate": {"career": 0.08}, "model": "civilizationevolution:item/population_fletcher"},
+    {"predicate": {"career": 0.09}, "model": "civilizationevolution:item/population_leatherworker"},
+    {"predicate": {"career": 0.10}, "model": "civilizationevolution:item/population_librarian"},
+    {"predicate": {"career": 0.11}, "model": "civilizationevolution:item/population_mason"},
+    {"predicate": {"career": 0.12}, "model": "civilizationevolution:item/population_shepherd"},
+    {"predicate": {"career": 0.13}, "model": "civilizationevolution:item/population_toolsmith"},
+    {"predicate": {"career": 0.14}, "model": "civilizationevolution:item/population_weaponsmith"}
+  ]
+}
