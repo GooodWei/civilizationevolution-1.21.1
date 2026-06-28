@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *
  * <p>子类分两条线：
  * <ul>
- *   <li>{@link CampBlockEntity} —— 无工作范围，直接继承</li>
+ *   <li>{@link AbstractCampBlockEntity} —— 无工作范围，直接继承</li>
  *   <li>{@link AbstractRangeMachineBlockEntity} —— 有工作范围+冲突检测+粒子边框</li>
  * </ul>
  *

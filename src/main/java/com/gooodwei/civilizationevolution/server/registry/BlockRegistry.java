@@ -1,10 +1,7 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.block.CampBlock;
-import com.gooodwei.civilizationevolution.server.block.HuntingGround;
-import com.gooodwei.civilizationevolution.server.block.PrimitiveRanch;
-import com.gooodwei.civilizationevolution.server.block.PrimitiveSettlement;
+import com.gooodwei.civilizationevolution.server.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;
@@ -42,6 +39,10 @@ public class BlockRegistry {
             () -> new PrimitiveRanch(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
+    public static final DeferredBlock<VillageController> VILLAGE_CONTROLLER = BLOCKS.register(
+            "village_controller",
+            () -> new VillageController(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
     /**
      * 向事件总线注册所有方块。
      * @param bus 模组事件总线

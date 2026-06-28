@@ -1,7 +1,7 @@
 package com.gooodwei.civilizationevolution.client.screen;
 
 import com.gooodwei.civilizationevolution.network.UpdateMachineFieldPayload;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.HuntingGroundBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.menu.HuntingGroundMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -103,7 +103,7 @@ public class HuntingGroundScreen extends AbstractContainerScreen<HuntingGroundMe
                         data.putInt("v", value);
                         PacketDistributor.sendToServer(new UpdateMachineFieldPayload(
                                 this.menu.getBlockPos(),
-                                HuntingGroundBlockEntity.FIELD_MIN_KEEP_NUMBER,
+                                AbstractHuntingGroundBlockEntity.FIELD_MIN_KEEP_NUMBER,
                                 data));
                     }
             ));

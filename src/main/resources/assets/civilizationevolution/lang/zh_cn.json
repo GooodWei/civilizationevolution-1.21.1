@@ -22,6 +22,10 @@
   "tooltip.civilizationevolution.population.lifespan": "寿命: %s",
   "tooltip.civilizationevolution.population.dead": "已死亡",
 
+  "tier.civilizationevolution.primitive": "原始时代",
+  "tier.civilizationevolution.village": "村庄时代",
+  "tooltip.civilizationevolution.tier": "时代：%s",
+
   "block.civilizationevolution.camp": "营地",
   "container.civilizationevolution.camp": "营地",
 

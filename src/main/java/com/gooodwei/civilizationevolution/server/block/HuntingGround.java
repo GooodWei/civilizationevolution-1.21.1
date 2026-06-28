@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.block;
 
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.HuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;
@@ -69,7 +70,7 @@ public class HuntingGround extends AbstractMachineBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof HuntingGroundBlockEntity be) {
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof AbstractHuntingGroundBlockEntity be) {
             be.onPlacedOrOpened((ServerLevel) level);
         }
     }

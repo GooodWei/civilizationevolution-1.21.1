@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.menu;
 
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.HuntingGroundBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.menu.slot.FoodInputSlot;
 import com.gooodwei.civilizationevolution.server.menu.slot.PopulationItemSlot;
 import com.gooodwei.civilizationevolution.server.menu.slot.PopulationMachineResultSlot;
@@ -51,7 +51,7 @@ public class HuntingGroundMenu extends MachineMenu {
      * @param blockEntity     狩猎场方块实体
      * @param data            同步数据
      */
-    public HuntingGroundMenu(int containerId, Inventory playerInventory, HuntingGroundBlockEntity blockEntity, ContainerData data) {
+    public HuntingGroundMenu(int containerId, Inventory playerInventory, AbstractHuntingGroundBlockEntity blockEntity, ContainerData data) {
         super(MenuRegistry.HUNTING_GROUND_MENU.get(), containerId);
         this.container = blockEntity;
         this.data = data;
@@ -93,7 +93,7 @@ public class HuntingGroundMenu extends MachineMenu {
      * @return 重建的 HuntingGroundMenu 实例（使用占位 {@link SimpleContainerData}）
      */
     public static HuntingGroundMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
-        HuntingGroundBlockEntity be = (HuntingGroundBlockEntity)
+        AbstractHuntingGroundBlockEntity be = (AbstractHuntingGroundBlockEntity)
                 playerInventory.player.level().getBlockEntity(buf.readBlockPos());
         return new HuntingGroundMenu(containerId, playerInventory, be,
                 new SimpleContainerData(3));
@@ -124,7 +124,7 @@ public class HuntingGroundMenu extends MachineMenu {
      * @return 方块坐标
      */
     public BlockPos getBlockPos() {
-        return ((HuntingGroundBlockEntity) this.container).getBlockPos();
+        return ((AbstractHuntingGroundBlockEntity) this.container).getBlockPos();
     }
 
     /**
@@ -135,7 +135,7 @@ public class HuntingGroundMenu extends MachineMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        if (!player.level().isClientSide && container instanceof HuntingGroundBlockEntity be) {
+        if (!player.level().isClientSide && container instanceof AbstractHuntingGroundBlockEntity be) {
             be.onPlacedOrOpened((ServerLevel) player.level());
         }
     }

@@ -62,8 +62,8 @@ public class CivilizationCoreData {
 
     // ==================== 绑定机器操作 ====================
 
-    public void addMachine(BlockPos pos, int nextTriggerProgress, boolean enabled, String machineType) {
-        boundMachines.add(new BoundMachineEntry(pos, nextTriggerProgress, enabled, machineType));
+    public void addMachine(BlockPos pos, int nextTriggerProgress, boolean enabled, String machineType, int tier) {
+        boundMachines.add(new BoundMachineEntry(pos, nextTriggerProgress, enabled, machineType, tier));
         markDirty();
     }
 
@@ -124,14 +124,17 @@ public class CivilizationCoreData {
         public boolean enabled;
         /** 机器 BlockEntityType 的注册名（如 "civilizationevolution:camp"），用于验证机器类型是否匹配 */
         public String machineType;
+        /** 绑定时机器的 Tier 等级，用于核心迁移后的调度兼容性判断 */
+        public int tier;
 
         public BoundMachineEntry() {}
 
-        public BoundMachineEntry(BlockPos pos, int nextTriggerProgress, boolean enabled, String machineType) {
+        public BoundMachineEntry(BlockPos pos, int nextTriggerProgress, boolean enabled, String machineType, int tier) {
             this.pos = pos.asLong();
             this.nextTriggerProgress = nextTriggerProgress;
             this.enabled = enabled;
             this.machineType = machineType;
+            this.tier = tier;
         }
 
         public BlockPos getBlockPos() {

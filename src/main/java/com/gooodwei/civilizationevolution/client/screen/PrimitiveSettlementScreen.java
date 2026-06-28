@@ -5,7 +5,7 @@ import com.gooodwei.civilizationevolution.client.ClientPayloadHandler;
 import com.gooodwei.civilizationevolution.client.renderer.HighlightRenderer;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
 import com.gooodwei.civilizationevolution.network.UpdateMachineFieldPayload;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveSettlementMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -351,7 +351,7 @@ public class PrimitiveSettlementScreen extends AbstractContainerScreen<Primitive
         // Payload 的 pos 必须是原始聚落的位置，NetworkHandler 据此查找 BE
         PacketDistributor.sendToServer(new UpdateMachineFieldPayload(
                 this.menu.getBlockPos(),
-                PrimitiveSettlementBlockEntity.FIELD_UNBIND_MACHINE, data));
+                AbstractControllerBlockEntity.FIELD_UNBIND_MACHINE, data));
     }
 
     /**
@@ -363,7 +363,7 @@ public class PrimitiveSettlementScreen extends AbstractContainerScreen<Primitive
         data.putBoolean("enabled", enabled);
         PacketDistributor.sendToServer(new UpdateMachineFieldPayload(
                 this.menu.getBlockPos(),
-                PrimitiveSettlementBlockEntity.FIELD_SET_ENABLED, data));
+                AbstractControllerBlockEntity.FIELD_SET_ENABLED, data));
     }
 
     // ==================== 高亮 ====================

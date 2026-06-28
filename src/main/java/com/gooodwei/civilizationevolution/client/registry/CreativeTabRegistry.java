@@ -41,6 +41,7 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.PRIMITIVE_SETTLEMENT.get());
                         output.accept(ItemRegistry.CIVILIZATION_CORE.get());
                         output.accept(ItemRegistry.PRIMITIVE_RANCH.get());
+                        output.accept(ItemRegistry.VILLAGE_CONTROLLER.get());
                     }).build());
 
     /**

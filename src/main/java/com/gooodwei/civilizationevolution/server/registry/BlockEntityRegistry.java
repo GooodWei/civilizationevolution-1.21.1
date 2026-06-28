@@ -5,6 +5,7 @@ import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.Huntin
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveRanchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.CampBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.VillageControllerBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -44,6 +45,11 @@ public class BlockEntityRegistry {
             BLOCK_ENTITIES.register("primitive_ranch",
                     () -> BlockEntityType.Builder.of(PrimitiveRanchBlockEntity::new,
                             BlockRegistry.PRIMITIVE_RANCH.get()).build(null));
+
+    public static final Supplier<BlockEntityType<VillageControllerBlockEntity>> VILLAGE_CONTROLLER =
+            BLOCK_ENTITIES.register("village_controller",
+                    () -> BlockEntityType.Builder.of(VillageControllerBlockEntity::new,
+                            BlockRegistry.VILLAGE_CONTROLLER.get()).build(null));
 
     /**
      * 向事件总线注册所有 BlockEntity 类型。

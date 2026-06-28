@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.menu;
 
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveRanchBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractRanchBlockEntity;
 import com.gooodwei.civilizationevolution.server.menu.slot.FoodInputSlot;
 import com.gooodwei.civilizationevolution.server.menu.slot.PopulationItemSlot;
 import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
@@ -43,7 +43,7 @@ public class PrimitiveRanchMenu extends MachineMenu {
      * @param data            同步数据
      */
     public PrimitiveRanchMenu(int containerId, Inventory playerInventory,
-                               PrimitiveRanchBlockEntity blockEntity, ContainerData data) {
+                               AbstractRanchBlockEntity blockEntity, ContainerData data) {
         super(MenuRegistry.PRIMITIVE_RANCH_MENU.get(), containerId);
         this.container = blockEntity;
         this.data = data;
@@ -75,7 +75,7 @@ public class PrimitiveRanchMenu extends MachineMenu {
      */
     public static PrimitiveRanchMenu fromNetwork(int containerId, Inventory playerInventory,
                                                   RegistryFriendlyByteBuf buf) {
-        PrimitiveRanchBlockEntity be = (PrimitiveRanchBlockEntity)
+        AbstractRanchBlockEntity be = (AbstractRanchBlockEntity)
                 playerInventory.player.level().getBlockEntity(buf.readBlockPos());
         return new PrimitiveRanchMenu(containerId, playerInventory, be,
                 new SimpleContainerData(2));
@@ -97,7 +97,7 @@ public class PrimitiveRanchMenu extends MachineMenu {
      * @return 方块坐标
      */
     public BlockPos getBlockPos() {
-        return ((PrimitiveRanchBlockEntity) this.container).getBlockPos();
+        return ((AbstractRanchBlockEntity) this.container).getBlockPos();
     }
 
     /**
@@ -108,7 +108,7 @@ public class PrimitiveRanchMenu extends MachineMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        if (!player.level().isClientSide && container instanceof PrimitiveRanchBlockEntity be) {
+        if (!player.level().isClientSide && container instanceof AbstractRanchBlockEntity be) {
             be.onPlacedOrOpened((ServerLevel) player.level());
         }
     }

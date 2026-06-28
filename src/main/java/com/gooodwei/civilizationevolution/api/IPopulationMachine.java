@@ -51,6 +51,20 @@ public interface IPopulationMachine {
     /** 每次工作周期完成后每个人口的年龄增长量 */
     int getAgeIncrement();
 
+    /**
+     * 此机器的 Tier 等级。
+     *
+     * <p>Tier 0 = 原始时代（营地、狩猎场、原始牧场），
+     * Tier 1 = 村庄时代，以此类推。
+     * 控制器只能绑定 tier ≤ 自身 tier 的机器。
+     *
+     * <p>附属模组可覆写此方法自定义机器等级。
+     * 默认返回{@link com.gooodwei.civilizationevolution.api.tier.TierRegistry#getByLevel(int) 获取 Tier 0}（原始时代）。
+     */
+    default com.gooodwei.civilizationevolution.api.tier.Tier getTier() {
+        return com.gooodwei.civilizationevolution.api.tier.ModTiers.PRIMITIVE;
+    }
+
     // ==================== 槽位分类 ====================
 
     /**

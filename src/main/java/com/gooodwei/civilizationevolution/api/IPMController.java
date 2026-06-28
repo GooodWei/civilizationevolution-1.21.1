@@ -31,6 +31,16 @@ public interface IPMController {
     /** 最大可绑定机器数量 */
     int getMaxBindCount();
 
+    /**
+     * 此控制器的 Tier 等级。
+     *
+     * <p>控制器只能绑定 tier ≤ 自身 tier 的机器。
+     * 附属模组实现此接口时可自定义控制器等级。
+     *
+     * @return Tier 等级（0 = 原始聚落，1 = 村庄，2+ = 更高级）
+     */
+    com.gooodwei.civilizationevolution.api.tier.Tier getTier();
+
     /** 当前已绑定机器数量 */
     int getBoundMachineCount();
 

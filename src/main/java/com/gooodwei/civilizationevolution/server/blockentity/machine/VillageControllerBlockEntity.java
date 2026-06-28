@@ -3,7 +3,6 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 import com.gooodwei.civilizationevolution.api.tier.ModTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.menu.PrimitiveSettlementMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -14,20 +13,25 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 原始聚落方块实体 —— 文明控制器的初级阶段。
+ * 村庄控制器方块实体 —— 比原始聚落更高级的文明控制器。
  *
- * <p>继承自 {@link AbstractControllerBlockEntity}，只需覆写类型特定的常量和方法。
- * 所有控制器通用逻辑（核心管理、绑定、调度、同步、持久化）均由父类提供。
+ * <p>继承自 {@link AbstractControllerBlockEntity}，继承了全部控制器通用功能。
+ * 相比原始聚落：
+ * <ul>
+ *   <li>区块强加载范围更大（5×5 vs 3×3）</li>
+ *   <li>可绑定更多机器（通过配置的 max_bind_count 控制）</li>
+ *   <li>后续可扩展更高级的调度模型和额外功能</li>
+ * </ul>
  */
-public class PrimitiveSettlementBlockEntity extends AbstractControllerBlockEntity {
+public class VillageControllerBlockEntity extends AbstractControllerBlockEntity {
 
     public static final int SIZE = 1;
 
-    private static final String TYPE = "primitive_settlement";
-    private static final int CHUNK_LOAD_RADIUS = 1; // 3×3 区块
+    private static final String TYPE = "village_controller";
+    private static final int CHUNK_LOAD_RADIUS = 2; // 5×5 区块，比原始聚落范围更大
 
-    public PrimitiveSettlementBlockEntity(BlockPos pos, BlockState blockState) {
-        super(BlockEntityRegistry.PRIMITIVE_SETTLEMENT.get(), pos, blockState, SIZE);
+    public VillageControllerBlockEntity(BlockPos pos, BlockState blockState) {
+        super(BlockEntityRegistry.VILLAGE_CONTROLLER.get(), pos, blockState, SIZE);
     }
 
     // ==================== 抽象方法实现 ====================
@@ -44,29 +48,30 @@ public class PrimitiveSettlementBlockEntity extends AbstractControllerBlockEntit
 
     @Override
     public Tier getTier() {
-        return ModTiers.PRIMITIVE;
+        return ModTiers.VILLAGE;
     }
 
     @Override
     protected boolean isViewingController(ServerPlayer sp) {
-        return sp.containerMenu instanceof PrimitiveSettlementMenu menu
-                && menu.getBlockPos().equals(getBlockPos());
+        // TODO: 等 VillageControllerMenu 创建后改为对应的 menu instanceof 检查
+        return false;
     }
 
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        return new PrimitiveSettlementMenu(containerId, inventory, this, this.data);
+        // TODO: 等 VillageControllerMenu 创建
+        return null;
     }
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.civilizationevolution.primitive_settlement");
+        return Component.translatable("container.civilizationevolution.village_controller");
     }
 
     // ==================== 供 Block ticker 引用 ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state,
-                                   PrimitiveSettlementBlockEntity be) {
+                                   VillageControllerBlockEntity be) {
         AbstractControllerBlockEntity.controllerServerTick(level, pos, state, be);
     }
 }

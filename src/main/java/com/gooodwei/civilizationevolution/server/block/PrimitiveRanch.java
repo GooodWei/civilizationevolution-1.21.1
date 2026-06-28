@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.block;
 
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractRanchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveRanchBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;
@@ -62,7 +63,7 @@ public class PrimitiveRanch extends AbstractMachineBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof PrimitiveRanchBlockEntity be) {
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof AbstractRanchBlockEntity be) {
             be.onPlacedOrOpened((ServerLevel) level);
         }
     }
@@ -89,7 +90,7 @@ public class PrimitiveRanch extends AbstractMachineBlock {
      */
     @Override
     protected void preOpenMenu(Level level, BlockPos pos) {
-        if (level.getBlockEntity(pos) instanceof PrimitiveRanchBlockEntity ranchBe) {
+        if (level.getBlockEntity(pos) instanceof AbstractRanchBlockEntity ranchBe) {
             ranchBe.onPlacedOrOpened((ServerLevel) level);
         }
     }

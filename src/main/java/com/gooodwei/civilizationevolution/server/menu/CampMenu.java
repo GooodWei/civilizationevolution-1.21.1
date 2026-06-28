@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.menu;
 
-import com.gooodwei.civilizationevolution.server.blockentity.machine.CampBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.menu.slot.FoodInputSlot;
 import com.gooodwei.civilizationevolution.server.menu.slot.PopulationItemSlot;
 import com.gooodwei.civilizationevolution.server.menu.slot.PopulationMachineResultSlot;
@@ -32,7 +32,7 @@ public class CampMenu extends MachineMenu {
      * @param playerInventory 玩家物品栏
      * @param blockEntity     营地方块实体
      */
-    public CampMenu(int containerId, Inventory playerInventory, CampBlockEntity blockEntity) {
+    public CampMenu(int containerId, Inventory playerInventory, AbstractCampBlockEntity blockEntity) {
         super(MenuRegistry.CAMP_MENU.get(), containerId);
         this.container = blockEntity;
         // 槽位 0-3：通用输入（接口不限制）
@@ -60,7 +60,7 @@ public class CampMenu extends MachineMenu {
      * @return 重建的 CampMenu 实例
      */
     public static CampMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
-        CampBlockEntity be = (CampBlockEntity) playerInventory.player.level().getBlockEntity(buf.readBlockPos());
+        AbstractCampBlockEntity be = (AbstractCampBlockEntity) playerInventory.player.level().getBlockEntity(buf.readBlockPos());
         return new CampMenu(containerId, playerInventory, be);
     }
 

@@ -4,7 +4,7 @@ import com.gooodwei.civilizationevolution.api.component.ConnectorTarget;
 import com.gooodwei.civilizationevolution.api.IPMController;
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
 import com.gooodwei.civilizationevolution.api.component.ModDataComponents;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
@@ -104,8 +104,8 @@ public class ConnectorItem extends Item {
             if (player.isShiftKeyDown()) {
                 // --- Shift+右键：从控制器读取核心 UUID ---
                 BlockEntity be = level.getBlockEntity(clickedPos);
-                if (be instanceof PrimitiveSettlementBlockEntity psbe) {
-                    ItemStack coreStack = psbe.getItem(0);
+                if (be instanceof AbstractControllerBlockEntity controller) {
+                    ItemStack coreStack = controller.getItem(0);
                     String uuid = CivilizationCoreItem.getUuid(coreStack);
                     if (uuid != null) {
                         setTarget(stack, uuid);
@@ -132,7 +132,7 @@ public class ConnectorItem extends Item {
 
         if (player.isShiftKeyDown()) {
             BlockEntity be = level.getBlockEntity(clickedPos);
-            if (be instanceof PrimitiveSettlementBlockEntity) {
+            if (be instanceof AbstractControllerBlockEntity) {
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
             return InteractionResult.PASS;
@@ -203,7 +203,7 @@ public class ConnectorItem extends Item {
     private void doUnbind(Player player, ServerLevel level, String coreUuid,
                           BlockPos machinePos, IPopulationMachine machine, BlockEntity machineBe) {
         // 查找持有此核心的活跃控制器
-        PrimitiveSettlementBlockEntity controller = findController(level, coreUuid);
+        AbstractControllerBlockEntity controller = findController(level, coreUuid);
         if (controller != null) {
             controller.unbindMachine(machinePos, level);
             controller.setChanged();
@@ -257,7 +257,7 @@ public class ConnectorItem extends Item {
         // ---- 0. 先清理旧核心中的残留绑定（兜底保障） ----
         String oldUuid = machine.getBoundCoreUuid();
         if (oldUuid != null && !oldUuid.equals(coreUuid)) {
-            PrimitiveSettlementBlockEntity oldController = findController(level, oldUuid);
+            AbstractControllerBlockEntity oldController = findController(level, oldUuid);
             if (oldController != null) {
                 oldController.unbindMachine(machinePos, level);
                 oldController.setChanged();
@@ -275,7 +275,7 @@ public class ConnectorItem extends Item {
         machine.setBoundCoreUuid(null);
 
         // ---- 1. 执行绑定 ----
-        PrimitiveSettlementBlockEntity controller = findController(level, coreUuid);
+        AbstractControllerBlockEntity controller = findController(level, coreUuid);
 
         if (controller != null) {
             // 通过控制器绑定（含距离、跨维度、数量上限检查）
@@ -291,7 +291,8 @@ public class ConnectorItem extends Item {
             return success;
         } else {
             // 无活跃控制器 → 直接写入核心数据文件
-            String controllerType = "primitive_settlement";
+            String controllerType = coreData.getControllerType();
+            if (controllerType == null) controllerType = "primitive_settlement";
             if (coreData.getBoundMachines().size() >= PopulationMachineConfig.getMaxBindCount(controllerType)) {
                 player.sendSystemMessage(Component.translatable(
                         "msg.civilizationevolution.connector.controller_full")
@@ -305,7 +306,7 @@ public class ConnectorItem extends Item {
             if (machineBe instanceof BlockEntity be) {
                 machineType = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType()).toString();
             }
-            coreData.addMachine(machinePos, 0, true, machineType);
+            coreData.addMachine(machinePos, 0, true, machineType, machine.getTier().getLevel());
             CoreDataManager.markDirty(coreUuid);
             machineBe.setChanged();
             return true;
@@ -316,11 +317,11 @@ public class ConnectorItem extends Item {
      * 通过核心 UUID 索引查找持有该核心的活跃控制器。
      * @return 找到的控制器，未找到时返回 null
      */
-    private static PrimitiveSettlementBlockEntity findController(ServerLevel level, String uuid) {
-        BlockPos pos = PrimitiveSettlementBlockEntity.getCoreLocation(uuid);
-        if (pos != null && level.getBlockEntity(pos) instanceof PrimitiveSettlementBlockEntity psbe
-                && uuid.equals(psbe.getCurrentUuid())) {
-            return psbe;
+    private static AbstractControllerBlockEntity findController(ServerLevel level, String uuid) {
+        BlockPos pos = AbstractControllerBlockEntity.getCoreLocation(uuid);
+        if (pos != null && level.getBlockEntity(pos) instanceof AbstractControllerBlockEntity controller
+                && uuid.equals(controller.getCurrentUuid())) {
+            return controller;
         }
         return null;
     }

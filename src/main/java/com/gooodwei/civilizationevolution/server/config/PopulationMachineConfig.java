@@ -37,6 +37,7 @@ public final class PopulationMachineConfig {
     public static final String HUNTING_GROUND = "hunting_ground";
     public static final String PRIMITIVE_SETTLEMENT = "primitive_settlement";
     public static final String PRIMITIVE_RANCH = "primitive_ranch";
+    public static final String VILLAGE_CONTROLLER = "village_controller";
 
     // ==================== 内部记录 ====================
 
@@ -159,6 +160,14 @@ public final class PopulationMachineConfig {
                   max_bind_count: 10
                   # 最大绑定距离（格）
                   max_bind_range: 64
+                  # 是否允许跨维度绑定（true/false）
+                  allow_cross_dimension: false
+
+                village_controller:
+                  # 最大可绑定机器数量
+                  max_bind_count: 20
+                  # 最大绑定距离（格）
+                  max_bind_range: 128
                   # 是否允许跨维度绑定（true/false）
                   allow_cross_dimension: false
                 """;

@@ -2,12 +2,15 @@ package com.gooodwei.civilizationevolution;
 
 import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
+import com.gooodwei.civilizationevolution.api.tier.ModTiers;
+import com.gooodwei.civilizationevolution.api.tier.TierRegistry;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.server.career.initial.*;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -71,6 +74,13 @@ public class CivilizationEvolution {
 
         // 注册自身以监听服务器事件（onServerStarting / onServerStarted / onServerStopping）
         NeoForge.EVENT_BUS.register(this);
+
+        // 触发内置 Tier 类加载注册
+        ModTiers.init();
+
+        // 冻结 Tier 注册表（附属模组应在此之前注册自己的 Tier）
+        TierRegistry.freeze();
+        LOGGER.info("TierRegistry 已冻结，共注册 {} 个 Tier", TierRegistry.size());
     }
 
     /**
