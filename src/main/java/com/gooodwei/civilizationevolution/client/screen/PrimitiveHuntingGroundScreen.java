@@ -2,7 +2,7 @@ package com.gooodwei.civilizationevolution.client.screen;
 
 import com.gooodwei.civilizationevolution.network.UpdateMachineFieldPayload;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractHuntingGroundBlockEntity;
-import com.gooodwei.civilizationevolution.server.menu.HuntingGroundMenu;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveHuntingGroundMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -22,11 +22,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * 确认后通过 {@link UpdateMachineFieldPayload} 将值发送到服务端。</p>
  */
 @OnlyIn(Dist.CLIENT)
-public class HuntingGroundScreen extends AbstractContainerScreen<HuntingGroundMenu> {
+public class PrimitiveHuntingGroundScreen extends AbstractContainerScreen<PrimitiveHuntingGroundMenu> {
 
     /** 狩猎场 GUI 背景贴图 */
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "textures/gui/container/hunting_ground.png");
+            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "textures/gui/container/primitive_hunting_ground.png");
 
     /** 工作进度条贴图 */
     private static final ResourceLocation PROGRESS =
@@ -42,11 +42,11 @@ public class HuntingGroundScreen extends AbstractContainerScreen<HuntingGroundMe
     /**
      * 构造狩猎场 Screen。
      *
-     * @param menu            服务端对应的 {@link HuntingGroundMenu}
+     * @param menu            服务端对应的 {@link PrimitiveHuntingGroundMenu}
      * @param playerInventory 玩家物品栏
      * @param title           界面标题（不渲染，由 {@link #renderLabels} 空实现屏蔽）
      */
-    public HuntingGroundScreen(HuntingGroundMenu menu, Inventory playerInventory, Component title) {
+    public PrimitiveHuntingGroundScreen(PrimitiveHuntingGroundMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 166;
@@ -55,7 +55,7 @@ public class HuntingGroundScreen extends AbstractContainerScreen<HuntingGroundMe
     /**
      * 渲染背景层：背景贴图、工作进度条和输入按钮。
      *
-     * <p>进度条根据 {@link HuntingGroundMenu#getWorkProgressRatio()} 返回的比例动态裁剪宽度。</p>
+     * <p>进度条根据 {@link PrimitiveHuntingGroundMenu#getWorkProgressRatio()} 返回的比例动态裁剪宽度。</p>
      *
      * @param guiGraphics 渲染上下文
      * @param v           当前帧的部分 tick 插值

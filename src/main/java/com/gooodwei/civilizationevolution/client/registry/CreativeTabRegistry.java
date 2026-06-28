@@ -36,7 +36,7 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.POPULATION.get());
                         output.accept(ItemRegistry.RECRUITER.get());
                         output.accept(ItemRegistry.CONNECTOR.get());
-                        output.accept(ItemRegistry.CAMP_BLOCK_ITEM.get());
+                        output.accept(ItemRegistry.PRIMITIVE_CAMP_BLOCK_ITEM.get());
                         output.accept(ItemRegistry.HUNTING_GROUND.get());
                         output.accept(ItemRegistry.PRIMITIVE_SETTLEMENT.get());
                         output.accept(ItemRegistry.CIVILIZATION_CORE.get());

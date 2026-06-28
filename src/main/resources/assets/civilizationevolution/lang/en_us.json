@@ -28,8 +28,8 @@
   "tier.civilizationevolution.village": "Village Era",
   "tooltip.civilizationevolution.tier": "Era: %s",
 
-  "block.civilizationevolution.camp": "Camp",
-  "container.civilizationevolution.camp": "Camp",
+  "block.civilizationevolution.primitive_camp": "Primitive Camp",
+  "container.civilizationevolution.primitive_camp": "Primitive Camp",
 
   "block.civilizationevolution.hunting_ground": "Hunting Ground",
   "block.civilizationevolution.primitive_ranch": "Primitive Ranch",

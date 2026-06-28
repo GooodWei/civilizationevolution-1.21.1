@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * 营地 GUI 的容器菜单。
+ * 原始营地 GUI 的容器菜单（Tier 0）。
  *
  * <p>槽位布局（共 10 个机器槽位）：
  * <ul>
@@ -20,7 +20,7 @@ import net.minecraft.world.entity.player.Player;
  *   <li>槽位 6-9：产物输出槽（{@link PopulationMachineResultSlot}，拒绝放入，仅由代码产出）</li>
  * </ul>
  */
-public class CampMenu extends MachineMenu {
+public class PrimitiveCampMenu extends MachineMenu {
 
     /** 底层的方块实体容器引用 */
     public final Container container;
@@ -32,8 +32,8 @@ public class CampMenu extends MachineMenu {
      * @param playerInventory 玩家物品栏
      * @param blockEntity     营地方块实体
      */
-    public CampMenu(int containerId, Inventory playerInventory, AbstractCampBlockEntity blockEntity) {
-        super(MenuRegistry.CAMP_MENU.get(), containerId);
+    public PrimitiveCampMenu(int containerId, Inventory playerInventory, AbstractCampBlockEntity blockEntity) {
+        super(MenuRegistry.PRIMITIVE_CAMP_MENU.get(), containerId);
         this.container = blockEntity;
         // 槽位 0-3：通用输入（接口不限制）
         for (int num = 0; num <= 3; num++) {
@@ -57,11 +57,11 @@ public class CampMenu extends MachineMenu {
      * @param containerId     容器窗口 ID
      * @param playerInventory 客户端玩家物品栏
      * @param buf             网络数据包（包含 BlockPos）
-     * @return 重建的 CampMenu 实例
+     * @return 重建的 PrimitiveCampMenu 实例
      */
-    public static CampMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+    public static PrimitiveCampMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         AbstractCampBlockEntity be = (AbstractCampBlockEntity) playerInventory.player.level().getBlockEntity(buf.readBlockPos());
-        return new CampMenu(containerId, playerInventory, be);
+        return new PrimitiveCampMenu(containerId, playerInventory, be);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class CampMenu extends MachineMenu {
     }
 
     /**
-     * 营地菜单始终有效（不需要玩家在方块附近）。
+     * 原始营地菜单始终有效（不需要玩家在方块附近）。
      *
      * @param player 当前玩家
      * @return 始终返回 {@code true}

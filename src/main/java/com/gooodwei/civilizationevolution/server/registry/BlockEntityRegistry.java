@@ -3,7 +3,7 @@ package com.gooodwei.civilizationevolution.server.registry;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.HuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveRanchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.CampBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.VillageControllerBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,11 +23,11 @@ public class BlockEntityRegistry {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, CivilizationEvolution.MODID);
 
-    /** 营地 BE 类型 */
-    public static final Supplier<BlockEntityType<CampBlockEntity>> CAMP_BLOCK_ENTITY =
-            BLOCK_ENTITIES.register("camp",
-                    () -> BlockEntityType.Builder.of(CampBlockEntity::new,
-                            BlockRegistry.CAMP_BLOCK.get()).build(null));
+    /** 原始营地 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveCampBlockEntity>> PRIMITIVE_CAMP_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("primitive_camp",
+                    () -> BlockEntityType.Builder.of(PrimitiveCampBlockEntity::new,
+                            BlockRegistry.PRIMITIVE_CAMP_BLOCK.get()).build(null));
 
     /** 狩猎场 BE 类型 */
     public static final Supplier<BlockEntityType<HuntingGroundBlockEntity>> HUNT_GROUND =
@@ -41,11 +41,13 @@ public class BlockEntityRegistry {
                     () -> BlockEntityType.Builder.of(PrimitiveSettlementBlockEntity::new,
                             BlockRegistry.PRIMITIVE_SETTLEMENT.get()).build(null));
 
+    /** 原始牧场 BE 类型（Tier 0） */
     public static final Supplier<BlockEntityType<PrimitiveRanchBlockEntity>> PRIMITIVE_RANCH =
             BLOCK_ENTITIES.register("primitive_ranch",
                     () -> BlockEntityType.Builder.of(PrimitiveRanchBlockEntity::new,
-                            BlockRegistry.PRIMITIVE_RANCH.get()).build(null));
+                            BlockRegistry.PRIMITIVE_RANCH_BLOCK.get()).build(null));
 
+    /** 村庄控制器 BE 类型（Tier 1） */
     public static final Supplier<BlockEntityType<VillageControllerBlockEntity>> VILLAGE_CONTROLLER =
             BLOCK_ENTITIES.register("village_controller",
                     () -> BlockEntityType.Builder.of(VillageControllerBlockEntity::new,

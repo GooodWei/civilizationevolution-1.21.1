@@ -18,8 +18,8 @@ import java.util.List;
  *
  * <p>使用示例：
  * <pre>{@code
- * ITEMS.registerItem("camp", properties ->
- *     new TieredBlockItem(BlockRegistry.CAMP_BLOCK.get(), properties, someTier));
+ * ITEMS.registerItem("primitive_camp", properties ->
+ *     new TieredBlockItem(BlockRegistry.PRIMITIVE_CAMP_BLOCK.get(), properties, someTier));
  * }</pre>
  */
 public class TieredBlockItem extends BlockItem {

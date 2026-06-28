@@ -2,7 +2,6 @@ package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.api.tier.ModTiers;
-import com.gooodwei.civilizationevolution.server.block.PrimitiveRanch;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
@@ -30,10 +29,10 @@ public class ItemRegistry {
     public static final DeferredItem<Recruiter> RECRUITER =
             ITEMS.registerItem("recruiter", properties -> new Recruiter(properties.stacksTo(1)));
 
-    /** 营地方块物品（Tier 0：原始时代） */
-    public static final DeferredItem<BlockItem> CAMP_BLOCK_ITEM =
-            ITEMS.registerItem("camp", properties ->
-                    new TieredBlockItem(BlockRegistry.CAMP_BLOCK.get(), properties,
+    /** 原始营地方块物品（Tier 0：原始时代） */
+    public static final DeferredItem<BlockItem> PRIMITIVE_CAMP_BLOCK_ITEM =
+            ITEMS.registerItem("primitive_camp", properties ->
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_CAMP_BLOCK.get(), properties,
                             ModTiers.PRIMITIVE));
 
     /** 狩猎场方块物品（Tier 0：原始时代） */
@@ -63,7 +62,7 @@ public class ItemRegistry {
     /** 原始牧地方块物品（Tier 0：原始时代） */
     public static final DeferredItem<BlockItem> PRIMITIVE_RANCH =
             ITEMS.registerItem("primitive_ranch", properties ->
-                    new TieredBlockItem(BlockRegistry.PRIMITIVE_RANCH.get(), properties,
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_RANCH_BLOCK.get(), properties,
                             ModTiers.PRIMITIVE));
 
     /** 村庄控制器方块物品（Tier 1：村庄时代） */

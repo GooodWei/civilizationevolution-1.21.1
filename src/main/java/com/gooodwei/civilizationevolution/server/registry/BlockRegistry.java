@@ -16,10 +16,10 @@ public class BlockRegistry {
     /** 方块注册器 */
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(CivilizationEvolution.MODID);
 
-    /** 营地 —— 原始社会生产单位，支持 2 个人口槽位进行繁殖 */
-    public static final DeferredBlock<CampBlock> CAMP_BLOCK = BLOCKS.register(
-            "camp",
-            () -> new CampBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    /** 原始营地 —— Tier 0 生产单位，支持 2 个人口槽位进行繁殖 */
+    public static final DeferredBlock<PrimitiveCampBlock> PRIMITIVE_CAMP_BLOCK = BLOCKS.register(
+            "primitive_camp",
+            () -> new PrimitiveCampBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
     /** 狩猎场 —— 在区块范围内自动猎杀动物、收集战利品 */
@@ -34,11 +34,13 @@ public class BlockRegistry {
             () -> new PrimitiveSettlement(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
-    public static final DeferredBlock<PrimitiveRanch> PRIMITIVE_RANCH = BLOCKS.register(
+    /** 原始牧场 —— Tier 0 喂养范围内动物的机器方块 */
+    public static final DeferredBlock<PrimitiveRanchBlock> PRIMITIVE_RANCH_BLOCK = BLOCKS.register(
             "primitive_ranch",
-            () -> new PrimitiveRanch(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+            () -> new PrimitiveRanchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
+    /** 村庄控制器 —— Tier 1 文明控制器 */
     public static final DeferredBlock<VillageController> VILLAGE_CONTROLLER = BLOCKS.register(
             "village_controller",
             () -> new VillageController(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())

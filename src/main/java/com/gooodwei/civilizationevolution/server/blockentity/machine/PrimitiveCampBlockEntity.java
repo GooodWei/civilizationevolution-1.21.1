@@ -2,7 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
-import com.gooodwei.civilizationevolution.server.menu.CampMenu;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveCampMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -13,16 +13,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 营地方块的 BlockEntity（Tier 0）。
+ * 原始营地方块的 BlockEntity（Tier 0）。
  *
  * <p>继承自 {@link AbstractCampBlockEntity}，仅提供 Tier 0 特有的参数。
  * 所有营地通用业务逻辑（繁殖、食物消耗）由父类提供。
  */
-public class CampBlockEntity extends AbstractCampBlockEntity {
+public class PrimitiveCampBlockEntity extends AbstractCampBlockEntity {
     public static final int SIZE = 10;
 
-    public CampBlockEntity(BlockPos pos, BlockState blockState) {
-        super(BlockEntityRegistry.CAMP_BLOCK_ENTITY.get(), pos, blockState, SIZE);
+    public PrimitiveCampBlockEntity(BlockPos pos, BlockState blockState) {
+        super(BlockEntityRegistry.PRIMITIVE_CAMP_BLOCK_ENTITY.get(), pos, blockState, SIZE);
     }
 
     // ==================== 抽象方法实现 ====================
@@ -40,7 +40,7 @@ public class CampBlockEntity extends AbstractCampBlockEntity {
     // ==================== serverTick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state,
-                                   CampBlockEntity campBlockEntity) {
+                                   PrimitiveCampBlockEntity campBlockEntity) {
         // 营地的工作由控制器调度，无独立 tick 逻辑
     }
 
@@ -48,21 +48,21 @@ public class CampBlockEntity extends AbstractCampBlockEntity {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.civilizationevolution.camp");
+        return Component.translatable("container.civilizationevolution.primitive_camp");
     }
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.civilizationevolution.camp");
+        return Component.translatable("container.civilizationevolution.primitive_camp");
     }
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        return new CampMenu(containerId, inventory, this);
+        return new PrimitiveCampMenu(containerId, inventory, this);
     }
 
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        return new CampMenu(containerId, inventory, this);
+        return new PrimitiveCampMenu(containerId, inventory, this);
     }
 }

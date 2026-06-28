@@ -1,7 +1,7 @@
 package com.gooodwei.civilizationevolution.client.registry;
 
-import com.gooodwei.civilizationevolution.client.screen.CampScreen;
-import com.gooodwei.civilizationevolution.client.screen.HuntingGroundScreen;
+import com.gooodwei.civilizationevolution.client.screen.PrimitiveHuntingGroundScreen;
+import com.gooodwei.civilizationevolution.client.screen.PrimitiveCampScreen;
 import com.gooodwei.civilizationevolution.client.screen.PrimitiveRanchScreen;
 import com.gooodwei.civilizationevolution.client.screen.PrimitiveSettlementScreen;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
@@ -24,8 +24,8 @@ public class ScreenRegistry {
      */
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
-        event.register(MenuRegistry.CAMP_MENU.get(), CampScreen::new);
-        event.register(MenuRegistry.HUNTING_GROUND_MENU.get(), HuntingGroundScreen::new);
+        event.register(MenuRegistry.PRIMITIVE_CAMP_MENU.get(), PrimitiveCampScreen::new);
+        event.register(MenuRegistry.HUNTING_GROUND_MENU.get(), PrimitiveHuntingGroundScreen::new);
         event.register(MenuRegistry.PRIMITIVE_RANCH_MENU.get(), PrimitiveRanchScreen::new);
         event.register(MenuRegistry.PRIMITIVE_SETTLEMENT_MENU.get(), PrimitiveSettlementScreen::new);
     }

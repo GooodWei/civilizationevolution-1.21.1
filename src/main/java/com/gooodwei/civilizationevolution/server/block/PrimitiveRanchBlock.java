@@ -17,20 +17,20 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 原始牧场方块 —— 喂养范围内动物的机器方块。
+ * 原始牧场方块 —— Tier 0 喂养范围内动物的机器方块。
  *
  * <p>在区块范围内自动喂养动物（幼年加速成长，成年进入繁殖模式），
  * 通过 {@link PrimitiveRanchBlockEntity} 处理工作逻辑。
  * 放置和打开 GUI 时会触发同类型机器的冲突检测。
  */
-public class PrimitiveRanch extends AbstractMachineBlock {
+public class PrimitiveRanchBlock extends AbstractMachineBlock {
     /** 序列化编解码器 */
-    public static final MapCodec<PrimitiveRanch> CODEC = simpleCodec(PrimitiveRanch::new);
+    public static final MapCodec<PrimitiveRanchBlock> CODEC = simpleCodec(PrimitiveRanchBlock::new);
 
     /**
      * @param properties 方块属性（硬度、爆破阻力等）
      */
-    public PrimitiveRanch(Properties properties) {
+    public PrimitiveRanchBlock(Properties properties) {
         super(properties);
     }
 

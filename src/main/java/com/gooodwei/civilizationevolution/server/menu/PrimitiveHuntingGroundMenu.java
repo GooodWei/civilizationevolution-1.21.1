@@ -37,7 +37,7 @@ import net.minecraft.world.item.ItemStack;
  *
  * <p>菜单关闭时触发一次冲突扫描（{@code onPlacedOrOpened}）。</p>
  */
-public class HuntingGroundMenu extends MachineMenu {
+public class PrimitiveHuntingGroundMenu extends MachineMenu {
     /** 底层的方块实体容器引用 */
     public final Container container;
     /** 同步到客户端的数据（工作进度、最小保留数量等） */
@@ -51,7 +51,7 @@ public class HuntingGroundMenu extends MachineMenu {
      * @param blockEntity     狩猎场方块实体
      * @param data            同步数据
      */
-    public HuntingGroundMenu(int containerId, Inventory playerInventory, AbstractHuntingGroundBlockEntity blockEntity, ContainerData data) {
+    public PrimitiveHuntingGroundMenu(int containerId, Inventory playerInventory, AbstractHuntingGroundBlockEntity blockEntity, ContainerData data) {
         super(MenuRegistry.HUNTING_GROUND_MENU.get(), containerId);
         this.container = blockEntity;
         this.data = data;
@@ -92,10 +92,10 @@ public class HuntingGroundMenu extends MachineMenu {
      * @param buf             网络数据包（包含 BlockPos）
      * @return 重建的 HuntingGroundMenu 实例（使用占位 {@link SimpleContainerData}）
      */
-    public static HuntingGroundMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+    public static PrimitiveHuntingGroundMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         AbstractHuntingGroundBlockEntity be = (AbstractHuntingGroundBlockEntity)
                 playerInventory.player.level().getBlockEntity(buf.readBlockPos());
-        return new HuntingGroundMenu(containerId, playerInventory, be,
+        return new PrimitiveHuntingGroundMenu(containerId, playerInventory, be,
                 new SimpleContainerData(3));
     }
 

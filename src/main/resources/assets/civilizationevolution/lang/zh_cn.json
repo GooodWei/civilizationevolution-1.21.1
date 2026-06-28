@@ -28,8 +28,8 @@
   "tier.civilizationevolution.village": "村庄时代",
   "tooltip.civilizationevolution.tier": "时代：%s",
 
-  "block.civilizationevolution.camp": "营地",
-  "container.civilizationevolution.camp": "营地",
+  "block.civilizationevolution.primitive_camp": "原始营地",
+  "container.civilizationevolution.primitive_camp": "原始营地",
 
   "block.civilizationevolution.hunting_ground": "狩猎场",
   "block.civilizationevolution.primitive_ranch": "原始牧场",

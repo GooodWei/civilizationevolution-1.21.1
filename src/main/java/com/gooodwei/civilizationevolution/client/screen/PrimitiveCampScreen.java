@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.client.screen;
 
-import com.gooodwei.civilizationevolution.server.menu.CampMenu;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveCampMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -8,25 +8,25 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * 营地 GUI 的客户端 Screen。
+ * 原始营地 GUI 的客户端 Screen（Tier 0）。
  *
  * <p>负责渲染营地容器的背景贴图。营地 GUI 不使用默认的文字标签（标题、物品栏名称），
  * 因此覆写了 {@link #renderLabels} 为空实现。</p>
  */
-public class CampScreen extends AbstractContainerScreen<CampMenu> {
+public class PrimitiveCampScreen extends AbstractContainerScreen<PrimitiveCampMenu> {
 
-    /** 营地 GUI 背景贴图纹理路径 */
+    /** 原始营地 GUI 背景贴图纹理路径 */
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "textures/gui/container/campblock.png");
+            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "textures/gui/container/primitive_camp.png");
 
     /**
-     * 构造营地 Screen。
+     * 构造原始营地 Screen。
      *
-     * @param menu            服务端对应的 {@link CampMenu}
+     * @param menu            服务端对应的 {@link PrimitiveCampMenu}
      * @param playerInventory 玩家物品栏
      * @param title           界面标题（不渲染，由 {@link #renderLabels} 空实现屏蔽）
      */
-    public CampScreen(CampMenu menu, Inventory playerInventory, Component title) {
+    public PrimitiveCampScreen(PrimitiveCampMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 222;

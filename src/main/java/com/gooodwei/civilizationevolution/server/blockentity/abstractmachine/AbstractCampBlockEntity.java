@@ -31,7 +31,7 @@ import java.util.List;
  * BaseContainerBlockEntity
  *  └── AbstractMachineBlockEntity
  *       └── AbstractCampBlockEntity (本类)
- *            └── CampBlockEntity (Tier 0 营地)
+ *            └── PrimitiveCampBlockEntity (Tier 0 原始营地)
  *            └── SmallCampBlockEntity (Tier 1+ 小型营地，附属模组)
  * </pre>
  *

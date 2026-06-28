@@ -1,8 +1,8 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.menu.CampMenu;
-import com.gooodwei.civilizationevolution.server.menu.HuntingGroundMenu;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveHuntingGroundMenu;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveCampMenu;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveRanchMenu;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveSettlementMenu;
 import net.minecraft.core.registries.Registries;
@@ -23,15 +23,15 @@ public class MenuRegistry {
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(Registries.MENU, CivilizationEvolution.MODID);
 
-    /** 营地菜单类型 */
-    public static final Supplier<MenuType<CampMenu>> CAMP_MENU =
-            MENUS.register("camp", () -> IMenuTypeExtension.create(CampMenu::fromNetwork));
+    /** 原始营地菜单类型（Tier 0） */
+    public static final Supplier<MenuType<PrimitiveCampMenu>> PRIMITIVE_CAMP_MENU =
+            MENUS.register("primitive_camp", () -> IMenuTypeExtension.create(PrimitiveCampMenu::fromNetwork));
 
     /** 狩猎场菜单类型 */
-    public static final Supplier<MenuType<HuntingGroundMenu>> HUNTING_GROUND_MENU =
-            MENUS.register("hunting_ground", () -> IMenuTypeExtension.create(HuntingGroundMenu::fromNetwork));
+    public static final Supplier<MenuType<PrimitiveHuntingGroundMenu>> HUNTING_GROUND_MENU =
+            MENUS.register("hunting_ground", () -> IMenuTypeExtension.create(PrimitiveHuntingGroundMenu::fromNetwork));
 
-    /** 原始牧场菜单类型 */
+    /** 原始牧场菜单类型（Tier 0） */
     public static final Supplier<MenuType<PrimitiveRanchMenu>> PRIMITIVE_RANCH_MENU =
             MENUS.register("primitive_ranch", () -> IMenuTypeExtension.create(PrimitiveRanchMenu::fromNetwork));
 

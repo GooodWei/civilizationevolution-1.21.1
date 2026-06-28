@@ -2,7 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.fieldmachine;
 
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
-import com.gooodwei.civilizationevolution.server.menu.HuntingGroundMenu;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveHuntingGroundMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.gooodwei.civilizationevolution.tags.ModTags;
 import net.minecraft.core.BlockPos;
@@ -74,11 +74,11 @@ public class HuntingGroundBlockEntity extends AbstractHuntingGroundBlockEntity {
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        return new HuntingGroundMenu(containerId, inventory, this, this.data);
+        return new PrimitiveHuntingGroundMenu(containerId, inventory, this, this.data);
     }
 
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        return new HuntingGroundMenu(containerId, inventory, this, this.data);
+        return new PrimitiveHuntingGroundMenu(containerId, inventory, this, this.data);
     }
 }

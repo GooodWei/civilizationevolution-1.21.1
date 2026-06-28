@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "civilizationevolution:block/campblock"
+    "all": "civilizationevolution:block/primitive_camp"
   }
 }
