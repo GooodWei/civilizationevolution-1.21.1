@@ -407,6 +407,7 @@ public abstract class AbstractControllerBlockEntity
         }
         coreData.addMachine(pos, next, true, machineType, machine.getTier().getLevel());
         CoreDataManager.markDirty(currentUuid);
+        CoreDataManager.saveDirty();
         setChanged();
         return true;
     }
@@ -422,6 +423,7 @@ public abstract class AbstractControllerBlockEntity
         }
         coreData.removeMachine(pos);
         CoreDataManager.markDirty(currentUuid);
+        CoreDataManager.saveDirty();
         setChanged();
     }
 
@@ -430,6 +432,7 @@ public abstract class AbstractControllerBlockEntity
         if (coreData == null) return;
         coreData.setMachineEnabled(pos, enabled);
         CoreDataManager.markDirty(currentUuid);
+        CoreDataManager.saveDirty();
         setChanged();
     }
 

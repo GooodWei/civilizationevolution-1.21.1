@@ -209,11 +209,12 @@ public class ConnectorItem extends Item {
             controller.setChanged();
             controller.notifyViewersSync();
         } else {
-            // 无活跃控制器 → 直接从核心数据文件中移除
+            // 无活跃控制器 → 直接从核心数据文件中移除并立即落盘
             CivilizationCoreData coreData = CoreDataManager.getOrLoad(coreUuid);
             if (coreData != null) {
                 coreData.removeMachine(machinePos);
                 CoreDataManager.markDirty(coreUuid);
+                CoreDataManager.saveDirty();
             }
             machine.setBound(false);
             machine.setBoundCoreUuid(null);
@@ -268,6 +269,7 @@ public class ConnectorItem extends Item {
                 if (oldData != null) {
                     oldData.removeMachine(machinePos);
                     CoreDataManager.markDirty(oldUuid);
+                    CoreDataManager.saveDirty();
                 }
             }
         }
@@ -310,6 +312,7 @@ public class ConnectorItem extends Item {
             }
             coreData.addMachine(machinePos, 0, true, machineType, machine.getTier().getLevel());
             CoreDataManager.markDirty(coreUuid);
+            CoreDataManager.saveDirty();
             machineBe.setChanged();
             return true;
         }

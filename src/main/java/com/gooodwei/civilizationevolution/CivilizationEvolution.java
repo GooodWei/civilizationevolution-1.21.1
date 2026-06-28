@@ -11,7 +11,6 @@ import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -19,9 +18,7 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
