@@ -38,6 +38,7 @@ public final class PopulationMachineConfig {
     public static final String PRIMITIVE_CONTROLLER = "primitive_controller";
     public static final String PRIMITIVE_RANCH = "primitive_ranch";
     public static final String PRIMITIVE_FARM = "primitive_farm";
+    public static final String PRIMITIVE_DOCTOR_CABIN = "primitive_doctor_cabin";
     public static final String VILLAGE_CONTROLLER = "village_controller";
 
     // ==================== 内部记录 ====================
@@ -168,6 +169,12 @@ public final class PopulationMachineConfig {
                   age_increment: 1
                   # 每次催熟作物消耗的水量（mB），每桶 = 1000 mB
                   water_per_crop: 250
+
+                primitive_doctor_cabin:
+                  # 原始诊所完成一次工作所需的 tick 数（6000 tick = 5 分钟）
+                  work_total_time: 6000
+                  # 原始诊所每次工作后每个人口的年龄增长量
+                  age_increment: 1
 
                 # 控制器配置
                 primitive_controller:

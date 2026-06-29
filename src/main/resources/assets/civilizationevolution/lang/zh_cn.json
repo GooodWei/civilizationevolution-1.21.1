@@ -36,11 +36,17 @@
   "block.civilizationevolution.primitive_farm": "原始农场",
   "block.civilizationevolution.primitive_controller": "原始控制器",
   "block.civilizationevolution.village_controller": "村庄控制器",
+  "block.civilizationevolution.primitive_doctor_cabin": "原始诊所",
+  "block.civilizationevolution.primitive_structure_casing": "原始结构方块",
+  "block.civilizationevolution.primitive_population_input_hatch": "原始人口输入接口",
+  "block.civilizationevolution.primitive_food_input_hatch": "原始食物输入接口",
+  "block.civilizationevolution.primitive_population_output_hatch": "原始人口输出接口",
   "container.civilizationevolution.primitive_hunting_ground": "狩猎场",
   "container.civilizationevolution.primitive_ranch": "原始牧场",
   "container.civilizationevolution.primitive_farm": "原始农场",
   "container.civilizationevolution.primitive_controller": "原始控制器",
   "container.civilizationevolution.village_controller": "村庄控制器",
+  "container.civilizationevolution.primitive_doctor_cabin": "原始诊所",
 
   "career.civilizationevolution.unemployed": "失业",
   "career.civilizationevolution.nitwit": "傻子",
@@ -61,6 +67,7 @@
   "gui.civilizationevolution.confirm": "确认",
   "gui.civilizationevolution.cancel": "取消",
   "gui.civilizationevolution.set_min_keep": "设置最低保留数量",
+  "gui.civilizationevolution.set_health_threshold": "设置健康阈值（0-100）",
   "gui.civilizationevolution.start": "启动",
   "gui.civilizationevolution.stop": "停止",
   "gui.civilizationevolution.unbind": "解绑",
@@ -83,6 +90,8 @@
 
   "msg.civilizationevolution.extractor.success": "§a已提取文明核心，UUID: %s",
   "msg.civilizationevolution.extractor.not_bound": "§c该机器未绑定任何文明核心",
+
+  "msg.civilizationevolution.structure_incomplete": "§c多方块结构不完整，请按照 2×2×2 结构摆放",
 
   "jade.civilizationevolution.tier": "§9时代：%s (Lv.%d)",
   "jade.civilizationevolution.bound": "§9控制器：%s",

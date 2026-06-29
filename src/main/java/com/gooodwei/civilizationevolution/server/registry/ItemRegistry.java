@@ -69,6 +69,32 @@ public class ItemRegistry {
     public static final DeferredItem<BlockItem> PRIMITIVE_FARM =
             ITEMS.registerItem("primitive_farm", properties ->
                     new TieredBlockItem(BlockRegistry.PRIMITIVE_FARM_BLOCK.get(), properties));
+
+    /** 原始结构方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_STRUCTURE_CASING =
+            ITEMS.registerItem("primitive_structure_casing", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_STRUCTURE_CASING.get(), properties));
+
+    /** 原始人口输入接口方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_POPULATION_INPUT_HATCH =
+            ITEMS.registerItem("primitive_population_input_hatch", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_POPULATION_INPUT_HATCH.get(), properties));
+
+    /** 原始食物输入接口方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_FOOD_INPUT_HATCH =
+            ITEMS.registerItem("primitive_food_input_hatch", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get(), properties));
+
+    /** 原始人口输出接口方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_POPULATION_OUTPUT_HATCH =
+            ITEMS.registerItem("primitive_population_output_hatch", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH.get(), properties));
+
+    /** 原始诊所方块物品（Tier 0：原始时代） */
+    public static final DeferredItem<BlockItem> PRIMITIVE_DOCTOR_CABIN =
+            ITEMS.registerItem("primitive_doctor_cabin", properties ->
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_DOCTOR_CABIN.get(), properties));
+
     /**
      * 向事件总线注册所有物品。
      * @param bus 模组事件总线

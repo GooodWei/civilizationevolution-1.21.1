@@ -44,6 +44,11 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.PRIMITIVE_RANCH.get());
                         output.accept(ItemRegistry.VILLAGE_CONTROLLER.get());
                         output.accept(ItemRegistry.PRIMITIVE_FARM.get());
+                        output.accept(ItemRegistry.PRIMITIVE_STRUCTURE_CASING.get());
+                        output.accept(ItemRegistry.PRIMITIVE_POPULATION_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_DOCTOR_CABIN.get());
                     }).build());
 
     /**

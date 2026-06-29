@@ -36,11 +36,17 @@
   "block.civilizationevolution.primitive_farm": "Primitive Farm",
   "block.civilizationevolution.primitive_controller": "Primitive Controller",
   "block.civilizationevolution.village_controller": "Village Controller",
+  "block.civilizationevolution.primitive_doctor_cabin": "Primitive Doctor Cabin",
+  "block.civilizationevolution.primitive_structure_casing": "Primitive Structure Casing",
+  "block.civilizationevolution.primitive_population_input_hatch": "Primitive Population Input Hatch",
+  "block.civilizationevolution.primitive_food_input_hatch": "Primitive Food Input Hatch",
+  "block.civilizationevolution.primitive_population_output_hatch": "Primitive Population Output Hatch",
   "container.civilizationevolution.primitive_hunting_ground": "Hunting Ground",
   "container.civilizationevolution.primitive_ranch": "Primitive Ranch",
   "container.civilizationevolution.primitive_farm": "Primitive Farm",
   "container.civilizationevolution.primitive_controller": "Primitive Controller",
   "container.civilizationevolution.village_controller": "Village Controller",
+  "container.civilizationevolution.primitive_doctor_cabin": "Primitive Doctor Cabin",
 
   "career.civilizationevolution.unemployed": "Unemployed",
   "career.civilizationevolution.nitwit": "Nitwit",
@@ -61,6 +67,7 @@
   "gui.civilizationevolution.confirm": "Confirm",
   "gui.civilizationevolution.cancel": "Cancel",
   "gui.civilizationevolution.set_min_keep": "Set Min Keep Number",
+  "gui.civilizationevolution.set_health_threshold": "Set Health Threshold (0-100)",
   "gui.civilizationevolution.start": "Start",
   "gui.civilizationevolution.stop": "Stop",
   "gui.civilizationevolution.unbind": "Unbind",
@@ -83,6 +90,8 @@
 
   "msg.civilizationevolution.extractor.success": "§aCore extracted, UUID: %s",
   "msg.civilizationevolution.extractor.not_bound": "§cThis machine is not bound to any civilization core",
+
+  "msg.civilizationevolution.structure_incomplete": "§cMulti-block structure incomplete, please build a 2×2×2 structure",
 
   "jade.civilizationevolution.tier": "§9Era: %s (Lv.%d)",
   "jade.civilizationevolution.bound": "§9Controller: %s",

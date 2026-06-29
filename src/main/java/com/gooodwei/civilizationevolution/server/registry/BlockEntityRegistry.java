@@ -1,9 +1,13 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
+import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveDoctorCabinBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveFarmBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveRanchBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveFoodInputHatchBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationInputHatchBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationOutputHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.VillageControllerBlockEntity;
@@ -59,6 +63,38 @@ public class BlockEntityRegistry {
             BLOCK_ENTITIES.register("primitive_farm",
                     () -> BlockEntityType.Builder.of(PrimitiveFarmBlockEntity::new,
                             BlockRegistry.PRIMITIVE_FARM_BLOCK.get()).build(null));
+
+    /** 原始人口输入接口 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitivePopulationInputHatchBlockEntity>> PRIMITIVE_POPULATION_INPUT_HATCH =
+            BLOCK_ENTITIES.register("primitive_population_input_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitivePopulationInputHatchBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_POPULATION_INPUT_HATCH.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_POPULATION_INPUT_HATCH.get()).build(null));
+
+    /** 原始食物输入接口 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveFoodInputHatchBlockEntity>> PRIMITIVE_FOOD_INPUT_HATCH =
+            BLOCK_ENTITIES.register("primitive_food_input_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitiveFoodInputHatchBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get()).build(null));
+
+    /** 原始人口输出接口 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitivePopulationOutputHatchBlockEntity>> PRIMITIVE_POPULATION_OUTPUT_HATCH =
+            BLOCK_ENTITIES.register("primitive_population_output_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitivePopulationOutputHatchBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH.get()).build(null));
+
+    /** 原始诊所 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveDoctorCabinBlockEntity>> PRIMITIVE_DOCTOR_CABIN =
+            BLOCK_ENTITIES.register("primitive_doctor_cabin",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitiveDoctorCabinBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_DOCTOR_CABIN.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_DOCTOR_CABIN.get()).build(null));
 
     /**
      * 向事件总线注册所有 BlockEntity 类型。

@@ -51,6 +51,37 @@ public class BlockRegistry {
             "primitive_farm",
             () -> new PrimitiveFarmBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
+
+    /** 原始结构方块 —— 多方块机器填充外壳（Tier 0） */
+    public static final DeferredBlock<PrimitiveStructureCasing> PRIMITIVE_STRUCTURE_CASING = BLOCKS.register(
+            "primitive_structure_casing",
+            () -> new PrimitiveStructureCasing(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f))
+    );
+
+    /** 原始人口输入接口 —— 多方块机器人口输入口（Tier 0） */
+    public static final DeferredBlock<PrimitivePopulationInputHatchBlock> PRIMITIVE_POPULATION_INPUT_HATCH = BLOCKS.register(
+            "primitive_population_input_hatch",
+            () -> new PrimitivePopulationInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始食物输入接口 —— 多方块机器食物输入口（Tier 0） */
+    public static final DeferredBlock<PrimitiveFoodInputHatchBlock> PRIMITIVE_FOOD_INPUT_HATCH = BLOCKS.register(
+            "primitive_food_input_hatch",
+            () -> new PrimitiveFoodInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始人口输出接口 —— 多方块机器人口输出口（Tier 0） */
+    public static final DeferredBlock<PrimitivePopulationOutputHatchBlock> PRIMITIVE_POPULATION_OUTPUT_HATCH = BLOCKS.register(
+            "primitive_population_output_hatch",
+            () -> new PrimitivePopulationOutputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始诊所 —— 多方块医院控制器（Tier 0） */
+    public static final DeferredBlock<PrimitiveDoctorCabin> PRIMITIVE_DOCTOR_CABIN = BLOCKS.register(
+            "primitive_doctor_cabin",
+            () -> new PrimitiveDoctorCabin(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
     /**
      * 向事件总线注册所有方块。
      * @param bus 模组事件总线

@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.client.registry;
 
+import com.gooodwei.civilizationevolution.client.screen.PrimitiveDoctorCabinScreen;
 import com.gooodwei.civilizationevolution.client.screen.PrimitiveFarmScreen;
 import com.gooodwei.civilizationevolution.client.screen.PrimitiveHuntingGroundScreen;
 import com.gooodwei.civilizationevolution.client.screen.PrimitiveCampScreen;
@@ -30,5 +31,6 @@ public class ScreenRegistry {
         event.register(MenuRegistry.PRIMITIVE_RANCH_MENU.get(), PrimitiveRanchScreen::new);
         event.register(MenuRegistry.PRIMITIVE_FARM_MENU.get(), PrimitiveFarmScreen::new);
         event.register(MenuRegistry.PRIMITIVE_CONTROLLER_MENU.get(), PrimitiveControllerScreen::new);
+        event.register(MenuRegistry.PRIMITIVE_DOCTOR_CABIN_MENU.get(), PrimitiveDoctorCabinScreen::new);
     }
 }

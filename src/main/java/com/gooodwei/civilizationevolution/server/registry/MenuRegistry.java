@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveDoctorCabinMenu;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveFarmMenu;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveHuntingGroundMenu;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveCampMenu;
@@ -43,6 +44,10 @@ public class MenuRegistry {
     /** 原始农场菜单类型（Tier 0） */
     public static final Supplier<MenuType<PrimitiveFarmMenu>> PRIMITIVE_FARM_MENU =
             MENUS.register("primitive_farm", () -> IMenuTypeExtension.create(PrimitiveFarmMenu::fromNetwork));
+
+    /** 原始诊所菜单类型（Tier 0） */
+    public static final Supplier<MenuType<PrimitiveDoctorCabinMenu>> PRIMITIVE_DOCTOR_CABIN_MENU =
+            MENUS.register("primitive_doctor_cabin", () -> IMenuTypeExtension.create(PrimitiveDoctorCabinMenu::fromNetwork));
 
     /**
      * 向事件总线注册所有 Menu 类型。
