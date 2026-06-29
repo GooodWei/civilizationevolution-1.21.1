@@ -1,11 +1,14 @@
 package com.gooodwei.civilizationevolution.server.block;
 
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.VillageControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -15,14 +18,20 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 村庄控制器方块 —— 比原始聚落更高级的文明控制器。
  *
- * <p>ticker 仅在服务端运行，直接委托给 {@link VillageControllerBlockEntity#serverTick}。</p>
+ * <p>ticker 仅在服务端运行，直接委托给 {@link VillageControllerBlockEntity#serverTick}。
+ * 收到红石信号且核心有效时发射信标光柱。</p>
  */
-public class VillageController extends AbstractMachineBlock {
+public class VillageController extends AbstractControllerBlock {
     /** 序列化编解码器 */
     public static final MapCodec<VillageController> CODEC = simpleCodec(VillageController::new);
 
     public VillageController(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public Tier getTier() {
+        return CivilizationTiers.VILLAGE;
     }
 
     @Override
@@ -60,5 +69,10 @@ public class VillageController extends AbstractMachineBlock {
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
         return new VillageControllerBlockEntity(blockPos, blockState);
+    }
+
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 }

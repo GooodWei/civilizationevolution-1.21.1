@@ -3,10 +3,12 @@ package com.gooodwei.civilizationevolution.server.blockentity.abstractmachine;
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.api.IPMController;
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
-import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.VillageControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.block.AbstractControllerBlock;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
@@ -57,7 +59,7 @@ import java.util.List;
  *   <li><b>BE NBT</b>：仅 workProgress（调度进度），物品由父类管理</li>
  * </ul>
  *
- * @see PrimitiveSettlementBlockEntity
+ * @see PrimitiveControllerBlockEntity
  * @see VillageControllerBlockEntity
  */
 public abstract class AbstractControllerBlockEntity
@@ -350,10 +352,29 @@ public abstract class AbstractControllerBlockEntity
             saveCounter = 0;
         }
 
+        // 信标光柱开关：红石信号 + 核心 UUID 同时满足时激活
+        boolean shouldBeam = be.currentUuid != null && level.hasNeighborSignal(pos);
+        if (blockState.hasProperty(AbstractControllerBlock.BEAM_ACTIVE)
+                && blockState.getValue(AbstractControllerBlock.BEAM_ACTIVE) != shouldBeam) {
+            level.setBlock(pos, blockState.setValue(AbstractControllerBlock.BEAM_ACTIVE, shouldBeam), 3);
+        }
+
         setChanged(level, pos, blockState);
     }
 
     // ==================== IPMController 实现 ====================
+
+    /**
+     * 此控制器的 Tier 等级。
+     *
+     * <p>每个具体控制器子类<b>必须</b>覆写此方法，显式声明所属时代。
+     * 与对应 Block 的 {@link AbstractMachineBlock#getTier()} 保持相同值，
+     * 确保绑定逻辑与物品 tooltip 一致。
+     *
+     * @return 此控制器的 Tier 等级
+     */
+    @Override
+    public abstract Tier getTier();
 
     @Override
     public Container getContainer() {

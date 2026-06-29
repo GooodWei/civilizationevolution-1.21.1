@@ -1,6 +1,8 @@
 package com.gooodwei.civilizationevolution.server.block;
 
-import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -15,27 +17,33 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 原始聚落方块 —— 文明控制器的方块实现。
  *
- * <p>原始聚落是当前唯一的控制器实现，接受文明核心物品（CivilizationCoreItem），
+ * <p>接受文明核心物品（CivilizationCoreItem），
  * 统一调度绑定的 {@link com.gooodwei.civilizationevolution.api.IPopulationMachine}（营地、狩猎场等）。
- * 自身通过日晷进度模型驱动工作周期。</p>
+ * 自身通过日晷进度模型驱动工作周期。
+ * 收到红石信号且核心有效时发射信标光柱。</p>
  *
- * <p>ticker 仅在服务端运行，直接委托给 {@link PrimitiveSettlementBlockEntity#serverTick}。</p>
+ * <p>ticker 仅在服务端运行，直接委托给 {@link PrimitiveControllerBlockEntity#serverTick}。</p>
  */
-public class PrimitiveSettlement extends AbstractMachineBlock {
+public class PrimitiveController extends AbstractControllerBlock {
     /** 序列化编解码器 */
-    public static final MapCodec<PrimitiveSettlement> CODEC = simpleCodec(PrimitiveSettlement::new);
+    public static final MapCodec<PrimitiveController> CODEC = simpleCodec(PrimitiveController::new);
 
     /**
      * @param properties 方块属性（硬度、爆破阻力等）
      */
-    public PrimitiveSettlement(Properties properties) {
+    public PrimitiveController(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public Tier getTier() {
+        return CivilizationTiers.PRIMITIVE;
     }
 
     /**
      * 获取方块实体的 Ticker（仅服务端）。
      *
-     * <p>客户端返回 {@code null}，服务端委托给 {@link PrimitiveSettlementBlockEntity#serverTick}。</p>
+     * <p>客户端返回 {@code null}，服务端委托给 {@link PrimitiveControllerBlockEntity#serverTick}。</p>
      *
      * @param level           所在世界
      * @param state           方块状态
@@ -47,8 +55,8 @@ public class PrimitiveSettlement extends AbstractMachineBlock {
         if (level.isClientSide) {
             return null; // 仅服务端 tick
         }
-        return createTickerHelper(blockEntityType, BlockEntityRegistry.PRIMITIVE_SETTLEMENT.get(),
-                PrimitiveSettlementBlockEntity::serverTick);
+        return createTickerHelper(blockEntityType, BlockEntityRegistry.PRIMITIVE_CONTROLLER.get(),
+                PrimitiveControllerBlockEntity::serverTick);
     }
 
     @Override
@@ -66,10 +74,10 @@ public class PrimitiveSettlement extends AbstractMachineBlock {
      *
      * @param blockPos   方块坐标
      * @param blockState 方块状态
-     * @return 新的 {@link PrimitiveSettlementBlockEntity} 实例
+     * @return 新的 {@link PrimitiveControllerBlockEntity} 实例
      */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return new PrimitiveSettlementBlockEntity(blockPos, blockState);
+        return new PrimitiveControllerBlockEntity(blockPos, blockState);
     }
 }

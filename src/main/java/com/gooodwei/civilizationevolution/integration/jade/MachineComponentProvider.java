@@ -42,7 +42,19 @@ public class MachineComponentProvider implements IBlockComponentProvider {
                     tierLevel));
         }
 
-        // ---- 第二行：绑定状态 ----
+        // ---- 控制器方块：显示文明核心 UUID ----
+        if (data.getBoolean("IsController")) {
+            if (data.getBoolean("HasCore")) {
+                String shortUuid = data.getString("CoreUuidShort");
+                tooltip.add(Component.translatable(
+                        "jade.civilizationevolution.core_uuid", shortUuid));
+            } else {
+                tooltip.add(Component.translatable("jade.civilizationevolution.no_core"));
+            }
+            return;
+        }
+
+        // ---- 普通机器：显示绑定状态 ----
         boolean isBound = data.getBoolean("IsBound");
         if (isBound) {
             String dim = data.getString("ControllerDimension");

@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.menu;
 
-import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -13,7 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 原始聚落 GUI 的容器菜单。
+ * 原始控制器 GUI 的容器菜单。
  *
  * <p>槽位布局（共 1 个机器槽位）：
  * <ul>
@@ -28,7 +28,7 @@ import net.minecraft.world.item.ItemStack;
  *   <li>{@code containerData[2]} — 日晷总时长（DAY_TICKS，通常为 24000）</li>
  * </ul>
  */
-public class PrimitiveSettlementMenu extends MachineMenu {
+public class PrimitiveControllerMenu extends MachineMenu {
     /** 底层的方块实体容器引用 */
     public final Container container;
     /** 同步到客户端的数据（日晷进度、绑定数量等） */
@@ -39,11 +39,11 @@ public class PrimitiveSettlementMenu extends MachineMenu {
      *
      * @param containerId     容器窗口 ID
      * @param playerInventory 玩家物品栏
-     * @param blockEntity     原始聚落方块实体
+     * @param blockEntity     原始控制器方块实体
      * @param containerData   同步数据
      */
-    public PrimitiveSettlementMenu(int containerId, Inventory playerInventory, PrimitiveSettlementBlockEntity blockEntity, ContainerData containerData) {
-        super(MenuRegistry.PRIMITIVE_SETTLEMENT_MENU.get(), containerId);
+    public PrimitiveControllerMenu(int containerId, Inventory playerInventory, PrimitiveControllerBlockEntity blockEntity, ContainerData containerData) {
+        super(MenuRegistry.PRIMITIVE_CONTROLLER_MENU.get(), containerId);
         this.container = blockEntity;
         this.containerData = containerData;
         this.addDataSlots(containerData);
@@ -70,7 +70,7 @@ public class PrimitiveSettlementMenu extends MachineMenu {
     }
 
     /**
-     * 原始聚落菜单始终有效（不需要玩家在方块附近）。
+     * 原始控制器菜单始终有效（不需要玩家在方块附近）。
      *
      * @param player 当前玩家
      * @return 始终返回 {@code true}
@@ -86,12 +86,12 @@ public class PrimitiveSettlementMenu extends MachineMenu {
      * @param containerId     容器窗口 ID
      * @param playerInventory 客户端玩家物品栏
      * @param buf             网络数据包（包含 BlockPos）
-     * @return 重建的 PrimitiveSettlementMenu 实例（使用占位 {@link SimpleContainerData}）
+     * @return 重建的 PrimitiveControllerMenu 实例（使用占位 {@link SimpleContainerData}）
      */
-    public static PrimitiveSettlementMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
+    public static PrimitiveControllerMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         BlockPos blockPos = buf.readBlockPos();
-        PrimitiveSettlementBlockEntity blockEntity = (PrimitiveSettlementBlockEntity) playerInventory.player.level().getBlockEntity(blockPos);
-        return new PrimitiveSettlementMenu(containerId, playerInventory, blockEntity, new SimpleContainerData(3));
+        PrimitiveControllerBlockEntity blockEntity = (PrimitiveControllerBlockEntity) playerInventory.player.level().getBlockEntity(blockPos);
+        return new PrimitiveControllerMenu(containerId, playerInventory, blockEntity, new SimpleContainerData(3));
     }
 
     /**
@@ -123,12 +123,12 @@ public class PrimitiveSettlementMenu extends MachineMenu {
     }
 
     /**
-     * 获取对应的原始聚落方块坐标。
+     * 获取对应的原始控制器方块坐标。
      *
      * @return 方块坐标
      */
     public BlockPos getBlockPos() {
-        return ((PrimitiveSettlementBlockEntity) this.container).getBlockPos();
+        return ((PrimitiveControllerBlockEntity) this.container).getBlockPos();
     }
 
 

@@ -1,7 +1,9 @@
 package com.gooodwei.civilizationevolution.server.block;
 
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveCampBlockEntity;
-import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -16,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * 原始营地方块 —— Tier 0 基础机器方块。
  *
  * <p>营地是最基础的机器类型，提供食物输入、人口安置和产物输出的 GUI。
- * 其工作逻辑由绑定的控制器（如 {@link com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity}）统一调度，
+ * 其工作逻辑由绑定的控制器（如 {@link PrimitiveControllerBlockEntity}）统一调度，
  * 自身无独立 ticker。</p>
  */
 public class PrimitiveCampBlock extends AbstractMachineBlock {
@@ -29,6 +31,11 @@ public class PrimitiveCampBlock extends AbstractMachineBlock {
      */
     public PrimitiveCampBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public Tier getTier() {
+        return CivilizationTiers.PRIMITIVE;
     }
 
     @Override

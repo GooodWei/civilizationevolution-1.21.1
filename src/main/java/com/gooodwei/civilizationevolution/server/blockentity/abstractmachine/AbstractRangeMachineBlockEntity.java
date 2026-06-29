@@ -163,8 +163,11 @@ public abstract class AbstractRangeMachineBlockEntity
      * {@link #blockedByConflict} 设为 true，并为所有冲突方块触发红色粒子边框。
      */
     protected void scanAndMarkConflicts(ServerLevel level) {
-        AABB aabb = getSelectionRange();
         TagKey<Block> tag = getConflictTag();
+        // 无冲突标签的机器（如农场）不进行冲突检测
+        if (tag == null) return;
+
+        AABB aabb = getSelectionRange();
 
         boolean wasBlocked = this.blockedByConflict;
         List<AbstractRangeMachineBlockEntity> conflicts = new ArrayList<>();
@@ -209,7 +212,7 @@ public abstract class AbstractRangeMachineBlockEntity
         boolean hasConflict = be.blockedByConflict;
 
         List<BlockPos> others = List.of();
-        if (hasConflict) {
+        if (hasConflict && tag != null) {
             List<BlockPos> list = new ArrayList<>();
             for (int x = (int) aabb.minX; x < (int) aabb.maxX; x++) {
                 for (int z = (int) aabb.minZ; z < (int) aabb.maxZ; z++) {

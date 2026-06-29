@@ -52,7 +52,7 @@ public class PrimitiveHuntingGroundMenu extends MachineMenu {
      * @param data            同步数据
      */
     public PrimitiveHuntingGroundMenu(int containerId, Inventory playerInventory, AbstractHuntingGroundBlockEntity blockEntity, ContainerData data) {
-        super(MenuRegistry.HUNTING_GROUND_MENU.get(), containerId);
+        super(MenuRegistry.PRIMITIVE_HUNTING_GROUND_MENU.get(), containerId);
         this.container = blockEntity;
         this.data = data;
         this.addDataSlots(data);
@@ -90,7 +90,7 @@ public class PrimitiveHuntingGroundMenu extends MachineMenu {
      * @param containerId     容器窗口 ID
      * @param playerInventory 客户端玩家物品栏
      * @param buf             网络数据包（包含 BlockPos）
-     * @return 重建的 HuntingGroundMenu 实例（使用占位 {@link SimpleContainerData}）
+     * @return 重建的 PrimitiveHuntingGroundMenu 实例（使用占位 {@link SimpleContainerData}）
      */
     public static PrimitiveHuntingGroundMenu fromNetwork(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         AbstractHuntingGroundBlockEntity be = (AbstractHuntingGroundBlockEntity)

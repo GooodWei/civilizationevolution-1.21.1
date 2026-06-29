@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.integration.jade;
 
 import com.gooodwei.civilizationevolution.server.block.AbstractMachineBlock;
+import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractMachineBlockEntity;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
@@ -24,6 +25,9 @@ public class CivEvoJadePlugin implements IWailaPlugin {
     public void register(IWailaCommonRegistration registration) {
         registration.registerBlockDataProvider(
                 MachineDataProvider.INSTANCE, AbstractMachineBlockEntity.class);
+        // 控制器的 BE 继承链不同（BaseContainerBlockEntity），需单独注册
+        registration.registerBlockDataProvider(
+                MachineDataProvider.INSTANCE, AbstractControllerBlockEntity.class);
     }
 
     @Override

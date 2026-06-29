@@ -1,10 +1,11 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.HuntingGroundBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveFarmBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveRanchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveCampBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveSettlementBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.VillageControllerBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -29,17 +30,17 @@ public class BlockEntityRegistry {
                     () -> BlockEntityType.Builder.of(PrimitiveCampBlockEntity::new,
                             BlockRegistry.PRIMITIVE_CAMP_BLOCK.get()).build(null));
 
-    /** 狩猎场 BE 类型 */
-    public static final Supplier<BlockEntityType<HuntingGroundBlockEntity>> HUNT_GROUND =
-            BLOCK_ENTITIES.register("hunting_ground",
-                    () -> BlockEntityType.Builder.of(HuntingGroundBlockEntity::new,
-                            BlockRegistry.HUNTING_GROUND.get()).build(null));
+    /** 原始狩猎场 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveHuntingGroundBlockEntity>> PRIMITIVE_HUNTING_GROUND =
+            BLOCK_ENTITIES.register("primitive_hunting_ground",
+                    () -> BlockEntityType.Builder.of(PrimitiveHuntingGroundBlockEntity::new,
+                            BlockRegistry.PRIMITIVE_HUNTING_GROUND.get()).build(null));
 
-    /** 原始聚落 BE 类型 */
-    public static final Supplier<BlockEntityType<PrimitiveSettlementBlockEntity>> PRIMITIVE_SETTLEMENT =
-            BLOCK_ENTITIES.register("primitive_settlement",
-                    () -> BlockEntityType.Builder.of(PrimitiveSettlementBlockEntity::new,
-                            BlockRegistry.PRIMITIVE_SETTLEMENT.get()).build(null));
+    /** 原始控制器 BE 类型 */
+    public static final Supplier<BlockEntityType<PrimitiveControllerBlockEntity>> PRIMITIVE_CONTROLLER =
+            BLOCK_ENTITIES.register("primitive_controller",
+                    () -> BlockEntityType.Builder.of(PrimitiveControllerBlockEntity::new,
+                            BlockRegistry.PRIMITIVE_CONTROLLER.get()).build(null));
 
     /** 原始牧场 BE 类型（Tier 0） */
     public static final Supplier<BlockEntityType<PrimitiveRanchBlockEntity>> PRIMITIVE_RANCH =
@@ -52,6 +53,12 @@ public class BlockEntityRegistry {
             BLOCK_ENTITIES.register("village_controller",
                     () -> BlockEntityType.Builder.of(VillageControllerBlockEntity::new,
                             BlockRegistry.VILLAGE_CONTROLLER.get()).build(null));
+
+    /** 原始农场 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveFarmBlockEntity>> PRIMITIVE_FARM =
+            BLOCK_ENTITIES.register("primitive_farm",
+                    () -> BlockEntityType.Builder.of(PrimitiveFarmBlockEntity::new,
+                            BlockRegistry.PRIMITIVE_FARM_BLOCK.get()).build(null));
 
     /**
      * 向事件总线注册所有 BlockEntity 类型。

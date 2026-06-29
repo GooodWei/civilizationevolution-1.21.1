@@ -34,15 +34,16 @@ public final class PopulationMachineConfig {
     // ==================== 机器 Key 常量 ====================
 
     public static final String CAMP = "camp";
-    public static final String HUNTING_GROUND = "hunting_ground";
-    public static final String PRIMITIVE_SETTLEMENT = "primitive_settlement";
+    public static final String PRIMITIVE_HUNTING_GROUND = "primitive_hunting_ground";
+    public static final String PRIMITIVE_CONTROLLER = "primitive_controller";
     public static final String PRIMITIVE_RANCH = "primitive_ranch";
+    public static final String PRIMITIVE_FARM = "primitive_farm";
     public static final String VILLAGE_CONTROLLER = "village_controller";
 
     // ==================== 内部记录 ====================
 
     /** 单台机器的配置项 */
-    public record MachineSection(int workTotalTime, int ageIncrement, int maxAnimalCount) {}
+    public record MachineSection(int workTotalTime, int ageIncrement, int maxAnimalCount, int waterPerCrop) {}
 
     /** 文明控制器机器的配置项*/
     public record ControllerSection(int maxBindCount, int maxBindRange, boolean allowCrossDimension) {}
@@ -89,12 +90,18 @@ public final class PopulationMachineConfig {
         return s != null ? s.maxAnimalCount() : 0;
     }
 
+    /** 按机器 key 获取每次催熟作物消耗的水量（mB），未配置时默认 250 */
+    public static int getWaterPerCrop(String machine) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null ? s.waterPerCrop() : 250;
+    }
+
     // ==================== 向后兼容字段（新代码建议直接用上面的方法） ====================
 
     public static int CAMP_WORK_TOTAL_TIME;
     public static int CAMP_AGE_INCREMENT;
-    public static int HUNT_GROUND_TOTAL_TIME;
-    public static int HUNT_GROUND_AGE_INCREMENT;
+    public static int PRIMITIVE_HUNTING_GROUND_TOTAL_TIME;
+    public static int PRIMITIVE_HUNTING_GROUND_AGE_INCREMENT;
     public static int PRIMITIVE_RANCH_WORK_TOTAL_TIME;
     public static int PRIMITIVE_RANCH_AGE_INCREMENT;
     public static int PRIMITIVE_RANCH_MAX_ANIMAL_COUNT;
@@ -120,8 +127,8 @@ public final class PopulationMachineConfig {
     private static void syncLegacyFields() {
         CAMP_WORK_TOTAL_TIME = getWorkTotalTime(CAMP);
         CAMP_AGE_INCREMENT = getAgeIncrement(CAMP);
-        HUNT_GROUND_TOTAL_TIME = getWorkTotalTime(HUNTING_GROUND);
-        HUNT_GROUND_AGE_INCREMENT = getAgeIncrement(HUNTING_GROUND);
+        PRIMITIVE_HUNTING_GROUND_TOTAL_TIME = getWorkTotalTime(PRIMITIVE_HUNTING_GROUND);
+        PRIMITIVE_HUNTING_GROUND_AGE_INCREMENT = getAgeIncrement(PRIMITIVE_HUNTING_GROUND);
         PRIMITIVE_RANCH_WORK_TOTAL_TIME = getWorkTotalTime(PRIMITIVE_RANCH);
         PRIMITIVE_RANCH_AGE_INCREMENT = getAgeIncrement(PRIMITIVE_RANCH);
         PRIMITIVE_RANCH_MAX_ANIMAL_COUNT = getMaxAnimalCount(PRIMITIVE_RANCH);
@@ -140,10 +147,10 @@ public final class PopulationMachineConfig {
                   # 营地每次工作后每个人口的年龄增长量
                   age_increment: 1
 
-                hunting_ground:
-                  # 狩猎场完成一次工作所需的 tick 数（12000 tick = 10 分钟）
+                primitive_hunting_ground:
+                  # 原始狩猎场完成一次工作所需的 tick 数（12000 tick = 10 分钟）
                   work_total_time: 12000
-                  # 狩猎场每次工作后每个人口的年龄增长量
+                  # 原始狩猎场每次工作后每个人口的年龄增长量
                   age_increment: 1
 
                 primitive_ranch:
@@ -154,8 +161,16 @@ public final class PopulationMachineConfig {
                   # 范围内最大动物数量，超过时取消当次工作（0 = 不限制）
                   max_animal_count: 24
 
+                primitive_farm:
+                  # 原始农场完成一次工作所需的 tick 数（1200 tick = 1 分钟）
+                  work_total_time: 1200
+                  # 原始农场每次工作后每个人口的年龄增长量
+                  age_increment: 1
+                  # 每次催熟作物消耗的水量（mB），每桶 = 1000 mB
+                  water_per_crop: 250
+
                 # 控制器配置
-                primitive_settlement:
+                primitive_controller:
                   # 最大可绑定机器数量
                   max_bind_count: 10
                   # 最大绑定距离（格）
@@ -183,6 +198,7 @@ public final class PopulationMachineConfig {
         int workTotalTime = 0;
         int ageIncrement = 0;
         int maxAnimalCount = 0;
+        int waterPerCrop = 0;
         // 控制器字段
         int maxBindCount = 0;
         int maxBindRange = 0;
@@ -196,7 +212,7 @@ public final class PopulationMachineConfig {
                 // 遇到新 section 时先保存上一个
                 if (!currentSection.isEmpty()) {
                     saveSection(currentSection, isController,
-                            workTotalTime, ageIncrement, maxAnimalCount,
+                            workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
                             maxBindCount, maxBindRange, allowCrossDimension);
                 }
                 currentSection = trimmed.substring(0, trimmed.length() - 1).trim();
@@ -204,6 +220,7 @@ public final class PopulationMachineConfig {
                 workTotalTime = 12000;
                 ageIncrement = 1;
                 maxAnimalCount = 0;
+                waterPerCrop = 0;
                 maxBindCount = 10;
                 maxBindRange = 64;
                 allowCrossDimension = false;
@@ -219,6 +236,7 @@ public final class PopulationMachineConfig {
                 case "work_total_time" -> workTotalTime = Integer.parseInt(value);
                 case "age_increment" -> ageIncrement = Integer.parseInt(value);
                 case "max_animal_count" -> maxAnimalCount = Integer.parseInt(value);
+                case "water_per_crop" -> waterPerCrop = Integer.parseInt(value);
                 case "max_bind_count" -> { maxBindCount = Integer.parseInt(value); isController = true; }
                 case "max_bind_range" -> { maxBindRange = Integer.parseInt(value); isController = true; }
                 case "allow_cross_dimension" -> { allowCrossDimension = Boolean.parseBoolean(value); isController = true; }
@@ -228,7 +246,7 @@ public final class PopulationMachineConfig {
         // 保存最后一个 section
         if (!currentSection.isEmpty()) {
             saveSection(currentSection, isController,
-                    workTotalTime, ageIncrement, maxAnimalCount,
+                    workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
                     maxBindCount, maxBindRange, allowCrossDimension);
         }
     }
@@ -236,11 +254,12 @@ public final class PopulationMachineConfig {
     /** 根据 section 类型保存到对应的 Map */
     private static void saveSection(String name, boolean isController,
                                      int workTotalTime, int ageIncrement, int maxAnimalCount,
+                                     int waterPerCrop,
                                      int maxBindCount, int maxBindRange, boolean allowCrossDimension) {
         if (isController) {
             CONTROLLERS.put(name, new ControllerSection(maxBindCount, maxBindRange, allowCrossDimension));
         } else {
-            SECTIONS.put(name, new MachineSection(workTotalTime, ageIncrement, maxAnimalCount));
+            SECTIONS.put(name, new MachineSection(workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop));
         }
     }
 }

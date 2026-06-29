@@ -1,19 +1,28 @@
 package com.gooodwei.civilizationevolution.server.block;
 
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,8 +41,24 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class AbstractMachineBlock extends BaseEntityBlock {
 
+    /** 水平朝向属性（北/南/西/东），方块正面朝向玩家 */
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+
+    /**
+     * 获取此方块的 Tier 等级。
+     *
+     * <p>供 {@link com.gooodwei.civilizationevolution.server.item.TieredBlockItem}
+     * 在物品 tooltip 中显示时代名称，与 BE 的
+     * {@link com.gooodwei.civilizationevolution.api.IPopulationMachine#getTier()} 保持一致。
+     *
+     * @return 此方块对应的 Tier 等级
+     */
+    public abstract Tier getTier();
+
     protected AbstractMachineBlock(Properties properties) {
         super(properties);
+        // 注册默认方块状态：朝向北方
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     /**
@@ -41,6 +66,53 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
      * 默认空实现，子类可覆写以添加扫描、刷新粒子等前置逻辑。
      */
     protected void preOpenMenu(Level level, BlockPos pos) {
+    }
+
+    // ==================== 方向属性 ====================
+
+    /**
+     * 注册方块状态定义，添加水平朝向属性。
+     *
+     * @param builder 方块状态构建器
+     */
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    /**
+     * 方块放置时计算初始状态，正面朝向放置者。
+     *
+     * @param context 方块放置上下文（包含玩家朝向信息）
+     * @return 包含正确朝向的方块状态
+     */
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    /**
+     * 处理方块旋转（如原版扳手、 /setblock）。
+     *
+     * @param state    当前方块状态
+     * @param rotation 旋转方式
+     * @return 旋转后的方块状态
+     */
+    @Override
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    /**
+     * 处理方块镜像反转。
+     *
+     * @param state  当前方块状态
+     * @param mirror 镜像方式
+     * @return 镜像后的方块状态
+     */
+    @Override
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     // ==================== 默认实现 ====================

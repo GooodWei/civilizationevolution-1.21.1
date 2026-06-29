@@ -1,5 +1,7 @@
 package com.gooodwei.civilizationevolution.server.blockentity.fieldmachine;
 
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveHuntingGroundMenu;
@@ -16,7 +18,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 狩猎场方块实体（Tier 0）。
+ * 原始狩猎场方块实体（Tier 0）。
  *
  * <p>继承自 {@link AbstractHuntingGroundBlockEntity}，仅提供 Tier 0 特有的参数。
  * 所有狩猎业务逻辑（实体扫描、战利品生成、食物消耗）由父类提供。
@@ -29,18 +31,23 @@ import net.minecraft.world.level.block.state.BlockState;
  *   <li>槽位 10-18：输出槽（战利品）</li>
  * </ul>
  */
-public class HuntingGroundBlockEntity extends AbstractHuntingGroundBlockEntity {
+public class PrimitiveHuntingGroundBlockEntity extends AbstractHuntingGroundBlockEntity {
     public static final int SIZE = 19;
 
-    public HuntingGroundBlockEntity(BlockPos pos, BlockState blockState) {
-        super(BlockEntityRegistry.HUNT_GROUND.get(), pos, blockState, SIZE);
+    public PrimitiveHuntingGroundBlockEntity(BlockPos pos, BlockState blockState) {
+        super(BlockEntityRegistry.PRIMITIVE_HUNTING_GROUND.get(), pos, blockState, SIZE);
     }
 
     // ==================== 抽象方法实现 ====================
 
     @Override
+    public Tier getTier() {
+        return CivilizationTiers.PRIMITIVE;
+    }
+
+    @Override
     protected String getMachineConfigKey() {
-        return PopulationMachineConfig.HUNTING_GROUND;
+        return PopulationMachineConfig.PRIMITIVE_HUNTING_GROUND;
     }
 
     @Override
@@ -56,7 +63,7 @@ public class HuntingGroundBlockEntity extends AbstractHuntingGroundBlockEntity {
     // ==================== serverTick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state,
-                                   HuntingGroundBlockEntity be) {
+                                   PrimitiveHuntingGroundBlockEntity be) {
         AbstractHuntingGroundBlockEntity.serverTick(level, pos, state, be);
     }
 
@@ -64,12 +71,12 @@ public class HuntingGroundBlockEntity extends AbstractHuntingGroundBlockEntity {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.civilizationevolution.hunting_ground");
+        return Component.translatable("container.civilizationevolution.primitive_hunting_ground");
     }
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.civilizationevolution.hunting_ground");
+        return Component.translatable("container.civilizationevolution.primitive_hunting_ground");
     }
 
     @Override

@@ -1,7 +1,9 @@
 package com.gooodwei.civilizationevolution.server.block;
 
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractHuntingGroundBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.HuntingGroundBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveHuntingGroundBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -24,15 +26,20 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>ticker 仅在服务端运行，且仅当方块实体已绑定时才执行 ServerTick。</p>
  */
-public class HuntingGround extends AbstractMachineBlock {
+public class PrimitiveHuntingGround extends AbstractMachineBlock {
     /** 序列化编解码器 */
-    public static final MapCodec<HuntingGround> CODEC = simpleCodec(HuntingGround::new);
+    public static final MapCodec<PrimitiveHuntingGround> CODEC = simpleCodec(PrimitiveHuntingGround::new);
 
     /**
      * @param properties 方块属性（硬度、爆破阻力等）
      */
-    public HuntingGround(Properties properties) {
+    public PrimitiveHuntingGround(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public Tier getTier() {
+        return CivilizationTiers.PRIMITIVE;
     }
 
     @Override
@@ -50,11 +57,11 @@ public class HuntingGround extends AbstractMachineBlock {
      *
      * @param blockPos   方块坐标
      * @param blockState 方块状态
-     * @return 新的 {@link HuntingGroundBlockEntity} 实例
+     * @return 新的 {@link PrimitiveHuntingGroundBlockEntity} 实例
      */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return new HuntingGroundBlockEntity(blockPos, blockState);
+        return new PrimitiveHuntingGroundBlockEntity(blockPos, blockState);
     }
 
     /**
@@ -87,8 +94,8 @@ public class HuntingGround extends AbstractMachineBlock {
         if (level.isClientSide) {
             return null; // 仅服务端 tick
         }
-        return createTickerHelper(type, BlockEntityRegistry.HUNT_GROUND.get(),
-                (lvl, pos, st, be) -> HuntingGroundBlockEntity.serverTick(lvl, pos, st, be));
+        return createTickerHelper(type, BlockEntityRegistry.PRIMITIVE_HUNTING_GROUND.get(),
+                (lvl, pos, st, be) -> PrimitiveHuntingGroundBlockEntity.serverTick(lvl, pos, st, be));
     }
 
     /**
@@ -99,7 +106,7 @@ public class HuntingGround extends AbstractMachineBlock {
      */
     @Override
     protected void preOpenMenu(Level level, BlockPos pos) {
-        if (level.getBlockEntity(pos) instanceof HuntingGroundBlockEntity hbe) {
+        if (level.getBlockEntity(pos) instanceof PrimitiveHuntingGroundBlockEntity hbe) {
             hbe.onPlacedOrOpened((ServerLevel) level);
         }
     }

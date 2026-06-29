@@ -20,7 +20,7 @@ import net.minecraft.resources.ResourceLocation;
  * }
  * }</pre>
  */
-public final class ModTiers {
+public final class CivilizationTiers {
 
     /** Tier 0：原始时代 */
     public static final Tier PRIMITIVE = TierRegistry.register(
@@ -32,7 +32,7 @@ public final class ModTiers {
             ResourceLocation.fromNamespaceAndPath("civilizationevolution", "village"),
             new Tier(1, "tier.civilizationevolution.village"));
 
-    private ModTiers() {}
+    private CivilizationTiers() {}
 
     /**
      * 触发类加载，确保所有内置 Tier 已注册到 {@link TierRegistry}。

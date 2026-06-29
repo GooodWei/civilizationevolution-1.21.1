@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,beam_active=false": { "model": "civilizationevolution:block/primitive_controller" },
+    "facing=south,beam_active=false": { "model": "civilizationevolution:block/primitive_controller", "y": 180 },
+    "facing=west,beam_active=false":  { "model": "civilizationevolution:block/primitive_controller", "y": 270 },
+    "facing=east,beam_active=false":  { "model": "civilizationevolution:block/primitive_controller", "y": 90 },
+    "facing=north,beam_active=true":  { "model": "civilizationevolution:block/primitive_controller" },
+    "facing=south,beam_active=true":  { "model": "civilizationevolution:block/primitive_controller", "y": 180 },
+    "facing=west,beam_active=true":   { "model": "civilizationevolution:block/primitive_controller", "y": 270 },
+    "facing=east,beam_active=true":   { "model": "civilizationevolution:block/primitive_controller", "y": 90 }
+  }
+}

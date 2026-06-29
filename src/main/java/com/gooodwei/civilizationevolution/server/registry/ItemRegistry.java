@@ -1,7 +1,6 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.api.tier.ModTiers;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
@@ -32,20 +31,17 @@ public class ItemRegistry {
     /** 原始营地方块物品（Tier 0：原始时代） */
     public static final DeferredItem<BlockItem> PRIMITIVE_CAMP_BLOCK_ITEM =
             ITEMS.registerItem("primitive_camp", properties ->
-                    new TieredBlockItem(BlockRegistry.PRIMITIVE_CAMP_BLOCK.get(), properties,
-                            ModTiers.PRIMITIVE));
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_CAMP_BLOCK.get(), properties));
 
     /** 狩猎场方块物品（Tier 0：原始时代） */
-    public static final DeferredItem<BlockItem> HUNTING_GROUND =
-            ITEMS.registerItem("hunting_ground", properties ->
-                    new TieredBlockItem(BlockRegistry.HUNTING_GROUND.get(), properties,
-                            ModTiers.PRIMITIVE));
+    public static final DeferredItem<BlockItem> PRIMITIVE_HUNTING_GROUND =
+            ITEMS.registerItem("primitive_hunting_ground", properties ->
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_HUNTING_GROUND.get(), properties));
 
-    /** 原始聚落方块物品（Tier 0：原始时代） */
-    public static final DeferredItem<BlockItem> PRIMITIVE_SETTLEMENT =
-            ITEMS.registerItem("primitive_settlement", properties ->
-                    new TieredBlockItem(BlockRegistry.PRIMITIVE_SETTLEMENT.get(), properties,
-                            ModTiers.PRIMITIVE));
+    /** 原始控制器方块物品（Tier 0：原始时代） */
+    public static final DeferredItem<BlockItem> PRIMITIVE_CONTROLLER =
+            ITEMS.registerItem("primitive_controller", properties ->
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_CONTROLLER.get(), properties));
 
     /** 文明核心 —— 控制器的数据存储介质，携带 UUID，最大堆叠 1 */
     public static final DeferredItem<CivilizationCoreItem> CIVILIZATION_CORE =
@@ -62,14 +58,17 @@ public class ItemRegistry {
     /** 原始牧地方块物品（Tier 0：原始时代） */
     public static final DeferredItem<BlockItem> PRIMITIVE_RANCH =
             ITEMS.registerItem("primitive_ranch", properties ->
-                    new TieredBlockItem(BlockRegistry.PRIMITIVE_RANCH_BLOCK.get(), properties,
-                            ModTiers.PRIMITIVE));
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_RANCH_BLOCK.get(), properties));
 
     /** 村庄控制器方块物品（Tier 1：村庄时代） */
     public static final DeferredItem<BlockItem> VILLAGE_CONTROLLER =
             ITEMS.registerItem("village_controller", properties ->
-                    new TieredBlockItem(BlockRegistry.VILLAGE_CONTROLLER.get(), properties,
-                            ModTiers.VILLAGE));
+                    new TieredBlockItem(BlockRegistry.VILLAGE_CONTROLLER.get(), properties));
+
+    /** 原始农场方块物品（Tier 0：原始时代） */
+    public static final DeferredItem<BlockItem> PRIMITIVE_FARM =
+            ITEMS.registerItem("primitive_farm", properties ->
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_FARM_BLOCK.get(), properties));
     /**
      * 向事件总线注册所有物品。
      * @param bus 模组事件总线

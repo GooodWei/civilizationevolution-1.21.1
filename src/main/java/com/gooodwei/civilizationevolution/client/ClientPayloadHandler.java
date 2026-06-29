@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.client;
 
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveSettlementScreen;
+import com.gooodwei.civilizationevolution.client.screen.PrimitiveControllerScreen;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -25,13 +25,13 @@ public class ClientPayloadHandler {
     }
 
     /**
-     * 处理机器列表同步：缓存数据并传递给当前打开的 PrimitiveSettlementScreen。
+     * 处理机器列表同步：缓存数据并传递给当前打开的 PrimitiveControllerScreen。
      */
     public static void handleSyncMachineList(final SyncMachineListPayload payload, final IPayloadContext context) {
         context.enqueueWork(() -> {
             cachedMachineList = payload.machines();
             Minecraft mc = Minecraft.getInstance();
-            if (mc.screen instanceof PrimitiveSettlementScreen screen) {
+            if (mc.screen instanceof PrimitiveControllerScreen screen) {
                 screen.updateMachineList(payload.machines());
             }
         });

@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.blockentity.controllermachine;
 
-import com.gooodwei.civilizationevolution.api.tier.ModTiers;
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
@@ -37,6 +37,11 @@ public class VillageControllerBlockEntity extends AbstractControllerBlockEntity 
     // ==================== 抽象方法实现 ====================
 
     @Override
+    public Tier getTier() {
+        return CivilizationTiers.VILLAGE;
+    }
+
+    @Override
     protected String getControllerType() {
         return TYPE;
     }
@@ -44,11 +49,6 @@ public class VillageControllerBlockEntity extends AbstractControllerBlockEntity 
     @Override
     protected int getChunkLoadRadius() {
         return CHUNK_LOAD_RADIUS;
-    }
-
-    @Override
-    public Tier getTier() {
-        return ModTiers.VILLAGE;
     }
 
     @Override

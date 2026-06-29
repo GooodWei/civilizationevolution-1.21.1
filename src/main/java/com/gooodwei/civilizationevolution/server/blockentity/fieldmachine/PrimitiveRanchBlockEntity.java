@@ -1,5 +1,7 @@
 package com.gooodwei.civilizationevolution.server.blockentity.fieldmachine;
 
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractRanchBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.PrimitiveRanchMenu;
@@ -36,6 +38,11 @@ public class PrimitiveRanchBlockEntity extends AbstractRanchBlockEntity {
     }
 
     // ==================== 抽象方法实现 ====================
+
+    @Override
+    public Tier getTier() {
+        return CivilizationTiers.PRIMITIVE;
+    }
 
     @Override
     protected String getMachineConfigKey() {

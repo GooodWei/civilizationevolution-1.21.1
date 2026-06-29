@@ -34,14 +34,32 @@ public class MachineDataProvider implements IServerDataProvider<BlockAccessor> {
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         BlockEntity be = accessor.getBlockEntity();
+
+        // ---- 控制器方块：显示文明核心 UUID ----
+        if (be instanceof AbstractControllerBlockEntity controller) {
+            Tier tier = controller.getTier();
+            data.putString("TierName", tier.getTranslationKey());
+            data.putInt("TierLevel", tier.getLevel());
+            data.putBoolean("IsController", true);
+
+            String uuid = controller.getCurrentUuid();
+            if (uuid != null) {
+                data.putBoolean("HasCore", true);
+                data.putString("CoreUuidShort", uuid.substring(0, Math.min(8, uuid.length())));
+            } else {
+                data.putBoolean("HasCore", false);
+            }
+            return;
+        }
+
+        // ---- 普通机器：显示绑定信息 ----
         if (!(be instanceof IPopulationMachine machine)) return;
 
-        // ---- Tier 信息 ----
         Tier tier = machine.getTier();
         data.putString("TierName", tier.getTranslationKey());
         data.putInt("TierLevel", tier.getLevel());
+        data.putBoolean("IsController", false);
 
-        // ---- 绑定信息 ----
         boolean bound = machine.isBound();
         data.putBoolean("IsBound", bound);
 

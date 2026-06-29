@@ -295,7 +295,7 @@ public class ConnectorItem extends Item {
         } else {
             // 无活跃控制器 → 直接写入核心数据文件
             String controllerType = coreData.getControllerType();
-            if (controllerType == null) controllerType = "primitive_settlement";
+            if (controllerType == null) controllerType = "primitive_controller";
             if (coreData.getBoundMachines().size() >= PopulationMachineConfig.getMaxBindCount(controllerType)) {
                 player.sendSystemMessage(Component.translatable(
                         "msg.civilizationevolution.connector.controller_full")

@@ -49,6 +49,9 @@ public abstract class Career {
     private final int modelIndex;
     @Nullable
     private final VillagerProfession vanillaProfession;
+    /** 父职业名称（null 表示此为根职业，如 "unemployed"、"farmer" 等初始职业） */
+    @Nullable
+    private String parentCareerName = null;
     private final List<Career> upgrades = new ArrayList<>();
 
     /**
@@ -67,6 +70,18 @@ public abstract class Career {
         this.modelIndex = nextModelIndex++;
         REGISTRY.put(name, this);
         NeoForge.EVENT_BUS.post(new CareerRegisterEvent(this));
+    }
+
+    /**
+     * 设置父职业名称，供子类构造器中调用。
+     *
+     * <p>例如农民的子职业可在构造器中调用 {@code setParentCareerName("farmer")}，
+     * 这样 {@link #isKindOf(String)} 可沿父链向上追溯到根职业。
+     *
+     * @param name 父职业名称（如 "farmer"）
+     */
+    protected void setParentCareerName(String name) {
+        this.parentCareerName = name;
     }
 
     /** @return 职业唯一名称（如 "armorer"） */
@@ -96,6 +111,27 @@ public abstract class Career {
      */
     protected void addUpgrade(Career career) { this.upgrades.add(career); }
 
+    /** @return 父职业名称，null 表示此为根职业 */
+    @Nullable
+    public String getParentCareerName() { return parentCareerName; }
+
+    /**
+     * 判断此职业是否等于指定名称或由其派生（沿父链向上追溯）。
+     *
+     * <p>例如：若 "farmer_artisan" 的父职业是 "farmer"，
+     * 则 {@code farmerArtisan.isKindOf("farmer")} 返回 {@code true}。
+     *
+     * @param baseName 基职业名称（如 "farmer"）
+     * @return true 表示此职业等于 baseName 或由其派生
+     */
+    public boolean isKindOf(String baseName) {
+        if (this.name.equals(baseName)) return true;
+        if (this.parentCareerName == null) return false;
+        Career parent = REGISTRY.get(this.parentCareerName);
+        if (parent == null) return false;
+        return parent.isKindOf(baseName);
+    }
+
     // --- 静态便捷方法（向后兼容） ---
 
     /**
@@ -122,5 +158,24 @@ public abstract class Career {
      */
     static Career fromVanilla(VillagerProfession prof) {
         return REGISTRY_INSTANCE.fromVanilla(prof);
+    }
+
+    /**
+     * 按名称判断一个职业是否等于或派生自指定的基职业。
+     *
+     * <p>遍历注册表中的父链，检查 {@code careerName} 是否等于 {@code baseName}
+     * 或其任意祖先等于 {@code baseName}。
+     *
+     * <p>例如 {@code Career.isKindOf("farmer_artisan", "farmer")} 返回 {@code true}，
+     * 前提是 "farmer_artisan" 的 {@code parentCareerName} 为 "farmer"。
+     *
+     * @param careerName 待检查的职业名称
+     * @param baseName   基职业名称
+     * @return true 表示 careerName 等于或派生自 baseName
+     */
+    public static boolean isKindOf(String careerName, String baseName) {
+        Career career = REGISTRY.get(careerName);
+        if (career == null) return false;
+        return career.isKindOf(baseName);
     }
 }

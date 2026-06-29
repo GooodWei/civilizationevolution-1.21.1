@@ -27,7 +27,7 @@ public class CivilizationCoreData {
     /** 核心的 UUID 字符串 */
     private String uuid;
 
-    /** 当前所在控制器类型标识（如 "primitive_settlement"） */
+    /** 当前所在控制器类型标识（如 "primitive_controller"） */
     private String controllerType;
 
     /** 绑定机器列表 */
@@ -116,7 +116,7 @@ public class CivilizationCoreData {
     /**
      * 单个绑定机器的持久化条目。
      * 使用 long 序列化 BlockPos（通过 {@link BlockPos#asLong()}），
-     * 由 {@code PrimitiveSettlementBlockEntity} 在运行时直接使用。
+     * 由 {@code PrimitiveControllerBlockEntity} 在运行时直接使用。
      */
     public static class BoundMachineEntry {
         public long pos;            // BlockPos.asLong()

@@ -1,12 +1,16 @@
 package com.gooodwei.civilizationevolution.api;
 
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
+import com.gooodwei.civilizationevolution.server.population.Population;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -62,7 +66,7 @@ public interface IPopulationMachine {
      * 默认返回{@link com.gooodwei.civilizationevolution.api.tier.TierRegistry#getByLevel(int) 获取 Tier 0}（原始时代）。
      */
     default com.gooodwei.civilizationevolution.api.tier.Tier getTier() {
-        return com.gooodwei.civilizationevolution.api.tier.ModTiers.PRIMITIVE;
+        return CivilizationTiers.PRIMITIVE;
     }
 
     // ==================== 槽位分类 ====================
@@ -499,6 +503,99 @@ public interface IPopulationMachine {
             return false;
         }
         return true;
+    }
+
+    // ==================== 职业经验系统 ====================
+
+    /**
+     * 获取人口在指定职业上的经验值。
+     *
+     * <p>每个职业独立累计经验，例如一个失业人口可能在农场获得了 7 点农民经验、
+     * 在教堂获得了 3 点牧师经验，互不干扰。
+     *
+     * <p>附属模组和各类机器可直接通过 {@code IPopulationMachine} 实例调用此方法，
+     * 无需导入 {@link PopulationNBT}。
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称（如 "farmer"）
+     * @return 该职业的经验值，默认 0
+     */
+    default int getCareerExperience(ItemStack stack, String careerName) {
+        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        CompoundTag exps = tag.getCompound(Population.TAG_CAREER_EXPS);
+        return exps.getInt(careerName);
+    }
+
+    /**
+     * 增加人口在指定职业上的经验值，返回增加后的值。
+     *
+     * <p>典型用法：机器在工作周期给槽位中的失业人口增加目标职业经验。
+     *
+     * <pre>{@code
+     * int newExp = addCareerExperience(stack, "farmer", 1);
+     * if (newExp >= 8) {
+     *     PopulationNBT.setCareer(stack, "farmer");
+     *     setCareerExperience(stack, "farmer", 0);
+     * }
+     * }</pre>
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称（如 "farmer"）
+     * @param amount     增加量（通常为 1）
+     * @return 增加后的经验值
+     */
+    default int addCareerExperience(ItemStack stack, String careerName, int amount) {
+        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        CompoundTag exps = tag.getCompound(Population.TAG_CAREER_EXPS);
+        int newExp = exps.getInt(careerName) + amount;
+        exps.putInt(careerName, newExp);
+        tag.put(Population.TAG_CAREER_EXPS, exps);
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        return newExp;
+    }
+
+    /**
+     * 设置人口在指定职业上的经验值。
+     *
+     * <p>通常用于转职后清零经验。
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称（如 "farmer"）
+     * @param exp        经验值（0 表示清零）
+     */
+    default void setCareerExperience(ItemStack stack, String careerName, int exp) {
+        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        CompoundTag exps = tag.getCompound(Population.TAG_CAREER_EXPS);
+        exps.putInt(careerName, exp);
+        tag.put(Population.TAG_CAREER_EXPS, exps);
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+    }
+
+    /**
+     * 判断人口在指定职业上的经验是否达到阈值。
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称
+     * @param threshold  阈值
+     * @return true 表示经验 ≥ 阈值
+     */
+    default boolean hasCareerExpReached(ItemStack stack, String careerName, int threshold) {
+        return getCareerExperience(stack, careerName) >= threshold;
+    }
+
+    /**
+     * 获得职业经验的人口基础条件检查。
+     *
+     * <p>默认要求：是 {@link PopulationItem}、未死亡、当前职业为 "unemployed"。
+     * 子类（如未来的学院机器）可覆写以放宽或收紧条件。
+     *
+     * @param stack 人口物品
+     * @return true 表示该人口可以获得职业经验
+     */
+    default boolean canGainCareerExperience(ItemStack stack) {
+        if (stack.isEmpty() || !(stack.getItem() instanceof PopulationItem)) return false;
+        if (PopulationNBT.isDead(stack)) return false;
+        return "unemployed".equals(PopulationNBT.getCareer(stack));
     }
 
     // ==================== 物品过滤工具 ====================

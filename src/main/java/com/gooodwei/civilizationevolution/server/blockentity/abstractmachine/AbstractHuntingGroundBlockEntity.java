@@ -24,7 +24,7 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 狩猎场类机器的抽象父类 —— 提供狩猎逻辑的通用实现。
@@ -41,7 +41,7 @@ import java.util.Map;
  *  └── AbstractMachineBlockEntity
  *       └── AbstractRangeMachineBlockEntity
  *            └── AbstractHuntingGroundBlockEntity (本类)
- *                 └── HuntingGroundBlockEntity (Tier 0 狩猎场)
+ *                 └── PrimitiveHuntingGroundBlockEntity (Tier 0 原始狩猎场)
  * </pre>
  *
  * @see AbstractRangeMachineBlockEntity
@@ -63,7 +63,7 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
 
     // ==================== Tier 特定抽象方法 ====================
 
-    /** 配置文件中此机器的 section key（如 "hunting_ground"） */
+    /** 配置文件中此机器的 section key（如 "primitive_hunting_ground"） */
     protected abstract String getMachineConfigKey();
 
     /** 每个人口槽位每次工作消耗的食物量（Tier 0 = 32） */
@@ -259,10 +259,10 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
      * @param durabilityPerKill 每杀一只动物消耗的武器耐久
      * @return 战利品列表（已应用效率加成）
      */
-    public static List<ItemStack> hunt(Map<Class<? extends Animal>, List<Animal>> map,
-                                        int minKeepNumber, ServerLevel level,
-                                        ItemStack weapon, float efficiency,
-                                        int durabilityPerKill) {
+    public static List<ItemStack> hunt(ConcurrentHashMap<? extends Class<? extends Animal>, List<Animal>> map,
+                                       int minKeepNumber, ServerLevel level,
+                                       ItemStack weapon, float efficiency,
+                                       int durabilityPerKill) {
         List<ItemStack> allDrops = new ArrayList<>();
         int maxToHunt = Math.max(1, (int) efficiency);
 

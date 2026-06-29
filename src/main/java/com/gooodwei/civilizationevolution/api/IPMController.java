@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
  *       {@link IPopulationMachine#executeWorkCycle(Level)}</li>
  * </ul>
  *
- * <p>典型实现：原始聚落（{@code PrimitiveSettlementBlockEntity}），
+ * <p>典型实现：原始控制器（{@code PrimitiveControllerBlockEntity}），
  * 使用 0–24000 的日晷进度，按每台机器的 {@code workTotalTime} 计算触发点。
  *
  * <p>未来可扩展其他调度模型（固定间隔、事件触发、分时轮转等），

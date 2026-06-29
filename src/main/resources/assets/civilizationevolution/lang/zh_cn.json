@@ -31,12 +31,16 @@
   "block.civilizationevolution.primitive_camp": "原始营地",
   "container.civilizationevolution.primitive_camp": "原始营地",
 
-  "block.civilizationevolution.hunting_ground": "狩猎场",
+  "block.civilizationevolution.primitive_hunting_ground": "狩猎场",
   "block.civilizationevolution.primitive_ranch": "原始牧场",
-  "block.civilizationevolution.primitive_settlement": "原始聚落",
-  "container.civilizationevolution.hunting_ground": "狩猎场",
+  "block.civilizationevolution.primitive_farm": "原始农场",
+  "block.civilizationevolution.primitive_controller": "原始控制器",
+  "block.civilizationevolution.village_controller": "村庄控制器",
+  "container.civilizationevolution.primitive_hunting_ground": "狩猎场",
   "container.civilizationevolution.primitive_ranch": "原始牧场",
-  "container.civilizationevolution.primitive_settlement": "原始聚落",
+  "container.civilizationevolution.primitive_farm": "原始农场",
+  "container.civilizationevolution.primitive_controller": "原始控制器",
+  "container.civilizationevolution.village_controller": "村庄控制器",
 
   "career.civilizationevolution.unemployed": "失业",
   "career.civilizationevolution.nitwit": "傻子",
@@ -82,5 +86,7 @@
 
   "jade.civilizationevolution.tier": "§9时代：%s (Lv.%d)",
   "jade.civilizationevolution.bound": "§9控制器：%s",
-  "jade.civilizationevolution.not_bound": "§7未绑定控制器"
+  "jade.civilizationevolution.not_bound": "§7未绑定控制器",
+  "jade.civilizationevolution.core_uuid": "§9文明核心 UUID: %s",
+  "jade.civilizationevolution.no_core": "§7无文明核心"
 }

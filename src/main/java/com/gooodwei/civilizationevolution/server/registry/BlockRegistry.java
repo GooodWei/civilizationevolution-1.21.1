@@ -22,16 +22,16 @@ public class BlockRegistry {
             () -> new PrimitiveCampBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
-    /** 狩猎场 —— 在区块范围内自动猎杀动物、收集战利品 */
-    public static final DeferredBlock<HuntingGround> HUNTING_GROUND = BLOCKS.register(
-            "hunting_ground",
-            () -> new HuntingGround(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    /** 原始狩猎场 —— 在区块范围内自动猎杀动物、收集战利品 */
+    public static final DeferredBlock<PrimitiveHuntingGround> PRIMITIVE_HUNTING_GROUND = BLOCKS.register(
+            "primitive_hunting_ground",
+            () -> new PrimitiveHuntingGround(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
-    /** 原始聚落 —— 文明控制器，可绑定最多 10 台机器进行统一调度 */
-    public static final DeferredBlock<PrimitiveSettlement> PRIMITIVE_SETTLEMENT = BLOCKS.register(
-            "primitive_settlement",
-            () -> new PrimitiveSettlement(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    /** 原始控制器 —— 文明控制器，可绑定最多 10 台机器进行统一调度 */
+    public static final DeferredBlock<PrimitiveController> PRIMITIVE_CONTROLLER = BLOCKS.register(
+            "primitive_controller",
+            () -> new PrimitiveController(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
     /** 原始牧场 —— Tier 0 喂养范围内动物的机器方块 */
@@ -44,6 +44,12 @@ public class BlockRegistry {
     public static final DeferredBlock<VillageController> VILLAGE_CONTROLLER = BLOCKS.register(
             "village_controller",
             () -> new VillageController(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始农场 —— Tier 0 自动催熟范围内作物的机器方块，内置储水罐 */
+    public static final DeferredBlock<PrimitiveFarmBlock> PRIMITIVE_FARM_BLOCK = BLOCKS.register(
+            "primitive_farm",
+            () -> new PrimitiveFarmBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
     /**
      * 向事件总线注册所有方块。

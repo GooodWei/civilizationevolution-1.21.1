@@ -39,6 +39,8 @@ public final class Population {
     public static final String TAG_WORK_EFFICIENCY = "workEfficiency";
     /** NBT 标签键：精神状态（double，范围 0.0-1.0） */
     public static final String TAG_MENTAL_STATE = "mentalState";
+    /** NBT 标签键：职业经验映射（CompoundTag，键=职业名，值=经验值 int） */
+    public static final String TAG_CAREER_EXPS = "careerExps";
     /** NBT 标签键：死亡标记（boolean，true = 已死亡） */
     public static final String TAG_DEAD = "dead";
 

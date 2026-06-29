@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "civilizationevolution:block/primitive_farm" },
+    "facing=south": { "model": "civilizationevolution:block/primitive_farm", "y": 180 },
+    "facing=west":  { "model": "civilizationevolution:block/primitive_farm", "y": 270 },
+    "facing=east":  { "model": "civilizationevolution:block/primitive_farm", "y": 90 }
+  }
+}

@@ -31,18 +31,19 @@ public class CreativeTabRegistry {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.civilizationevolution"))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
-                    .icon(() -> ItemRegistry.POPULATION.get().getDefaultInstance())
+                    .icon(() -> ItemRegistry.PRIMITIVE_CONTROLLER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(ItemRegistry.POPULATION.get());
                         output.accept(ItemRegistry.RECRUITER.get());
                         output.accept(ItemRegistry.CONNECTOR.get());
                         output.accept(ItemRegistry.PRIMITIVE_CAMP_BLOCK_ITEM.get());
-                        output.accept(ItemRegistry.HUNTING_GROUND.get());
-                        output.accept(ItemRegistry.PRIMITIVE_SETTLEMENT.get());
+                        output.accept(ItemRegistry.PRIMITIVE_HUNTING_GROUND.get());
+                        output.accept(ItemRegistry.PRIMITIVE_CONTROLLER.get());
                         output.accept(ItemRegistry.CIVILIZATION_CORE.get());
                         output.accept(ItemRegistry.CIVILIZATION_CORE_EXTRACTOR.get());
                         output.accept(ItemRegistry.PRIMITIVE_RANCH.get());
                         output.accept(ItemRegistry.VILLAGE_CONTROLLER.get());
+                        output.accept(ItemRegistry.PRIMITIVE_FARM.get());
                     }).build());
 
     /**

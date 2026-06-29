@@ -1,0 +1,57 @@
+{
+	"parent": "minecraft:block/block",
+	"textures": {
+		"particle": "civilizationevolution:block/glass",
+		"glass": "civilizationevolution:block/glass",
+		"obsidian": "civilizationevolution:block/platform",
+		"primitive_controller": "civilizationevolution:block/primitive_controller"
+	},
+	"elements": [
+		{
+			"__comment": "玻璃外壳",
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#glass"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#glass"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#glass"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#glass"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#glass"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#glass"}
+			}
+		},
+		{
+			"__comment": "平台底座",
+			"from": [2, 0.1, 2],
+			"to": [14, 3, 14],
+			"faces": {
+				"north": {"uv": [2, 13, 14, 16], "texture": "#obsidian"},
+				"east": {"uv": [2, 13, 14, 16], "texture": "#obsidian"},
+				"south": {"uv": [2, 13, 14, 16], "texture": "#obsidian"},
+				"west": {"uv": [2, 13, 14, 16], "texture": "#obsidian"},
+				"up": {"uv": [2, 2, 14, 14], "texture": "#obsidian"},
+				"down": {"uv": [2, 2, 14, 14], "texture": "#obsidian"}
+			}
+		},
+		{
+			"__comment": "原始控制器核心",
+			"from": [3, 3, 3],
+			"to": [13, 14, 13],
+			"faces": {
+				"north": {"uv": [3, 2, 13, 13], "texture": "#primitive_controller"},
+				"east": {"uv": [3, 2, 13, 13], "texture": "#primitive_controller"},
+				"south": {"uv": [3, 2, 13, 13], "texture": "#primitive_controller"},
+				"west": {"uv": [3, 2, 13, 13], "texture": "#primitive_controller"},
+				"up": {"uv": [3, 3, 13, 13], "texture": "#primitive_controller"},
+				"down": {"uv": [3, 3, 13, 13], "texture": "#primitive_controller"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [75, 45, 0],
+			"translation": [0, 2.5, 0],
+			"scale": [0.375, 0.375, 0.375]
+		}
+	}
+}

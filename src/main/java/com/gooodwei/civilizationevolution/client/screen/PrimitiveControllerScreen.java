@@ -6,7 +6,7 @@ import com.gooodwei.civilizationevolution.client.renderer.HighlightRenderer;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
 import com.gooodwei.civilizationevolution.network.UpdateMachineFieldPayload;
 import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.menu.PrimitiveSettlementMenu;
+import com.gooodwei.civilizationevolution.server.menu.PrimitiveControllerMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
@@ -22,12 +22,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.*;
 
 @OnlyIn(Dist.CLIENT)
-public class PrimitiveSettlementScreen extends AbstractContainerScreen<PrimitiveSettlementMenu> {
+public class PrimitiveControllerScreen extends AbstractContainerScreen<PrimitiveControllerMenu> {
 
     /** 纹理文件 256×256 */
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(CivilizationEvolution.MODID,
-                    "textures/gui/container/primitive_settlement.png");
+                    "textures/gui/container/primitive_controller.png");
 
     // ==================== 进度条 ====================
     private static final int PROGRESSBAR_X = 31;
@@ -94,7 +94,7 @@ public class PrimitiveSettlementScreen extends AbstractContainerScreen<Primitive
     /** 滚动偏移（0 为顶部） */
     private int scrollOffset;
 
-    public PrimitiveSettlementScreen(PrimitiveSettlementMenu menu, Inventory playerInventory, Component title) {
+    public PrimitiveControllerScreen(PrimitiveControllerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 196;
@@ -343,19 +343,19 @@ public class PrimitiveSettlementScreen extends AbstractContainerScreen<Primitive
     }
 
     /**
-     * 发送解绑包：Payload 的 pos 是原始聚落 BE 的位置，目标机器坐标在 data 中。
+     * 发送解绑包：Payload 的 pos 是原始控制器 BE 的位置，目标机器坐标在 data 中。
      */
     private void sendUnbindPacket(BlockPos targetPos) {
         CompoundTag data = new CompoundTag();
         data.putLong("pos", targetPos.asLong());
-        // Payload 的 pos 必须是原始聚落的位置，NetworkHandler 据此查找 BE
+        // Payload 的 pos 必须是原始控制器的位置，NetworkHandler 据此查找 BE
         PacketDistributor.sendToServer(new UpdateMachineFieldPayload(
                 this.menu.getBlockPos(),
                 AbstractControllerBlockEntity.FIELD_UNBIND_MACHINE, data));
     }
 
     /**
-     * 发送启停包：Payload 的 pos 是原始聚落 BE 的位置，目标机器坐标在 data 中。
+     * 发送启停包：Payload 的 pos 是原始控制器 BE 的位置，目标机器坐标在 data 中。
      */
     private void sendEnablePacket(BlockPos targetPos, boolean enabled) {
         CompoundTag data = new CompoundTag();

@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.blockentity.abstractmachine;
 
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -73,6 +74,18 @@ public abstract class AbstractMachineBlockEntity
     }
 
     // ==================== IPopulationMachine — 绑定 ====================
+
+    /**
+     * 此机器的 Tier 等级。
+     *
+     * <p>每个具体机器子类<b>必须</b>覆写此方法，显式声明所属时代。
+     * 与对应 Block 的 {@link AbstractMachineBlock#getTier()} 保持相同值，
+     * 确保绑定逻辑与物品 tooltip 一致。
+     *
+     * @return 此机器的 Tier 等级
+     */
+    @Override
+    public abstract Tier getTier();
 
     @Override
     public Container getContainer() {

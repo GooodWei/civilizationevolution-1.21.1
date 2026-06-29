@@ -31,12 +31,16 @@
   "block.civilizationevolution.primitive_camp": "Primitive Camp",
   "container.civilizationevolution.primitive_camp": "Primitive Camp",
 
-  "block.civilizationevolution.hunting_ground": "Hunting Ground",
+  "block.civilizationevolution.primitive_hunting_ground": "Hunting Ground",
   "block.civilizationevolution.primitive_ranch": "Primitive Ranch",
-  "block.civilizationevolution.primitive_settlement": "Primitive Settlement",
-  "container.civilizationevolution.hunting_ground": "Hunting Ground",
+  "block.civilizationevolution.primitive_farm": "Primitive Farm",
+  "block.civilizationevolution.primitive_controller": "Primitive Controller",
+  "block.civilizationevolution.village_controller": "Village Controller",
+  "container.civilizationevolution.primitive_hunting_ground": "Hunting Ground",
   "container.civilizationevolution.primitive_ranch": "Primitive Ranch",
-  "container.civilizationevolution.primitive_settlement": "Primitive Settlement",
+  "container.civilizationevolution.primitive_farm": "Primitive Farm",
+  "container.civilizationevolution.primitive_controller": "Primitive Controller",
+  "container.civilizationevolution.village_controller": "Village Controller",
 
   "career.civilizationevolution.unemployed": "Unemployed",
   "career.civilizationevolution.nitwit": "Nitwit",
@@ -82,5 +86,7 @@
 
   "jade.civilizationevolution.tier": "§9Era: %s (Lv.%d)",
   "jade.civilizationevolution.bound": "§9Controller: %s",
-  "jade.civilizationevolution.not_bound": "§7Not bound"
+  "jade.civilizationevolution.not_bound": "§7Not bound",
+  "jade.civilizationevolution.core_uuid": "§9Core UUID: %s",
+  "jade.civilizationevolution.no_core": "§7No civilization core"
 }

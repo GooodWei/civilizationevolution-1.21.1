@@ -2,16 +2,20 @@ package com.gooodwei.civilizationevolution;
 
 import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
-import com.gooodwei.civilizationevolution.api.tier.ModTiers;
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.TierRegistry;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
+import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveFarmBlockEntity;
 import com.gooodwei.civilizationevolution.server.career.initial.*;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
+import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
 import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.slf4j.Logger;
@@ -71,12 +75,13 @@ public class CivilizationEvolution {
         // 注册 commonSetup 方法和网络处理器
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(NetworkHandler::register);
+        modEventBus.addListener(this::registerCapabilities);
 
         // 注册自身以监听服务器事件（onServerStarting / onServerStarted / onServerStopping）
         NeoForge.EVENT_BUS.register(this);
 
         // 触发内置 Tier 类加载注册
-        ModTiers.init();
+        CivilizationTiers.init();
 
         // 冻结 Tier 注册表（附属模组应在此之前注册自己的 Tier）
         TierRegistry.freeze();
@@ -109,6 +114,25 @@ public class CivilizationEvolution {
     /** 模组通用初始化（逻辑端通用的设置） */
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("HELLO FROM COMMON SETUP");
+    }
+
+    /**
+     * 注册方块实体的能力（Capability）。
+     *
+     * <p>为原始农场方块注册 {@link Capabilities.FluidHandler#BLOCK} 流体能力，
+     * 使所有物流模组（Pipez、Mekanism、AE2、Integrated Dynamics 等）的管道
+     * 均能通过 NeoForge 标准接口向农场储水罐输入水。
+     *
+     * @param event 能力注册事件
+     */
+    private void registerCapabilities(RegisterCapabilitiesEvent event) {
+        // 为原始农场注册流体能力（所有方向均可输入水）
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.PRIMITIVE_FARM.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        LOGGER.info("已注册原始农场流体能力（Capabilities.FluidHandler.BLOCK）");
     }
 
     /** 服务器启动中事件：日志输出 */

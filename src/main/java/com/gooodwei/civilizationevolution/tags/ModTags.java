@@ -29,6 +29,12 @@ public class ModTags {
             ResourceLocation.fromNamespaceAndPath("civilizationevolution", "primitive_ranch_conflicts")
     );
 
+    /** 农场冲突检测标签：扫描范围内命中此标签的方块视为冲突，防止两个农场并发操作同一作物 */
+    public static final TagKey<Block> FARM_CONFLICTS = TagKey.create(
+            Registries.BLOCK,
+            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "farm_conflicts")
+    );
+
     private ModTags() {
         // 工具类，禁止实例化
     }

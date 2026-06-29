@@ -2,7 +2,10 @@ package com.gooodwei.civilizationevolution.client;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
+import com.gooodwei.civilizationevolution.server.registry.BlockRegistry;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -53,10 +56,16 @@ public class CivilizationEvolutionClient {
         );
     }
 
-    /** 客户端初始化完成事件：输出玩家名和日志 */
+    /** 客户端初始化完成事件：输出玩家名和日志，注册方块渲染类型 */
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         CivilizationEvolution.LOGGER.info("HELLO FROM CLIENT SETUP");
         CivilizationEvolution.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+
+        // 控制器方块注册 cutout 渲染类型，使玻璃外壳正确处理透明像素
+        event.enqueueWork(() -> {
+            ItemBlockRenderTypes.setRenderLayer(BlockRegistry.PRIMITIVE_CONTROLLER.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(BlockRegistry.VILLAGE_CONTROLLER.get(), RenderType.cutout());
+        });
     }
 }

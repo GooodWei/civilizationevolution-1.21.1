@@ -209,6 +209,66 @@ public final class PopulationNBT {
         recalcEfficiency(stack);
     }
 
+    /**
+     * 获取人口在指定职业上的经验值。
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称（如 "farmer"）
+     * @return 该职业的经验值，默认 0
+     */
+    public static int getCareerExp(ItemStack stack, String careerName) {
+        CompoundTag exps = getTag(stack).getCompound(Population.TAG_CAREER_EXPS);
+        return exps.getInt(careerName);
+    }
+
+    /**
+     * 设置人口在指定职业上的经验值。
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称（如 "farmer"）
+     * @param exp        经验值
+     */
+    public static void setCareerExp(ItemStack stack, String careerName, int exp) {
+        CompoundTag tag = getOrCopyTag(stack);
+        CompoundTag exps = tag.getCompound(Population.TAG_CAREER_EXPS);
+        if (exp <= 0 && !exps.contains(careerName)) {
+            return; // 无需写入零值
+        }
+        exps.putInt(careerName, exp);
+        tag.put(Population.TAG_CAREER_EXPS, exps);
+        saveTag(stack, tag);
+    }
+
+    /**
+     * 增加人口在指定职业上的经验值，返回增加后的值。
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称（如 "farmer"）
+     * @param amount     增加量（通常为 1）
+     * @return 增加后的经验值
+     */
+    public static int addCareerExp(ItemStack stack, String careerName, int amount) {
+        CompoundTag tag = getOrCopyTag(stack);
+        CompoundTag exps = tag.getCompound(Population.TAG_CAREER_EXPS);
+        int newExp = exps.getInt(careerName) + amount;
+        exps.putInt(careerName, newExp);
+        tag.put(Population.TAG_CAREER_EXPS, exps);
+        saveTag(stack, tag);
+        return newExp;
+    }
+
+    /**
+     * 判断人口在指定职业上的经验是否达到阈值。
+     *
+     * @param stack      人口物品
+     * @param careerName 职业名称
+     * @param threshold  阈值
+     * @return true 表示经验 ≥ 阈值
+     */
+    public static boolean hasCareerExpReached(ItemStack stack, String careerName, int threshold) {
+        return getCareerExp(stack, careerName) >= threshold;
+    }
+
     // ==================== 判定 ====================
 
     /**
