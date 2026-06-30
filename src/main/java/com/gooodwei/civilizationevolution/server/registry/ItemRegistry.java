@@ -4,9 +4,10 @@ import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
+import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import com.gooodwei.civilizationevolution.server.item.Recruiter;
-import com.gooodwei.civilizationevolution.server.item.TieredBlockItem;
+import com.gooodwei.civilizationevolution.server.registry.TieredBlockItem;
 import net.minecraft.world.item.BlockItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -89,6 +90,11 @@ public class ItemRegistry {
     public static final DeferredItem<BlockItem> PRIMITIVE_POPULATION_OUTPUT_HATCH =
             ITEMS.registerItem("primitive_population_output_hatch", properties ->
                     new BlockItem(BlockRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH.get(), properties));
+
+    /** 结构调试获取器 —— 框选多方块结构区域并导出 JSON，最大堆叠 1 */
+    public static final DeferredItem<DebugStructureGetterItem> DEBUG_STRUCTURE_GETTER =
+            ITEMS.registerItem("debug_structure_getter",
+                    properties -> new DebugStructureGetterItem(properties.stacksTo(1)));
 
     /** 原始诊所方块物品（Tier 0：原始时代） */
     public static final DeferredItem<BlockItem> PRIMITIVE_DOCTOR_CABIN =

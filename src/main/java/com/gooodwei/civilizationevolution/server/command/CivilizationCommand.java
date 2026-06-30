@@ -2,27 +2,48 @@ package com.gooodwei.civilizationevolution.server.command;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
+import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
 import com.gooodwei.civilizationevolution.api.career.Career;
+import com.gooodwei.civilizationevolution.api.component.DebugStructureData;
+import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
 import com.gooodwei.civilizationevolution.server.population.Population;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -60,7 +81,65 @@ public final class CivilizationCommand {
     private static final ResourceLocation POPULATION_ID =
             ResourceLocation.fromNamespaceAndPath(CivilizationEvolution.MODID, "population");
 
+    /** 自动填充玩家准星对准方块的 X 坐标 */
+    private static final SuggestionProvider<CommandSourceStack> TARGET_BLOCK_X = (ctx, builder) -> {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            HitResult hit = player.pick(20.0D, 0.0F, false);
+            if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
+                builder.suggest(String.valueOf(blockHit.getBlockPos().getX()));
+            }
+        } catch (CommandSyntaxException ignored) {}
+        return builder.buildFuture();
+    };
+
+    /** 自动填充玩家准星对准方块的 Y 坐标 */
+    private static final SuggestionProvider<CommandSourceStack> TARGET_BLOCK_Y = (ctx, builder) -> {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            HitResult hit = player.pick(20.0D, 0.0F, false);
+            if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
+                builder.suggest(String.valueOf(blockHit.getBlockPos().getY()));
+            }
+        } catch (CommandSyntaxException ignored) {}
+        return builder.buildFuture();
+    };
+
+    /** 自动填充玩家准星对准方块的 Z 坐标 */
+    private static final SuggestionProvider<CommandSourceStack> TARGET_BLOCK_Z = (ctx, builder) -> {
+        try {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            HitResult hit = player.pick(20.0D, 0.0F, false);
+            if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
+                builder.suggest(String.valueOf(blockHit.getBlockPos().getZ()));
+            }
+        } catch (CommandSyntaxException ignored) {}
+        return builder.buildFuture();
+    };
+
+    /** 可用作 key 的单字节字符池（按优先级排列） */
+    private static final char[] SINGLE_CHAR_POOL = buildSingleCharPool();
+
+    /** 输出结构 JSON 的目录 */
+    private static final Path STRUCTURE_OUTPUT_DIR =
+            FMLPaths.CONFIGDIR.get().resolve("civilizationevolution").resolve("debug").resolve("structures");
+
     private CivilizationCommand() {}
+
+    /** 构造单字节字符池：A-Z + a-z + 0-9 + 安全符号，排除空格和逗号 */
+    private static char[] buildSingleCharPool() {
+        StringBuilder sb = new StringBuilder();
+        // A-Z
+        for (char c = 'A'; c <= 'Z'; c++) sb.append(c);
+        // a-z
+        for (char c = 'a'; c <= 'z'; c++) sb.append(c);
+        // 0-9
+        for (char c = '0'; c <= '9'; c++) sb.append(c);
+        // 安全 ASCII 符号（排除空格 ' '、逗号 ',' 和双字节填充符 '_'）
+        String safeSymbols = "!@#$%^&*()-=+[]{}|;:'.<>?/~";
+        sb.append(safeSymbols);
+        return sb.toString().toCharArray();
+    }
 
     /**
      * 注册命令到命令调度器。
@@ -98,6 +177,34 @@ public final class CivilizationCommand {
                         ), false);
                         return Command.SINGLE_SUCCESS;
                     })
+                )
+        );
+
+        // /civilization admin getStructure <x> <y> <z> <name>
+        dispatcher.register(
+            Commands.literal("civilization")
+                .requires(src -> src.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("admin")
+                    .then(Commands.literal("getStructure")
+                        .then(Commands.argument("x", IntegerArgumentType.integer())
+                            .suggests(TARGET_BLOCK_X)
+                            .then(Commands.argument("y", IntegerArgumentType.integer())
+                                .suggests(TARGET_BLOCK_Y)
+                                .then(Commands.argument("z", IntegerArgumentType.integer())
+                                    .suggests(TARGET_BLOCK_Z)
+                                    .then(Commands.argument("name", StringArgumentType.word())
+                                        .executes(ctx -> doGetStructure(
+                                            ctx.getSource(),
+                                            IntegerArgumentType.getInteger(ctx, "x"),
+                                            IntegerArgumentType.getInteger(ctx, "y"),
+                                            IntegerArgumentType.getInteger(ctx, "z"),
+                                            StringArgumentType.getString(ctx, "name")
+                                        ))
+                                    )
+                                )
+                            )
+                        )
+                    )
                 )
         );
     }
@@ -203,4 +310,322 @@ public final class CivilizationCommand {
 
     /** 字段元信息：从 CompoundTag 读取值的函数 + 值类型标识（用于 set 时解析） */
     private record FieldInfo(Function<CompoundTag, Object> reader, String type) {}
+
+    // ==================== 结构导出命令 ====================
+
+    /**
+     * 执行结构导出命令。
+     *
+     * @param src  命令来源
+     * @param cx   控制器 X 坐标
+     * @param cy   控制器 Y 坐标
+     * @param cz   控制器 Z 坐标
+     * @param name 结构名称
+     */
+    private static int doGetStructure(CommandSourceStack src, int cx, int cy, int cz, String name)
+            throws CommandSyntaxException {
+        ServerPlayer player = src.getPlayerOrException();
+        ItemStack stack = player.getMainHandItem();
+
+        // 1. 检查手持物品
+        if (!(stack.getItem() instanceof DebugStructureGetterItem)) {
+            src.sendFailure(Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.not_holding"));
+            return 0;
+        }
+
+        // 2. 读取坐标数据
+        DebugStructureData data = DebugStructureGetterItem.getData(stack);
+        if (!data.hasPos1() || !data.hasPos2()) {
+            src.sendFailure(Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.no_positions"));
+            return 0;
+        }
+
+        // 3. 检查维度一致
+        if (!data.dim1().equals(data.dim2())) {
+            src.sendFailure(Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.dimension_mismatch"));
+            return 0;
+        }
+
+        // 4. 检查与玩家当前维度一致
+        String currentDim = player.level().dimension().location().toString();
+        if (!currentDim.equals(data.dim1())) {
+            src.sendFailure(Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.dimension_mismatch"));
+            return 0;
+        }
+
+        ServerLevel level = player.serverLevel();
+
+        // 5. 计算包围盒
+        BlockPos controllerPos = new BlockPos(cx, cy, cz);
+        int minX = Math.min(data.x1(), data.x2());
+        int minY = Math.min(data.y1(), data.y2());
+        int minZ = Math.min(data.z1(), data.z2());
+        int maxX = Math.max(data.x1(), data.x2());
+        int maxY = Math.max(data.y1(), data.y2());
+        int maxZ = Math.max(data.z1(), data.z2());
+
+        // 6. 验证控制器坐标在包围盒内
+        if (cx < minX || cx > maxX || cy < minY || cy > maxY || cz < minZ || cz > maxZ) {
+            src.sendFailure(Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.controller_out_of_bounds"));
+            return 0;
+        }
+
+        // 7. 检查包围盒大小
+        int sizeX = maxX - minX + 1;
+        int sizeY = maxY - minY + 1;
+        int sizeZ = maxZ - minZ + 1;
+        if (sizeX > 128 || sizeY > 128 || sizeZ > 128) {
+            src.sendFailure(Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.too_large"));
+            return 0;
+        }
+
+        // 8. Chunk 可用性检查 + 收集 LevelChunk 引用
+        int minChunkX = minX >> 4;
+        int minChunkZ = minZ >> 4;
+        int maxChunkX = maxX >> 4;
+        int maxChunkZ = maxZ >> 4;
+
+        Map<ChunkPos, LevelChunk> chunkMap = new HashMap<>();
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
+                if (chunk == null) {
+                    src.sendFailure(Component.translatable(
+                            "msg.civilizationevolution.debug_structure_getter.chunk_not_loaded"));
+                    return 0;
+                }
+                chunkMap.put(new ChunkPos(chunkX, chunkZ), chunk);
+            }
+        }
+
+        // 9. 拷贝 final 变量供工作线程使用
+        final BlockPos fControllerPos = controllerPos;
+        final int fMinX = minX, fMinY = minY, fMinZ = minZ;
+        final int fMaxX = maxX, fMaxY = maxY, fMaxZ = maxZ;
+        final int fSizeX = sizeX, fSizeY = sizeY, fSizeZ = sizeZ;
+        final String fName = name;
+
+        // 10. 异步处理（工作线程）
+        CompletableFuture.runAsync(() -> {
+            try {
+                // 收集方块类型
+                Map<String, List<int[]>> typeToLocalPos = new LinkedHashMap<>();
+
+                for (int y = fMinY; y <= fMaxY; y++) {
+                    for (int z = fMinZ; z <= fMaxZ; z++) {
+                        for (int x = fMinX; x <= fMaxX; x++) {
+                            BlockPos worldPos = new BlockPos(x, y, z);
+                            int chunkX = x >> 4;
+                            int chunkZ = z >> 4;
+                            LevelChunk chunk = chunkMap.get(new ChunkPos(chunkX, chunkZ));
+                            if (chunk == null) continue;
+
+                            BlockState state = chunk.getBlockState(worldPos);
+                            // 局部坐标（包围盒最小角为原点，保证全部非负）
+                            int lx = x - fMinX;
+                            int ly = y - fMinY;
+                            int lz = z - fMinZ;
+
+                            String typeId;
+                            if (worldPos.equals(fControllerPos)) {
+                                typeId = "__CONTROLLER__";
+                            } else if (state.isAir()) {
+                                typeId = "__AIR__";
+                            } else {
+                                BlockEntity be = chunk.getBlockEntity(worldPos);
+                                if (be instanceof IMultiBlockPart part) {
+                                    typeId = "part:" + part.getPartType();
+                                } else if (state.getBlock() instanceof IMultiBlockPart part) {
+                                    typeId = "part:" + part.getPartType();
+                                } else {
+                                    typeId = "block:" + BuiltInRegistries.BLOCK.getKey(state.getBlock());
+                                }
+                            }
+
+                            typeToLocalPos.computeIfAbsent(typeId, k -> new ArrayList<>())
+                                    .add(new int[]{lx, ly, lz});
+                        }
+                    }
+                }
+
+                // 分配字符编码
+                Map<String, String> typeToCode = assignCodes(typeToLocalPos);
+
+                // 判断是否使用双字节模式
+                boolean doubleChar = typeToCode.values().stream().anyMatch(s -> s.length() == 2);
+
+                // 构建 pattern 三维字符数组
+                char[][][] pattern = new char[fSizeY][fSizeZ][fSizeX * (doubleChar ? 2 : 1)];
+                // 初始化为空格
+                for (int y = 0; y < fSizeY; y++) {
+                    for (int z = 0; z < fSizeZ; z++) {
+                        int width = fSizeX * (doubleChar ? 2 : 1);
+                        for (int x = 0; x < width; x++) {
+                            pattern[y][z][x] = ' ';
+                        }
+                    }
+                }
+
+                // 填充 pattern
+                for (var entry : typeToLocalPos.entrySet()) {
+                    String typeId = entry.getKey();
+                    String code = typeToCode.get(typeId);
+                    if (code == null || "__AIR__".equals(typeId)) continue;
+
+                    for (int[] pos : entry.getValue()) {
+                        int lx = pos[0];
+                        int ly = pos[1];
+                        int lz = pos[2];
+                        // 验证局部坐标范围
+                        if (ly < 0 || ly >= fSizeY || lz < 0 || lz >= fSizeZ || lx < 0 || lx >= fSizeX) continue;
+
+                        if (doubleChar) {
+                            int cx2 = lx * 2;
+                            if (code.length() == 2) {
+                                pattern[ly][lz][cx2] = code.charAt(0);
+                                pattern[ly][lz][cx2 + 1] = code.charAt(1);
+                            } else {
+                                // 单字节 code：填充 _ 后缀
+                                pattern[ly][lz][cx2] = code.charAt(0);
+                                pattern[ly][lz][cx2 + 1] = '_';
+                            }
+                        } else {
+                            pattern[ly][lz][lx] = code.charAt(0);
+                        }
+                    }
+                }
+
+                // 通配符位置（空气）在双字节模式下写为 __
+                if (doubleChar) {
+                    for (int y = 0; y < fSizeY; y++) {
+                        for (int z = 0; z < fSizeZ; z++) {
+                            for (int x = 0; x < fSizeX; x++) {
+                                if (pattern[y][z][x * 2] == ' ' && pattern[y][z][x * 2 + 1] == ' ') {
+                                    pattern[y][z][x * 2] = '_';
+                                    pattern[y][z][x * 2 + 1] = '_';
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 生成 JSON
+                JsonObject root = new JsonObject();
+                JsonObject structures = new JsonObject();
+                JsonObject structure = new JsonObject();
+
+                // controller（局部坐标，包围盒最小角为原点）
+                JsonArray controllerArr = new JsonArray();
+                controllerArr.add(fControllerPos.getY() - fMinY);
+                controllerArr.add(fControllerPos.getX() - fMinX);
+                controllerArr.add(fControllerPos.getZ() - fMinZ);
+                structure.add("controller", controllerArr);
+
+                // pattern
+                JsonObject patternObj = new JsonObject();
+                for (int y = 0; y < fSizeY; y++) {
+                    StringBuilder layer = new StringBuilder();
+                    for (int z = 0; z < fSizeZ; z++) {
+                        if (z > 0) layer.append(',');
+                        for (int x = 0; x < (doubleChar ? fSizeX * 2 : fSizeX); x++) {
+                            layer.append(pattern[y][z][x]);
+                        }
+                    }
+                    patternObj.addProperty("y" + y, layer.toString());
+                }
+                structure.add("pattern", patternObj);
+
+                // key
+                JsonObject keyObj = new JsonObject();
+                for (var entry : typeToCode.entrySet()) {
+                    String typeId = entry.getKey();
+                    String code = entry.getValue();
+                    if ("__AIR__".equals(typeId)) continue;
+
+                    JsonObject keyDef = new JsonObject();
+                    if ("__CONTROLLER__".equals(typeId)) {
+                        keyDef.addProperty("block", "self");
+                    } else {
+                        // 去掉前缀 part: 或 block:
+                        String actualType = typeId;
+                        if (actualType.startsWith("part:")) {
+                            actualType = actualType.substring(5);
+                        } else if (actualType.startsWith("block:")) {
+                            actualType = actualType.substring(6);
+                        }
+                        keyDef.addProperty("type", actualType);
+                    }
+                    keyObj.add(code, keyDef);
+                }
+                structure.add("key", keyObj);
+
+                if (doubleChar) {
+                    structure.addProperty("code_width", 2);
+                }
+
+                structure.addProperty("validate_interval", 30);
+                structures.add(fName, structure);
+                root.add("structures", structures);
+
+                // 写入文件
+                Files.createDirectories(STRUCTURE_OUTPUT_DIR);
+                Path outputFile = STRUCTURE_OUTPUT_DIR.resolve(fName + ".json");
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                Files.writeString(outputFile, gson.toJson(root));
+
+                // 回到主线程通知玩家
+                level.getServer().execute(() -> {
+                    src.sendSuccess(() -> Component.translatable(
+                            "msg.civilizationevolution.debug_structure_getter.exported",
+                            outputFile.toString()), false);
+                });
+
+            } catch (Exception e) {
+                level.getServer().execute(() -> {
+                    src.sendFailure(Component.literal("导出失败: " + e.getMessage()));
+                });
+                CivilizationEvolution.LOGGER.error("导出结构数据失败", e);
+            }
+        });
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * 按类型出现频率降序分配字符编码。
+     * 高频类型优先分配单字节短 code。
+     */
+    private static Map<String, String> assignCodes(Map<String, List<int[]>> typeToLocalPos) {
+        // 按出现频率降序排列
+        List<Map.Entry<String, List<int[]>>> sorted = new ArrayList<>(typeToLocalPos.entrySet());
+        sorted.sort((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()));
+
+        Map<String, String> result = new LinkedHashMap<>();
+        int singleIdx = 0;
+        int doubleIdx = 0;
+
+        for (var entry : sorted) {
+            String typeId = entry.getKey();
+            if ("__AIR__".equals(typeId)) continue;
+
+            if (singleIdx < SINGLE_CHAR_POOL.length) {
+                // 单字节
+                result.put(typeId, String.valueOf(SINGLE_CHAR_POOL[singleIdx++]));
+            } else {
+                // 双字节回退：AA, AB, ... AZ, A0, A1, ...
+                char c1 = SINGLE_CHAR_POOL[doubleIdx / SINGLE_CHAR_POOL.length];
+                char c2 = SINGLE_CHAR_POOL[doubleIdx % SINGLE_CHAR_POOL.length];
+                result.put(typeId, "" + c1 + c2);
+                doubleIdx++;
+            }
+        }
+
+        return result;
+    }
 }

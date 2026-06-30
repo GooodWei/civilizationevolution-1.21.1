@@ -135,7 +135,7 @@ public final class Population {
         if (lifespan <= 0) return false;
 
         int newAge = tag.getInt(TAG_AGE) + 1;
-        if (newAge >= lifespan) {
+        if (newAge > lifespan) {
             NeoForge.EVENT_BUS.post(new PopulationDeathEvent(stack));
             stack.setCount(0);
             return false;

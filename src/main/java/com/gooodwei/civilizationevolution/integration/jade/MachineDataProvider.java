@@ -3,7 +3,7 @@ package com.gooodwei.civilizationevolution.integration.jade;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;

@@ -36,6 +36,7 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.POPULATION.get());
                         output.accept(ItemRegistry.RECRUITER.get());
                         output.accept(ItemRegistry.CONNECTOR.get());
+                        output.accept(ItemRegistry.DEBUG_STRUCTURE_GETTER.get());
                         output.accept(ItemRegistry.PRIMITIVE_CAMP_BLOCK_ITEM.get());
                         output.accept(ItemRegistry.PRIMITIVE_HUNTING_GROUND.get());
                         output.accept(ItemRegistry.PRIMITIVE_CONTROLLER.get());
@@ -65,6 +66,7 @@ public class CreativeTabRegistry {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(ItemRegistry.RECRUITER);
             event.accept(ItemRegistry.CONNECTOR);
+            event.accept(ItemRegistry.DEBUG_STRUCTURE_GETTER);
         }
     }
 }

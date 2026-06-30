@@ -1,6 +1,8 @@
 package com.gooodwei.civilizationevolution.client;
 
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveControllerScreen;
+import com.gooodwei.civilizationevolution.client.preview.PreviewState;
+import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveControllerScreen;
+import com.gooodwei.civilizationevolution.network.StructurePreviewPayload;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -33,6 +35,21 @@ public class ClientPayloadHandler {
             Minecraft mc = Minecraft.getInstance();
             if (mc.screen instanceof PrimitiveControllerScreen screen) {
                 screen.updateMachineList(payload.machines());
+            }
+        });
+    }
+
+    /**
+     * 处理多方块结构预览数据：存入 {@link PreviewState} 单例。
+     *
+     * <p>blocks 非空 → 开启预览；blocks 为空 → 停止预览。
+     */
+    public static void handleStructurePreview(final StructurePreviewPayload payload, final IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (payload.isStart()) {
+                PreviewState.start(payload.controllerPos(), payload.blocks());
+            } else {
+                PreviewState.stop();
             }
         });
     }

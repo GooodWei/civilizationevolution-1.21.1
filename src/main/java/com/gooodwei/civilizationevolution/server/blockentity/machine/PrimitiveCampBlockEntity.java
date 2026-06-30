@@ -2,9 +2,9 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractCampBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
-import com.gooodwei.civilizationevolution.server.menu.PrimitiveCampMenu;
+import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveCampMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;

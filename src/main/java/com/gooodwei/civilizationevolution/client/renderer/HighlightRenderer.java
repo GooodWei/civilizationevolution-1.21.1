@@ -1,6 +1,5 @@
 package com.gooodwei.civilizationevolution.client.renderer;
 
-import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
@@ -62,8 +61,6 @@ public class HighlightRenderer {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null) {
             endGameTick = mc.level.getGameTime() + DURATION_TICKS;
-            CivilizationEvolution.LOGGER.debug("[HighlightRenderer] 高亮已启动: pos={}, 持续至 tick={}",
-                    pos, endGameTick);
         } else {
             endGameTick = 0;
         }

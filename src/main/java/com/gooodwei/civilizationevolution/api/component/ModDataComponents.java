@@ -44,6 +44,16 @@ public class ModDataComponents {
                             .build());
 
     /**
+     * 结构调试获取器存储的坐标数据（pos1、pos2 及各自维度）。
+     */
+    public static final Supplier<DataComponentType<DebugStructureData>> DEBUG_STRUCTURE_DATA =
+            DATA_COMPONENTS.register("debug_structure_data",
+                    () -> DataComponentType.<DebugStructureData>builder()
+                            .persistent(DebugStructureData.CODEC)
+                            .networkSynchronized(DebugStructureData.STREAM_CODEC)
+                            .build());
+
+    /**
      * 向 NeoForge 事件总线注册所有 DataComponent。
      * @param bus 模组事件总线
      */

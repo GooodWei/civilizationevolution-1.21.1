@@ -1,11 +1,14 @@
 package com.gooodwei.civilizationevolution.client.registry;
 
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveDoctorCabinScreen;
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveFarmScreen;
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveHuntingGroundScreen;
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveCampScreen;
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveRanchScreen;
-import com.gooodwei.civilizationevolution.client.screen.PrimitiveControllerScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveDoctorCabinScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveFarmScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitiveFoodInputHatchScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveHuntingGroundScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveCampScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitivePopulationInputHatchScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitivePopulationOutputHatchScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveRanchScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveControllerScreen;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.neoforged.api.distmarker.Dist;
@@ -32,5 +35,11 @@ public class ScreenRegistry {
         event.register(MenuRegistry.PRIMITIVE_FARM_MENU.get(), PrimitiveFarmScreen::new);
         event.register(MenuRegistry.PRIMITIVE_CONTROLLER_MENU.get(), PrimitiveControllerScreen::new);
         event.register(MenuRegistry.PRIMITIVE_DOCTOR_CABIN_MENU.get(), PrimitiveDoctorCabinScreen::new);
+        event.register(MenuRegistry.PRIMITIVE_POPULATION_INPUT_HATCH_MENU.get(),
+                PrimitivePopulationInputHatchScreen::new);
+        event.register(MenuRegistry.PRIMITIVE_FOOD_INPUT_HATCH_MENU.get(),
+                PrimitiveFoodInputHatchScreen::new);
+        event.register(MenuRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH_MENU.get(),
+                PrimitivePopulationOutputHatchScreen::new);
     }
 }

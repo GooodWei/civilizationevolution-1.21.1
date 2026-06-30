@@ -1,8 +1,8 @@
 package com.gooodwei.civilizationevolution.integration.jade;
 
-import com.gooodwei.civilizationevolution.server.block.AbstractMachineBlock;
-import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractMachineBlockEntity;
+import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
+import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
 import snownee.jade.api.IWailaPlugin;

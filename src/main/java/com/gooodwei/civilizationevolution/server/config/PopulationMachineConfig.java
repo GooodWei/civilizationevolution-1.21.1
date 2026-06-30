@@ -44,7 +44,8 @@ public final class PopulationMachineConfig {
     // ==================== 内部记录 ====================
 
     /** 单台机器的配置项 */
-    public record MachineSection(int workTotalTime, int ageIncrement, int maxAnimalCount, int waterPerCrop) {}
+    public record MachineSection(int workTotalTime, int ageIncrement, int maxAnimalCount,
+                                 int waterPerCrop, int foodPerPopulation) {}
 
     /** 文明控制器机器的配置项*/
     public record ControllerSection(int maxBindCount, int maxBindRange, boolean allowCrossDimension) {}
@@ -95,6 +96,12 @@ public final class PopulationMachineConfig {
     public static int getWaterPerCrop(String machine) {
         MachineSection s = SECTIONS.get(machine);
         return s != null ? s.waterPerCrop() : 250;
+    }
+
+    /** 按机器 key 获取单位人口食物消耗量，未配置时默认 1 */
+    public static int getFoodPerPopulation(String machine) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null ? s.foodPerPopulation() : 1;
     }
 
     // ==================== 向后兼容字段（新代码建议直接用上面的方法） ====================
@@ -175,6 +182,8 @@ public final class PopulationMachineConfig {
                   work_total_time: 6000
                   # 原始诊所每次工作后每个人口的年龄增长量
                   age_increment: 1
+                  # 单位人口每次工作周期消耗的食物量
+                  food_per_population: 1
 
                 # 控制器配置
                 primitive_controller:
@@ -206,6 +215,7 @@ public final class PopulationMachineConfig {
         int ageIncrement = 0;
         int maxAnimalCount = 0;
         int waterPerCrop = 0;
+        int foodPerPopulation = 1;
         // 控制器字段
         int maxBindCount = 0;
         int maxBindRange = 0;
@@ -220,6 +230,7 @@ public final class PopulationMachineConfig {
                 if (!currentSection.isEmpty()) {
                     saveSection(currentSection, isController,
                             workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
+                            foodPerPopulation,
                             maxBindCount, maxBindRange, allowCrossDimension);
                 }
                 currentSection = trimmed.substring(0, trimmed.length() - 1).trim();
@@ -228,6 +239,7 @@ public final class PopulationMachineConfig {
                 ageIncrement = 1;
                 maxAnimalCount = 0;
                 waterPerCrop = 0;
+                foodPerPopulation = 1;
                 maxBindCount = 10;
                 maxBindRange = 64;
                 allowCrossDimension = false;
@@ -244,6 +256,7 @@ public final class PopulationMachineConfig {
                 case "age_increment" -> ageIncrement = Integer.parseInt(value);
                 case "max_animal_count" -> maxAnimalCount = Integer.parseInt(value);
                 case "water_per_crop" -> waterPerCrop = Integer.parseInt(value);
+                case "food_per_population" -> foodPerPopulation = Integer.parseInt(value);
                 case "max_bind_count" -> { maxBindCount = Integer.parseInt(value); isController = true; }
                 case "max_bind_range" -> { maxBindRange = Integer.parseInt(value); isController = true; }
                 case "allow_cross_dimension" -> { allowCrossDimension = Boolean.parseBoolean(value); isController = true; }
@@ -254,6 +267,7 @@ public final class PopulationMachineConfig {
         if (!currentSection.isEmpty()) {
             saveSection(currentSection, isController,
                     workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
+                    foodPerPopulation,
                     maxBindCount, maxBindRange, allowCrossDimension);
         }
     }
@@ -261,12 +275,13 @@ public final class PopulationMachineConfig {
     /** 根据 section 类型保存到对应的 Map */
     private static void saveSection(String name, boolean isController,
                                      int workTotalTime, int ageIncrement, int maxAnimalCount,
-                                     int waterPerCrop,
+                                     int waterPerCrop, int foodPerPopulation,
                                      int maxBindCount, int maxBindRange, boolean allowCrossDimension) {
         if (isController) {
             CONTROLLERS.put(name, new ControllerSection(maxBindCount, maxBindRange, allowCrossDimension));
         } else {
-            SECTIONS.put(name, new MachineSection(workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop));
+            SECTIONS.put(name, new MachineSection(workTotalTime, ageIncrement, maxAnimalCount,
+                    waterPerCrop, foodPerPopulation));
         }
     }
 }

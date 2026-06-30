@@ -1,7 +1,10 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.block.*;
+import com.gooodwei.civilizationevolution.server.block.controller.*;
+import com.gooodwei.civilizationevolution.server.block.machine.*;
+import com.gooodwei.civilizationevolution.server.block.hatch.*;
+import com.gooodwei.civilizationevolution.server.block.part.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;

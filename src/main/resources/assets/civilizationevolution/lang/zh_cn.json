@@ -48,6 +48,10 @@
   "container.civilizationevolution.village_controller": "村庄控制器",
   "container.civilizationevolution.primitive_doctor_cabin": "原始诊所",
 
+  "container.civilizationevolution.population_input_hatch": "人口输入接口",
+  "container.civilizationevolution.food_input_hatch": "食物输入接口",
+  "container.civilizationevolution.population_output_hatch": "人口输出接口",
+
   "career.civilizationevolution.unemployed": "失业",
   "career.civilizationevolution.nitwit": "傻子",
   "career.civilizationevolution.armorer": "盔甲匠",
@@ -92,10 +96,26 @@
   "msg.civilizationevolution.extractor.not_bound": "§c该机器未绑定任何文明核心",
 
   "msg.civilizationevolution.structure_incomplete": "§c多方块结构不完整，请按照 2×2×2 结构摆放",
+  "msg.civilizationevolution.structure_not_formed": "§c多方块结构未成型，机器调度已暂停，请按照配置文件摆放结构方块",
 
+  "config.jade.plugin_civilizationevolution.machine": "文明演进：机器信息",
   "jade.civilizationevolution.tier": "§9时代：%s (Lv.%d)",
   "jade.civilizationevolution.bound": "§9控制器：%s",
   "jade.civilizationevolution.not_bound": "§7未绑定控制器",
   "jade.civilizationevolution.core_uuid": "§9文明核心 UUID: %s",
-  "jade.civilizationevolution.no_core": "§7无文明核心"
+  "jade.civilizationevolution.no_core": "§7无文明核心",
+
+  "item.civilizationevolution.debug_structure_getter": "结构调试获取器",
+  "tooltip.civilizationevolution.debug_structure_getter.pos1": "坐标1: (%d, %d, %d) [%s]",
+  "tooltip.civilizationevolution.debug_structure_getter.pos2": "坐标2: (%d, %d, %d) [%s]",
+  "tooltip.civilizationevolution.debug_structure_getter.no_pos": "未设定坐标",
+  "msg.civilizationevolution.debug_structure_getter.pos1_set": "已设定坐标1: (%d, %d, %d) [%s]",
+  "msg.civilizationevolution.debug_structure_getter.pos2_set": "已设定坐标2: (%d, %d, %d) [%s]",
+  "msg.civilizationevolution.debug_structure_getter.no_positions": "请先使用结构调试获取器右键设定两个坐标",
+  "msg.civilizationevolution.debug_structure_getter.dimension_mismatch": "坐标1和坐标2不在同一维度，无法导出结构",
+  "msg.civilizationevolution.debug_structure_getter.too_large": "框选区域过大（最大 128×128×128），无法导出",
+  "msg.civilizationevolution.debug_structure_getter.exported": "结构已导出到: %s",
+  "msg.civilizationevolution.debug_structure_getter.not_holding": "请手持结构调试获取器",
+  "msg.civilizationevolution.debug_structure_getter.controller_out_of_bounds": "控制器坐标不在框选区域内",
+  "msg.civilizationevolution.debug_structure_getter.chunk_not_loaded": "框选区域存在未加载的区块，无法导出"
 }

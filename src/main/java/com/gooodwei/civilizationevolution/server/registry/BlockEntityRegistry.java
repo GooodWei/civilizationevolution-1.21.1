@@ -1,16 +1,16 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveDoctorCabinBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveFarmBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveHuntingGroundBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveRanchBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveDoctorCabinBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveFarmBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveHuntingGroundBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveRanchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveFoodInputHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationInputHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationOutputHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveCampBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.PrimitiveControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.controllermachine.VillageControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controller.PrimitiveControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.controller.VillageControllerBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;

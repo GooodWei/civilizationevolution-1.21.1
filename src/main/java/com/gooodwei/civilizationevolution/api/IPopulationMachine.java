@@ -238,8 +238,8 @@ public interface IPopulationMachine {
             int newAge = PopulationNBT.getAge(stack) + increment;
             int lifespan = PopulationNBT.getLifespan(stack);
 
-            if (newAge >= lifespan) {
-                // 达到寿命 → 标记死亡
+            if (newAge > lifespan) {
+                // 超过寿命 → 标记死亡
                 PopulationNBT.markDead(stack);
             } else {
                 for (int a = 0; a < increment; a++) {

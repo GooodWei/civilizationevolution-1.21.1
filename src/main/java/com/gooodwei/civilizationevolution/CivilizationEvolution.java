@@ -5,14 +5,20 @@ import com.gooodwei.civilizationevolution.api.CivilizationAPI;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.TierRegistry;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
-import com.gooodwei.civilizationevolution.server.blockentity.fieldmachine.PrimitiveFarmBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveFarmBlockEntity;
 import com.gooodwei.civilizationevolution.server.career.initial.*;
+import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.PreviewBlockInfo;
+import com.gooodwei.civilizationevolution.network.StructurePreviewPayload;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
+import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -30,9 +36,14 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 文明演进模组主入口类。
@@ -55,6 +66,9 @@ public class CivilizationEvolution {
     /** SLF4J 日志记录器 */
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    /** 跟踪当前正在预览多方块结构的玩家 UUID（用于切换开关） */
+    private static final Set<UUID> PREVIEWING_PLAYERS = ConcurrentHashMap.newKeySet();
+
     /**
      * 模组构造器。FML 自动识别并注入 {@link IEventBus} 和 {@link ModContainer} 参数。
      *
@@ -65,6 +79,7 @@ public class CivilizationEvolution {
         // 初始化配置
         PopulationConfig.init();
         PopulationMachineConfig.init();
+        MultiBlockConfig.init();
 
         // 初始化所有职业（构造函数会自动注册到内部注册表中）
         initializeCareers();
@@ -138,7 +153,6 @@ public class CivilizationEvolution {
     /** 服务器启动中事件：日志输出 */
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        LOGGER.info("HELLO from server starting");
     }
 
     /**
@@ -149,15 +163,12 @@ public class CivilizationEvolution {
     public void onServerStarted(ServerStartedEvent event) {
         Path worldPath = event.getServer().getWorldPath(LevelResource.ROOT);
         CoreDataManager.init(worldPath);
-        LOGGER.info("CoreDataManager 已初始化，数据目录：{}",
-                worldPath.getParent().resolve("civilizationevolution/coredata"));
     }
 
     /** 服务器停止事件：保存所有核心数据到磁盘 */
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
         CoreDataManager.saveAll();
-        LOGGER.info("CoreDataManager 已保存所有数据");
     }
 
     /**
@@ -178,6 +189,87 @@ public class CivilizationEvolution {
                 && itemEntity.getItem().getItem() instanceof CivilizationCoreItem) {
             itemEntity.setInvulnerable(true);
             itemEntity.lifespan = Integer.MAX_VALUE;
+        }
+    }
+
+    /**
+     * 右键方块事件 —— 为结构调试获取器抢先拦截带 GUI 的方块交互。
+     *
+     * <p>在 Minecraft 1.21.x 中，方块 {@code useItemOn} 的优先级高于物品
+     * {@code useOn}。对于带 GUI 的方块（箱子、工作台、本模组机器等），
+     * 方块直接在 {@code useItemOn} 中打开菜单并返回 SUCCESS/CONSUME，
+     * 物品的 {@code useOn} 根本不会被调到。因此必须在方块处理<b>之前</b>
+     * 通过此事件取消交互并执行坐标记录。
+     *
+     * <p>仅在服务端取消事件（客户端侧放行以正常发送网络包到服务端）。
+     *
+     * @param event 右键方块事件
+     */
+    @SubscribeEvent
+    public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        // 结构调试获取器 → 拦截 GUI，记录坐标
+        if (event.getItemStack().getItem() instanceof DebugStructureGetterItem) {
+            DebugStructureGetterItem.handleBlockClick(
+                    event.getLevel(),
+                    event.getEntity(),
+                    event.getItemStack(),
+                    event.getPos());
+            if (!event.getLevel().isClientSide) {
+                event.setCanceled(true);
+            }
+            return;
+        }
+
+        // 手持控制器对应物品 + Shift+右键 → 切换多方块结构预览
+        if (event.getEntity().isShiftKeyDown()
+                && event.getItemStack().getItem() == event.getLevel().getBlockState(event.getPos()).getBlock().asItem()) {
+            handlePreviewToggle(event);
+            return;
+        }
+    }
+
+    /**
+     * 处理手持控制器物品 Shift+右键多方块控制器：切换结构预览。
+     *
+     * <p>通用性检查（类型 + 结构成型状态）在双端都执行，
+     * 确保客户端侧也能阻止 GUI 打开（各子类可能重写了 {@code useItemOn}）。
+     * 实际预览切换逻辑仅服务端执行。
+     *
+     * @param event 右键方块事件
+     */
+    private void handlePreviewToggle(PlayerInteractEvent.RightClickBlock event) {
+        // 仅对 IMultiBlockMachine 生效（双端检查）
+        if (!(event.getLevel().getBlockEntity(event.getPos()) instanceof IMultiBlockMachine machine)) {
+            return;
+        }
+
+        // 结构已成型 → 不触发预览，正常打开 GUI（双端检查）
+        if (machine.isStructureFormed()) {
+            return;
+        }
+
+        // 取消事件，阻止 GUI 打开（双端都必须取消，因为子类可能重写了 useItemOn）
+        event.setCanceled(true);
+
+        // 以下仅服务端执行
+        if (event.getLevel().isClientSide) return;
+
+        ServerPlayer player = (ServerPlayer) event.getEntity();
+        UUID playerId = player.getUUID();
+
+        if (PREVIEWING_PLAYERS.contains(playerId)) {
+            // 已显示预览 → 关闭
+            PREVIEWING_PLAYERS.remove(playerId);
+            NetworkHandler.sendToPlayer(player,
+                    StructurePreviewPayload.stop(event.getPos()));
+        } else {
+            // 未显示 → 收集数据并开启预览
+            List<PreviewBlockInfo> blocks = machine.collectPreviewPositions();
+            if (blocks.isEmpty()) return;
+
+            PREVIEWING_PLAYERS.add(playerId);
+            NetworkHandler.sendToPlayer(player,
+                    new StructurePreviewPayload(event.getPos(), blocks));
         }
     }
 }

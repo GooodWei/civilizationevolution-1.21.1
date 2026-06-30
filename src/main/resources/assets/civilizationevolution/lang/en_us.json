@@ -48,6 +48,10 @@
   "container.civilizationevolution.village_controller": "Village Controller",
   "container.civilizationevolution.primitive_doctor_cabin": "Primitive Doctor Cabin",
 
+  "container.civilizationevolution.population_input_hatch": "Population Input Hatch",
+  "container.civilizationevolution.food_input_hatch": "Food Input Hatch",
+  "container.civilizationevolution.population_output_hatch": "Population Output Hatch",
+
   "career.civilizationevolution.unemployed": "Unemployed",
   "career.civilizationevolution.nitwit": "Nitwit",
   "career.civilizationevolution.armorer": "Armorer",
@@ -92,10 +96,26 @@
   "msg.civilizationevolution.extractor.not_bound": "§cThis machine is not bound to any civilization core",
 
   "msg.civilizationevolution.structure_incomplete": "§cMulti-block structure incomplete, please build a 2×2×2 structure",
+  "msg.civilizationevolution.structure_not_formed": "§cMulti-block structure not formed, machine scheduling paused. Please build the structure as configured",
 
+  "config.jade.plugin_civilizationevolution.machine": "Civilization Evolution: Machine Info",
   "jade.civilizationevolution.tier": "§9Era: %s (Lv.%d)",
   "jade.civilizationevolution.bound": "§9Controller: %s",
   "jade.civilizationevolution.not_bound": "§7Not bound",
   "jade.civilizationevolution.core_uuid": "§9Core UUID: %s",
-  "jade.civilizationevolution.no_core": "§7No civilization core"
+  "jade.civilizationevolution.no_core": "§7No civilization core",
+
+  "item.civilizationevolution.debug_structure_getter": "Debug Structure Getter",
+  "tooltip.civilizationevolution.debug_structure_getter.pos1": "Pos1: (%d, %d, %d) [%s]",
+  "tooltip.civilizationevolution.debug_structure_getter.pos2": "Pos2: (%d, %d, %d) [%s]",
+  "tooltip.civilizationevolution.debug_structure_getter.no_pos": "No position set",
+  "msg.civilizationevolution.debug_structure_getter.pos1_set": "Pos1 set: (%d, %d, %d) [%s]",
+  "msg.civilizationevolution.debug_structure_getter.pos2_set": "Pos2 set: (%d, %d, %d) [%s]",
+  "msg.civilizationevolution.debug_structure_getter.no_positions": "Use the Debug Structure Getter to set two positions first",
+  "msg.civilizationevolution.debug_structure_getter.dimension_mismatch": "Pos1 and Pos2 are in different dimensions, cannot export",
+  "msg.civilizationevolution.debug_structure_getter.too_large": "Selection too large (max 128×128×128), cannot export",
+  "msg.civilizationevolution.debug_structure_getter.exported": "Structure exported to: %s",
+  "msg.civilizationevolution.debug_structure_getter.not_holding": "You must hold a Debug Structure Getter",
+  "msg.civilizationevolution.debug_structure_getter.controller_out_of_bounds": "Controller position is outside the selection area",
+  "msg.civilizationevolution.debug_structure_getter.chunk_not_loaded": "Selection contains unloaded chunks, cannot export"
 }

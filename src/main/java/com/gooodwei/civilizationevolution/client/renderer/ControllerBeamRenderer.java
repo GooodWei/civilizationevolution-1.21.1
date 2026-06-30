@@ -1,7 +1,7 @@
 package com.gooodwei.civilizationevolution.client.renderer;
 
-import com.gooodwei.civilizationevolution.server.block.AbstractControllerBlock;
-import com.gooodwei.civilizationevolution.server.blockentity.abstractmachine.AbstractControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.block.controller.AbstractControllerBlock;
+import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.core.BlockPos;

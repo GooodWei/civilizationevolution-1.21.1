@@ -12,9 +12,23 @@ import com.gooodwei.civilizationevolution.api.tier.Tier;
  * <p>用法：
  * <ul>
  *   <li>{@link #getPartTier()} 返回此零件的 Tier 等级</li>
+ *   <li>{@link #getPartType()} 返回此零件的类型（用于多方块结构 JSON 的 alternatives 匹配）</li>
  * </ul>
  */
 public interface IMultiBlockPart {
+
+    // ==================== 零件类型常量 ====================
+
+    /** 普通结构外壳方块 */
+    String TYPE_MULTI_BLOCK_PART = "multi_block_part";
+    /** 人口输入接口 */
+    String TYPE_INPUT_HATCH = "input_hatch";
+    /** 人口输出接口 */
+    String TYPE_OUTPUT_HATCH = "output_hatch";
+    /** 食物输入接口 */
+    String TYPE_FOOD_HATCH = "food_hatch";
+
+    // ==================== 抽象/默认方法 ====================
 
     /**
      * 此结构零件的 Tier 等级。
@@ -25,4 +39,17 @@ public interface IMultiBlockPart {
      * @return 此零件的 Tier 等级
      */
     Tier getPartTier();
+
+    /**
+     * 此结构零件的类型标识。
+     *
+     * <p>用于多方块结构 JSON 中 alternatives 匹配。
+     * 默认返回 {@link #TYPE_MULTI_BLOCK_PART}（普通外壳方块），
+     * hatch 子类应覆写返回对应的类型常量。
+     *
+     * @return 零件类型字符串（如 {@code "input_hatch"}）
+     */
+    default String getPartType() {
+        return TYPE_MULTI_BLOCK_PART;
+    }
 }
