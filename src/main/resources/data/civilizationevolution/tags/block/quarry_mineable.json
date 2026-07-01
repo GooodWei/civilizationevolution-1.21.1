@@ -1,0 +1,19 @@
+{
+  "values": [
+    "#minecraft:stone_ore_replaceables",
+    "#minecraft:deepslate_ore_replaceables",
+    "#minecraft:dirt",
+    "minecraft:gravel",
+    "minecraft:sand",
+    "minecraft:red_sand",
+    "minecraft:sandstone",
+    "minecraft:red_sandstone",
+    "minecraft:cobblestone",
+    "minecraft:mossy_cobblestone",
+    "minecraft:cobbled_deepslate",
+    "minecraft:calcite",
+    "minecraft:dripstone_block",
+    "minecraft:terracotta",
+    "minecraft:clay"
+  ]
+}
