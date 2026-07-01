@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.item;
 
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
+import com.gooodwei.civilizationevolution.api.IPopulationItem;
 import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.population.Population;
@@ -24,7 +25,7 @@ import java.util.List;
  *
  * <p>物品显示名称动态读取职业 NBT，tooltip 展示完整的人口属性面板。
  */
-public class PopulationItem extends Item {
+public class PopulationItem extends Item implements IPopulationItem {
 
     public PopulationItem(Properties properties) {
         super(properties);

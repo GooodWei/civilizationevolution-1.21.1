@@ -131,6 +131,18 @@ public abstract class AbstractMachineBlockEntity
         return isBound();
     }
 
+    // ==================== 健康度波动（子类可覆写） ====================
+
+    /** 每次工作周期后人口健康度随机波动下限（默认 -5） */
+    protected int getHealthFluctuateMin() {
+        return -5;
+    }
+
+    /** 每次工作周期后人口健康度随机波动上限（默认 -1） */
+    protected int getHealthFluctuateMax() {
+        return -1;
+    }
+
     // ==================== Container boilerplate ====================
 
     @Override

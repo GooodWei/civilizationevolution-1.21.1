@@ -63,11 +63,6 @@ public class PrimitiveFarmBlockEntity extends AbstractFarmBlockEntity {
     }
 
     @Override
-    protected int getFoodPerPopulation() {
-        return 8;
-    }
-
-    @Override
     public long getTankCapacity() {
         return TANK_CAPACITY;
     }

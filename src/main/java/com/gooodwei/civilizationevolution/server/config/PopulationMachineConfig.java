@@ -40,12 +40,21 @@ public final class PopulationMachineConfig {
     public static final String PRIMITIVE_FARM = "primitive_farm";
     public static final String PRIMITIVE_DOCTOR_CABIN = "primitive_doctor_cabin";
     public static final String VILLAGE_CONTROLLER = "village_controller";
+    public static final String VILLAGE_QUARRY = "village_quarry";
 
     // ==================== 内部记录 ====================
 
     /** 单台机器的配置项 */
     public record MachineSection(int workTotalTime, int ageIncrement, int maxAnimalCount,
-                                 int waterPerCrop, int foodPerPopulation) {}
+                                 int waterPerCrop, int foodPerPopulation,
+                                 int fluidLavaPerCycle, int fluidWaterPerCycle,
+                                 int blocksPerCycleMultiplier,
+                                 int careerExpThreshold,
+                                 int healthFluctuateMin, int healthFluctuateMax,
+                                 int efficiencyNoWeapon, int fedPerTypeMultiplier,
+                                 int minParentAge, int maxParentAge,
+                                 int miningHorizontalSize,
+                                 int apprenticeExpPerCycle) {}
 
     /** 文明控制器机器的配置项*/
     public record ControllerSection(int maxBindCount, int maxBindRange, boolean allowCrossDimension) {}
@@ -104,6 +113,84 @@ public final class PopulationMachineConfig {
         return s != null ? s.foodPerPopulation() : 1;
     }
 
+    /** 按机器 key 获取每次工作消耗的岩浆量（mB），未配置时返回指定默认值 */
+    public static int getFluidLavaPerCycle(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.fluidLavaPerCycle() > 0 ? s.fluidLavaPerCycle() : defaultVal;
+    }
+
+    /** 按机器 key 获取每次工作消耗的水量（mB），未配置时返回指定默认值 */
+    public static int getFluidWaterPerCycle(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.fluidWaterPerCycle() > 0 ? s.fluidWaterPerCycle() : defaultVal;
+    }
+
+    /** 按机器 key 获取效率→方块数的乘数，未配置时返回指定默认值 */
+    public static int getBlocksPerCycleMultiplier(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.blocksPerCycleMultiplier() > 0 ? s.blocksPerCycleMultiplier() : defaultVal;
+    }
+
+    /** 按机器 key 获取单位人口食物消耗量，未配置时返回指定默认值（重载） */
+    public static int getFoodPerPopulation(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.foodPerPopulation() > 0 ? s.foodPerPopulation() : defaultVal;
+    }
+
+    /** 按机器 key 获取学徒转职经验阈值，未配置时返回指定默认值 */
+    public static int getCareerExpThreshold(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.careerExpThreshold() > 0 ? s.careerExpThreshold() : defaultVal;
+    }
+
+    /** 按机器 key 获取健康度波动下限，未配置时返回指定默认值 */
+    public static int getHealthFluctuateMin(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null ? s.healthFluctuateMin() : defaultVal;
+    }
+
+    /** 按机器 key 获取健康度波动上限，未配置时返回指定默认值 */
+    public static int getHealthFluctuateMax(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null ? s.healthFluctuateMax() : defaultVal;
+    }
+
+    /** 按机器 key 获取无武器时效率百分比（0-100），未配置时返回指定默认值 */
+    public static int getEfficiencyNoWeapon(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null ? s.efficiencyNoWeapon() : defaultVal;
+    }
+
+    /** 按机器 key 获取效率→喂养数乘数，未配置时返回指定默认值 */
+    public static int getFedPerTypeMultiplier(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.fedPerTypeMultiplier() > 0 ? s.fedPerTypeMultiplier() : defaultVal;
+    }
+
+    /** 按机器 key 获取最低生育年龄，未配置时返回指定默认值 */
+    public static int getMinParentAge(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.minParentAge() > 0 ? s.minParentAge() : defaultVal;
+    }
+
+    /** 按机器 key 获取最高生育年龄，未配置时返回指定默认值 */
+    public static int getMaxParentAge(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.maxParentAge() > 0 ? s.maxParentAge() : defaultVal;
+    }
+
+    /** 按机器 key 获取水平挖掘范围边长，未配置时返回指定默认值 */
+    public static int getMiningHorizontalSize(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.miningHorizontalSize() > 0 ? s.miningHorizontalSize() : defaultVal;
+    }
+
+    /** 按机器 key 获取每次工作周期给学徒的经验量，未配置时返回指定默认值 */
+    public static int getApprenticeExpPerCycle(String machine, int defaultVal) {
+        MachineSection s = SECTIONS.get(machine);
+        return s != null && s.apprenticeExpPerCycle() > 0 ? s.apprenticeExpPerCycle() : defaultVal;
+    }
+
     // ==================== 向后兼容字段（新代码建议直接用上面的方法） ====================
 
     public static int CAMP_WORK_TOTAL_TIME;
@@ -154,12 +241,34 @@ public final class PopulationMachineConfig {
                   work_total_time: 12000
                   # 营地每次工作后每个人口的年龄增长量
                   age_increment: 1
+                  # 每个人口每次工作消耗的食物份数
+                  food_per_population: 8
+                  # 父代最低生育年龄
+                  min_parent_age: 18
+                  # 父代最高生育年龄
+                  max_parent_age: 50
+                  # 每次工作后人口健康度的随机波动范围
+                  health_fluctuate_min: -10
+                  health_fluctuate_max: 5
+                  # 每次工作周期给学徒的经验量（营地不使用学徒系统，保留字段）
+                  apprentice_exp_per_cycle: 1
 
                 primitive_hunting_ground:
                   # 原始狩猎场完成一次工作所需的 tick 数（12000 tick = 10 分钟）
                   work_total_time: 12000
                   # 原始狩猎场每次工作后每个人口的年龄增长量
                   age_increment: 1
+                  # 每个人口每次工作消耗的食物份数
+                  food_per_population: 32
+                  # 学徒累积多少经验后转职为屠夫
+                  career_exp_threshold: 8
+                  # 无武器时效率百分比（50 = 50% = 0.5 倍率）
+                  efficiency_no_weapon: 50
+                  # 每次工作后人口健康度的随机波动范围（负数 = 下降）
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量
+                  apprentice_exp_per_cycle: 1
 
                 primitive_ranch:
                   # 原始牧场完成一次工作所需的 tick 数（3000 tick = 2.5 分钟）
@@ -168,14 +277,34 @@ public final class PopulationMachineConfig {
                   age_increment: 1
                   # 范围内最大动物数量，超过时取消当次工作（0 = 不限制）
                   max_animal_count: 24
+                  # 每个人口每次工作消耗的食物份数
+                  food_per_population: 2
+                  # 效率→每种动物喂养数量的乘数（效率 × 此值 = 每种动物喂养数）
+                  fed_per_type_multiplier: 3
+                  # 学徒累积多少经验后转职为牧羊人
+                  career_exp_threshold: 8
+                  # 每次工作后人口健康度的随机波动范围（负数 = 下降）
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量
+                  apprentice_exp_per_cycle: 1
 
                 primitive_farm:
                   # 原始农场完成一次工作所需的 tick 数（1200 tick = 1 分钟）
                   work_total_time: 1200
                   # 原始农场每次工作后每个人口的年龄增长量
                   age_increment: 1
+                  # 每个人口每次工作消耗的食物份数
+                  food_per_population: 8
                   # 每次催熟作物消耗的水量（mB），每桶 = 1000 mB
                   water_per_crop: 250
+                  # 学徒累积多少经验后转职为农民
+                  career_exp_threshold: 8
+                  # 每次工作后人口健康度的随机波动范围（负数 = 下降）
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量
+                  apprentice_exp_per_cycle: 1
 
                 primitive_doctor_cabin:
                   # 原始诊所完成一次工作所需的 tick 数（6000 tick = 5 分钟）
@@ -184,6 +313,10 @@ public final class PopulationMachineConfig {
                   age_increment: 1
                   # 单位人口每次工作周期消耗的食物量
                   food_per_population: 1
+                  # 学徒累积多少经验后转职为牧师
+                  career_exp_threshold: 8
+                  # 每次工作周期给学徒的经验量
+                  apprentice_exp_per_cycle: 1
 
                 # 控制器配置
                 primitive_controller:
@@ -193,6 +326,29 @@ public final class PopulationMachineConfig {
                   max_bind_range: 64
                   # 是否允许跨维度绑定（true/false）
                   allow_cross_dimension: false
+
+                village_quarry:
+                  # 村庄采石场完成一次工作所需的 tick 数（200 tick = 10 秒）
+                  work_total_time: 200
+                  # 村庄采石场每次工作后每个人口的年龄增长量
+                  age_increment: 1
+                  # 每次工作消耗的岩浆量（mB），每桶 = 1000 mB
+                  fluid_lava_per_cycle: 100
+                  # 每次工作消耗的水量（mB）
+                  fluid_water_per_cycle: 100
+                  # 每个人口每次工作消耗的食物份数
+                  food_per_population: 8
+                  # 效率→每周期破坏方块数的乘数（效率 × 此值 = 每周期方块数）
+                  blocks_per_cycle_multiplier: 2
+                  # 学徒累积多少经验后转职为矿工
+                  career_exp_threshold: 8
+                  # 每次工作后人口健康度的随机波动范围（负数 = 下降）
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量
+                  apprentice_exp_per_cycle: 1
+                  # 水平挖掘范围边长（如 16 = 16×16 即 1 个区块）
+                  mining_horizontal_size: 16
 
                 village_controller:
                   # 最大可绑定机器数量
@@ -216,6 +372,18 @@ public final class PopulationMachineConfig {
         int maxAnimalCount = 0;
         int waterPerCrop = 0;
         int foodPerPopulation = 1;
+        int fluidLavaPerCycle = 0;
+        int fluidWaterPerCycle = 0;
+        int blocksPerCycleMultiplier = 0;
+        int careerExpThreshold = 0;
+        int healthFluctuateMin = 0;
+        int healthFluctuateMax = 0;
+        int efficiencyNoWeapon = 0;
+        int fedPerTypeMultiplier = 0;
+        int minParentAge = 0;
+        int maxParentAge = 0;
+        int miningHorizontalSize = 0;
+        int apprenticeExpPerCycle = 1;
         // 控制器字段
         int maxBindCount = 0;
         int maxBindRange = 0;
@@ -231,6 +399,11 @@ public final class PopulationMachineConfig {
                     saveSection(currentSection, isController,
                             workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
                             foodPerPopulation,
+                            fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
+                            careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
+                            efficiencyNoWeapon, fedPerTypeMultiplier,
+                            minParentAge, maxParentAge, miningHorizontalSize,
+                            apprenticeExpPerCycle,
                             maxBindCount, maxBindRange, allowCrossDimension);
                 }
                 currentSection = trimmed.substring(0, trimmed.length() - 1).trim();
@@ -240,6 +413,18 @@ public final class PopulationMachineConfig {
                 maxAnimalCount = 0;
                 waterPerCrop = 0;
                 foodPerPopulation = 1;
+                fluidLavaPerCycle = 0;
+                fluidWaterPerCycle = 0;
+                blocksPerCycleMultiplier = 0;
+                careerExpThreshold = 0;
+                healthFluctuateMin = 0;
+                healthFluctuateMax = 0;
+                efficiencyNoWeapon = 0;
+                fedPerTypeMultiplier = 0;
+                minParentAge = 0;
+                maxParentAge = 0;
+                miningHorizontalSize = 0;
+                apprenticeExpPerCycle = 1;
                 maxBindCount = 10;
                 maxBindRange = 64;
                 allowCrossDimension = false;
@@ -257,6 +442,18 @@ public final class PopulationMachineConfig {
                 case "max_animal_count" -> maxAnimalCount = Integer.parseInt(value);
                 case "water_per_crop" -> waterPerCrop = Integer.parseInt(value);
                 case "food_per_population" -> foodPerPopulation = Integer.parseInt(value);
+                case "fluid_lava_per_cycle" -> fluidLavaPerCycle = Integer.parseInt(value);
+                case "fluid_water_per_cycle" -> fluidWaterPerCycle = Integer.parseInt(value);
+                case "blocks_per_cycle_multiplier" -> blocksPerCycleMultiplier = Integer.parseInt(value);
+                case "career_exp_threshold" -> careerExpThreshold = Integer.parseInt(value);
+                case "health_fluctuate_min" -> healthFluctuateMin = Integer.parseInt(value);
+                case "health_fluctuate_max" -> healthFluctuateMax = Integer.parseInt(value);
+                case "efficiency_no_weapon" -> efficiencyNoWeapon = Integer.parseInt(value);
+                case "fed_per_type_multiplier" -> fedPerTypeMultiplier = Integer.parseInt(value);
+                case "min_parent_age" -> minParentAge = Integer.parseInt(value);
+                case "max_parent_age" -> maxParentAge = Integer.parseInt(value);
+                case "mining_horizontal_size" -> miningHorizontalSize = Integer.parseInt(value);
+                case "apprentice_exp_per_cycle" -> apprenticeExpPerCycle = Integer.parseInt(value);
                 case "max_bind_count" -> { maxBindCount = Integer.parseInt(value); isController = true; }
                 case "max_bind_range" -> { maxBindRange = Integer.parseInt(value); isController = true; }
                 case "allow_cross_dimension" -> { allowCrossDimension = Boolean.parseBoolean(value); isController = true; }
@@ -268,6 +465,11 @@ public final class PopulationMachineConfig {
             saveSection(currentSection, isController,
                     workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
                     foodPerPopulation,
+                    fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
+                    careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
+                    efficiencyNoWeapon, fedPerTypeMultiplier,
+                    minParentAge, maxParentAge, miningHorizontalSize,
+                    apprenticeExpPerCycle,
                     maxBindCount, maxBindRange, allowCrossDimension);
         }
     }
@@ -276,12 +478,25 @@ public final class PopulationMachineConfig {
     private static void saveSection(String name, boolean isController,
                                      int workTotalTime, int ageIncrement, int maxAnimalCount,
                                      int waterPerCrop, int foodPerPopulation,
+                                     int fluidLavaPerCycle, int fluidWaterPerCycle,
+                                     int blocksPerCycleMultiplier,
+                                     int careerExpThreshold,
+                                     int healthFluctuateMin, int healthFluctuateMax,
+                                     int efficiencyNoWeapon, int fedPerTypeMultiplier,
+                                     int minParentAge, int maxParentAge,
+                                     int miningHorizontalSize,
+                                     int apprenticeExpPerCycle,
                                      int maxBindCount, int maxBindRange, boolean allowCrossDimension) {
         if (isController) {
             CONTROLLERS.put(name, new ControllerSection(maxBindCount, maxBindRange, allowCrossDimension));
         } else {
             SECTIONS.put(name, new MachineSection(workTotalTime, ageIncrement, maxAnimalCount,
-                    waterPerCrop, foodPerPopulation));
+                    waterPerCrop, foodPerPopulation, fluidLavaPerCycle, fluidWaterPerCycle,
+                    blocksPerCycleMultiplier, careerExpThreshold,
+                    healthFluctuateMin, healthFluctuateMax,
+                    efficiencyNoWeapon, fedPerTypeMultiplier,
+                    minParentAge, maxParentAge, miningHorizontalSize,
+                    apprenticeExpPerCycle));
         }
     }
 }

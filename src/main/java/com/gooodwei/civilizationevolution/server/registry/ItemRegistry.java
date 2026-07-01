@@ -71,6 +71,11 @@ public class ItemRegistry {
             ITEMS.registerItem("primitive_farm", properties ->
                     new TieredBlockItem(BlockRegistry.PRIMITIVE_FARM_BLOCK.get(), properties));
 
+    /** 村庄结构方块物品 */
+    public static final DeferredItem<BlockItem> VILLAGE_STRUCTURE_CASING =
+            ITEMS.registerItem("village_structure_casing", properties ->
+                    new BlockItem(BlockRegistry.VILLAGE_STRUCTURE_CASING.get(), properties));
+
     /** 原始结构方块物品 */
     public static final DeferredItem<BlockItem> PRIMITIVE_STRUCTURE_CASING =
             ITEMS.registerItem("primitive_structure_casing", properties ->
@@ -86,6 +91,11 @@ public class ItemRegistry {
             ITEMS.registerItem("primitive_food_input_hatch", properties ->
                     new BlockItem(BlockRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get(), properties));
 
+    /** 村庄食物输入接口方块物品（Tier 1：村庄时代） */
+    public static final DeferredItem<BlockItem> VILLAGE_FOOD_INPUT_HATCH =
+            ITEMS.registerItem("village_food_input_hatch", properties ->
+                    new BlockItem(BlockRegistry.VILLAGE_FOOD_INPUT_HATCH.get(), properties));
+
     /** 原始人口输出接口方块物品 */
     public static final DeferredItem<BlockItem> PRIMITIVE_POPULATION_OUTPUT_HATCH =
             ITEMS.registerItem("primitive_population_output_hatch", properties ->
@@ -100,6 +110,51 @@ public class ItemRegistry {
     public static final DeferredItem<BlockItem> PRIMITIVE_DOCTOR_CABIN =
             ITEMS.registerItem("primitive_doctor_cabin", properties ->
                     new TieredBlockItem(BlockRegistry.PRIMITIVE_DOCTOR_CABIN.get(), properties));
+
+    /** 原始物品输入接口方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_ITEM_INPUT_HATCH =
+            ITEMS.registerItem("primitive_item_input_hatch", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_ITEM_INPUT_HATCH.get(), properties));
+
+    /** 村庄物品输入接口方块物品 */
+    public static final DeferredItem<BlockItem> VILLAGE_ITEM_INPUT_HATCH =
+            ITEMS.registerItem("village_item_input_hatch", properties ->
+                    new BlockItem(BlockRegistry.VILLAGE_ITEM_INPUT_HATCH.get(), properties));
+
+    /** 原始物品输出接口方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_ITEM_OUTPUT_HATCH =
+            ITEMS.registerItem("primitive_item_output_hatch", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_ITEM_OUTPUT_HATCH.get(), properties));
+
+    /** 村庄物品输出接口方块物品 */
+    public static final DeferredItem<BlockItem> VILLAGE_ITEM_OUTPUT_HATCH =
+            ITEMS.registerItem("village_item_output_hatch", properties ->
+                    new BlockItem(BlockRegistry.VILLAGE_ITEM_OUTPUT_HATCH.get(), properties));
+
+    /** 原始流体输入接口方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_FLUID_INPUT_HATCH =
+            ITEMS.registerItem("primitive_fluid_input_hatch", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get(), properties));
+
+    /** 村庄流体输入接口方块物品 */
+    public static final DeferredItem<BlockItem> VILLAGE_FLUID_INPUT_HATCH =
+            ITEMS.registerItem("village_fluid_input_hatch", properties ->
+                    new BlockItem(BlockRegistry.VILLAGE_FLUID_INPUT_HATCH.get(), properties));
+
+    /** 原始流体输出接口方块物品 */
+    public static final DeferredItem<BlockItem> PRIMITIVE_FLUID_OUTPUT_HATCH =
+            ITEMS.registerItem("primitive_fluid_output_hatch", properties ->
+                    new BlockItem(BlockRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get(), properties));
+
+    /** 村庄流体输出接口方块物品 */
+    public static final DeferredItem<BlockItem> VILLAGE_FLUID_OUTPUT_HATCH =
+            ITEMS.registerItem("village_fluid_output_hatch", properties ->
+                    new BlockItem(BlockRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get(), properties));
+
+    /** 村庄采石场方块物品（Tier 1：村庄时代） */
+    public static final DeferredItem<BlockItem> VILLAGE_QUARRY =
+            ITEMS.registerItem("village_quarry", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_QUARRY.get(), properties));
 
     /**
      * 向事件总线注册所有物品。

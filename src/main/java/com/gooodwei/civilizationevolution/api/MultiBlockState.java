@@ -41,6 +41,8 @@ public class MultiBlockState {
     public final List<BlockPos> inputHatches = new ArrayList<>();
     public final List<BlockPos> outputHatches = new ArrayList<>();
     public final List<BlockPos> foodHatches = new ArrayList<>();
+    public final List<BlockPos> fluidInputHatches = new ArrayList<>();
+    public final List<BlockPos> fluidOutputHatches = new ArrayList<>();
     public final List<BlockPos> casingPositions = new ArrayList<>();
 
     /** 所有已成型零件位置（不分类型），用于破坏时通知所有零件 */
@@ -79,6 +81,8 @@ public class MultiBlockState {
         inputHatches.clear();
         outputHatches.clear();
         foodHatches.clear();
+        fluidInputHatches.clear();
+        fluidOutputHatches.clear();
         casingPositions.clear();
         allPartPositions.clear();
     }

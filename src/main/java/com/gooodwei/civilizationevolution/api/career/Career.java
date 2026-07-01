@@ -45,14 +45,18 @@ public abstract class Career {
     };
 
     private final String name;
-    private final int tier;
+    private int tier;
     private final int modelIndex;
     @Nullable
     private final VillagerProfession vanillaProfession;
-    /** 父职业名称（null 表示此为根职业，如 "unemployed"、"farmer" 等初始职业） */
+    /** 父职业名称（null 表示此为根职业，如 "unemployed" 等初始职业） */
     @Nullable
     private String parentCareerName = null;
     private final List<Career> upgrades = new ArrayList<>();
+    /** 子职业列表（由 CareerConfig 在配置加载后填充） */
+    private final List<Career> children = new ArrayList<>();
+    /** 晋升为该职业所需学徒经验阈值（≤0 表示不可通过学徒晋升） */
+    private int apprenticeExpThreshold = 8;
 
     /**
      * 构造一个职业实例并自动注册到内部注册表。
@@ -80,7 +84,7 @@ public abstract class Career {
      *
      * @param name 父职业名称（如 "farmer"）
      */
-    protected void setParentCareerName(String name) {
+    public void setParentCareerName(String name) {
         this.parentCareerName = name;
     }
 
@@ -116,6 +120,42 @@ public abstract class Career {
     public String getParentCareerName() { return parentCareerName; }
 
     /**
+     * 设置职业等级，供 {@link com.gooodwei.civilizationevolution.server.config.CareerConfig}
+     * 在配置加载后覆盖构造时的默认值。
+     */
+    public void setTier(int tier) { this.tier = tier; }
+
+    /**
+     * 添加一个子职业，由 CareerConfig 在配置加载后调用。
+     */
+    public void addChild(Career child) { this.children.add(child); }
+
+    /** @return 直接子职业的只读列表 */
+    public List<Career> getChildren() { return Collections.unmodifiableList(children); }
+
+    /**
+     * 递归获取所有后代职业（子职业、孙职业等）。
+     * @return 所有后代的平铺列表
+     */
+    public List<Career> getDescendants() {
+        List<Career> result = new ArrayList<>();
+        for (Career child : children) {
+            result.add(child);
+            result.addAll(child.getDescendants());
+        }
+        return result;
+    }
+
+    /** @return 晋升为该职业所需学徒经验阈值（≤0 表示不可通过学徒晋升） */
+    public int getApprenticeExpThreshold() { return apprenticeExpThreshold; }
+
+    /**
+     * 设置学徒经验阈值，供 CareerConfig 在配置加载后覆盖默认值。
+     * @param threshold 晋升所需经验值（≤0 = 不可晋升）
+     */
+    public void setApprenticeExpThreshold(int threshold) { this.apprenticeExpThreshold = threshold; }
+
+    /**
      * 判断此职业是否等于指定名称或由其派生（沿父链向上追溯）。
      *
      * <p>例如：若 "farmer_artisan" 的父职业是 "farmer"，
@@ -140,7 +180,7 @@ public abstract class Career {
      * @return 对应的 Career，未找到则为 null
      */
     @Nullable
-    static Career byName(String name) {
+    public static Career byName(String name) {
         return REGISTRY_INSTANCE.byName(name);
     }
 

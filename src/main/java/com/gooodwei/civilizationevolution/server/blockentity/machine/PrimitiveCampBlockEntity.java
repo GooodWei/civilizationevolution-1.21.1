@@ -39,11 +39,6 @@ public class PrimitiveCampBlockEntity extends AbstractCampBlockEntity {
         return PopulationMachineConfig.CAMP;
     }
 
-    @Override
-    protected int getFoodPerPopulation() {
-        return 8;
-    }
-
     // ==================== serverTick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state,

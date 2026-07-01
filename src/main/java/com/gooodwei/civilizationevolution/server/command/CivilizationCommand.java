@@ -43,7 +43,6 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -404,195 +403,181 @@ public final class CivilizationCommand {
             }
         }
 
-        // 9. 拷贝 final 变量供工作线程使用
-        final BlockPos fControllerPos = controllerPos;
-        final int fMinX = minX, fMinY = minY, fMinZ = minZ;
-        final int fMaxX = maxX, fMaxY = maxY, fMaxZ = maxZ;
-        final int fSizeX = sizeX, fSizeY = sizeY, fSizeZ = sizeZ;
-        final String fName = name;
+        // 9. 同步导出（直接在主线程执行，确保 chunk 数据读取安全和文件写入可靠）
+        try {
+            // 收集方块类型
+            Map<String, List<int[]>> typeToLocalPos = new LinkedHashMap<>();
 
-        // 10. 异步处理（工作线程）
-        CompletableFuture.runAsync(() -> {
-            try {
-                // 收集方块类型
-                Map<String, List<int[]>> typeToLocalPos = new LinkedHashMap<>();
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    for (int x = minX; x <= maxX; x++) {
+                        BlockPos worldPos = new BlockPos(x, y, z);
+                        int chunkX = x >> 4;
+                        int chunkZ = z >> 4;
+                        LevelChunk chunk = chunkMap.get(new ChunkPos(chunkX, chunkZ));
+                        if (chunk == null) continue;
 
-                for (int y = fMinY; y <= fMaxY; y++) {
-                    for (int z = fMinZ; z <= fMaxZ; z++) {
-                        for (int x = fMinX; x <= fMaxX; x++) {
-                            BlockPos worldPos = new BlockPos(x, y, z);
-                            int chunkX = x >> 4;
-                            int chunkZ = z >> 4;
-                            LevelChunk chunk = chunkMap.get(new ChunkPos(chunkX, chunkZ));
-                            if (chunk == null) continue;
+                        BlockState state = chunk.getBlockState(worldPos);
+                        // 局部坐标（包围盒最小角为原点，保证全部非负）
+                        int lx = x - minX;
+                        int ly = y - minY;
+                        int lz = z - minZ;
 
-                            BlockState state = chunk.getBlockState(worldPos);
-                            // 局部坐标（包围盒最小角为原点，保证全部非负）
-                            int lx = x - fMinX;
-                            int ly = y - fMinY;
-                            int lz = z - fMinZ;
-
-                            String typeId;
-                            if (worldPos.equals(fControllerPos)) {
-                                typeId = "__CONTROLLER__";
-                            } else if (state.isAir()) {
-                                typeId = "__AIR__";
-                            } else {
-                                BlockEntity be = chunk.getBlockEntity(worldPos);
-                                if (be instanceof IMultiBlockPart part) {
-                                    typeId = "part:" + part.getPartType();
-                                } else if (state.getBlock() instanceof IMultiBlockPart part) {
-                                    typeId = "part:" + part.getPartType();
-                                } else {
-                                    typeId = "block:" + BuiltInRegistries.BLOCK.getKey(state.getBlock());
-                                }
-                            }
-
-                            typeToLocalPos.computeIfAbsent(typeId, k -> new ArrayList<>())
-                                    .add(new int[]{lx, ly, lz});
-                        }
-                    }
-                }
-
-                // 分配字符编码
-                Map<String, String> typeToCode = assignCodes(typeToLocalPos);
-
-                // 判断是否使用双字节模式
-                boolean doubleChar = typeToCode.values().stream().anyMatch(s -> s.length() == 2);
-
-                // 构建 pattern 三维字符数组
-                char[][][] pattern = new char[fSizeY][fSizeZ][fSizeX * (doubleChar ? 2 : 1)];
-                // 初始化为空格
-                for (int y = 0; y < fSizeY; y++) {
-                    for (int z = 0; z < fSizeZ; z++) {
-                        int width = fSizeX * (doubleChar ? 2 : 1);
-                        for (int x = 0; x < width; x++) {
-                            pattern[y][z][x] = ' ';
-                        }
-                    }
-                }
-
-                // 填充 pattern
-                for (var entry : typeToLocalPos.entrySet()) {
-                    String typeId = entry.getKey();
-                    String code = typeToCode.get(typeId);
-                    if (code == null || "__AIR__".equals(typeId)) continue;
-
-                    for (int[] pos : entry.getValue()) {
-                        int lx = pos[0];
-                        int ly = pos[1];
-                        int lz = pos[2];
-                        // 验证局部坐标范围
-                        if (ly < 0 || ly >= fSizeY || lz < 0 || lz >= fSizeZ || lx < 0 || lx >= fSizeX) continue;
-
-                        if (doubleChar) {
-                            int cx2 = lx * 2;
-                            if (code.length() == 2) {
-                                pattern[ly][lz][cx2] = code.charAt(0);
-                                pattern[ly][lz][cx2 + 1] = code.charAt(1);
-                            } else {
-                                // 单字节 code：填充 _ 后缀
-                                pattern[ly][lz][cx2] = code.charAt(0);
-                                pattern[ly][lz][cx2 + 1] = '_';
-                            }
+                        String typeId;
+                        if (worldPos.equals(controllerPos)) {
+                            typeId = "__CONTROLLER__";
+                        } else if (state.isAir()) {
+                            typeId = "__AIR__";
                         } else {
-                            pattern[ly][lz][lx] = code.charAt(0);
+                            BlockEntity be = chunk.getBlockEntity(worldPos);
+                            if (be instanceof IMultiBlockPart part) {
+                                typeId = "part:" + part.getPartType();
+                            } else if (state.getBlock() instanceof IMultiBlockPart part) {
+                                typeId = "part:" + part.getPartType();
+                            } else {
+                                typeId = "block:" + BuiltInRegistries.BLOCK.getKey(state.getBlock());
+                            }
                         }
+
+                        typeToLocalPos.computeIfAbsent(typeId, k -> new ArrayList<>())
+                                .add(new int[]{lx, ly, lz});
                     }
                 }
+            }
 
-                // 通配符位置（空气）在双字节模式下写为 __
-                if (doubleChar) {
-                    for (int y = 0; y < fSizeY; y++) {
-                        for (int z = 0; z < fSizeZ; z++) {
-                            for (int x = 0; x < fSizeX; x++) {
-                                if (pattern[y][z][x * 2] == ' ' && pattern[y][z][x * 2 + 1] == ' ') {
-                                    pattern[y][z][x * 2] = '_';
-                                    pattern[y][z][x * 2 + 1] = '_';
-                                }
+            // 分配字符编码
+            Map<String, String> typeToCode = assignCodes(typeToLocalPos);
+
+            // 判断是否使用双字节模式
+            boolean doubleChar = typeToCode.values().stream().anyMatch(s -> s.length() == 2);
+
+            // 构建 pattern 三维字符数组
+            char[][][] pattern = new char[sizeY][sizeZ][sizeX * (doubleChar ? 2 : 1)];
+            // 初始化为空格
+            for (int y = 0; y < sizeY; y++) {
+                for (int z = 0; z < sizeZ; z++) {
+                    int width = sizeX * (doubleChar ? 2 : 1);
+                    for (int x = 0; x < width; x++) {
+                        pattern[y][z][x] = ' ';
+                    }
+                }
+            }
+
+            // 填充 pattern
+            for (var entry : typeToLocalPos.entrySet()) {
+                String typeId = entry.getKey();
+                String code = typeToCode.get(typeId);
+                if (code == null || "__AIR__".equals(typeId)) continue;
+
+                for (int[] pos : entry.getValue()) {
+                    int lx = pos[0];
+                    int ly = pos[1];
+                    int lz = pos[2];
+                    // 验证局部坐标范围
+                    if (ly < 0 || ly >= sizeY || lz < 0 || lz >= sizeZ || lx < 0 || lx >= sizeX) continue;
+
+                    if (doubleChar) {
+                        int cx2 = lx * 2;
+                        if (code.length() == 2) {
+                            pattern[ly][lz][cx2] = code.charAt(0);
+                            pattern[ly][lz][cx2 + 1] = code.charAt(1);
+                        } else {
+                            // 单字节 code：填充 _ 后缀
+                            pattern[ly][lz][cx2] = code.charAt(0);
+                            pattern[ly][lz][cx2 + 1] = '_';
+                        }
+                    } else {
+                        pattern[ly][lz][lx] = code.charAt(0);
+                    }
+                }
+            }
+
+            // 通配符位置（空气）在双字节模式下写为 __
+            if (doubleChar) {
+                for (int y = 0; y < sizeY; y++) {
+                    for (int z = 0; z < sizeZ; z++) {
+                        for (int x = 0; x < sizeX; x++) {
+                            if (pattern[y][z][x * 2] == ' ' && pattern[y][z][x * 2 + 1] == ' ') {
+                                pattern[y][z][x * 2] = '_';
+                                pattern[y][z][x * 2 + 1] = '_';
                             }
                         }
                     }
                 }
-
-                // 生成 JSON
-                JsonObject root = new JsonObject();
-                JsonObject structures = new JsonObject();
-                JsonObject structure = new JsonObject();
-
-                // controller（局部坐标，包围盒最小角为原点）
-                JsonArray controllerArr = new JsonArray();
-                controllerArr.add(fControllerPos.getY() - fMinY);
-                controllerArr.add(fControllerPos.getX() - fMinX);
-                controllerArr.add(fControllerPos.getZ() - fMinZ);
-                structure.add("controller", controllerArr);
-
-                // pattern
-                JsonObject patternObj = new JsonObject();
-                for (int y = 0; y < fSizeY; y++) {
-                    StringBuilder layer = new StringBuilder();
-                    for (int z = 0; z < fSizeZ; z++) {
-                        if (z > 0) layer.append(',');
-                        for (int x = 0; x < (doubleChar ? fSizeX * 2 : fSizeX); x++) {
-                            layer.append(pattern[y][z][x]);
-                        }
-                    }
-                    patternObj.addProperty("y" + y, layer.toString());
-                }
-                structure.add("pattern", patternObj);
-
-                // key
-                JsonObject keyObj = new JsonObject();
-                for (var entry : typeToCode.entrySet()) {
-                    String typeId = entry.getKey();
-                    String code = entry.getValue();
-                    if ("__AIR__".equals(typeId)) continue;
-
-                    JsonObject keyDef = new JsonObject();
-                    if ("__CONTROLLER__".equals(typeId)) {
-                        keyDef.addProperty("block", "self");
-                    } else {
-                        // 去掉前缀 part: 或 block:
-                        String actualType = typeId;
-                        if (actualType.startsWith("part:")) {
-                            actualType = actualType.substring(5);
-                        } else if (actualType.startsWith("block:")) {
-                            actualType = actualType.substring(6);
-                        }
-                        keyDef.addProperty("type", actualType);
-                    }
-                    keyObj.add(code, keyDef);
-                }
-                structure.add("key", keyObj);
-
-                if (doubleChar) {
-                    structure.addProperty("code_width", 2);
-                }
-
-                structure.addProperty("validate_interval", 30);
-                structures.add(fName, structure);
-                root.add("structures", structures);
-
-                // 写入文件
-                Files.createDirectories(STRUCTURE_OUTPUT_DIR);
-                Path outputFile = STRUCTURE_OUTPUT_DIR.resolve(fName + ".json");
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                Files.writeString(outputFile, gson.toJson(root));
-
-                // 回到主线程通知玩家
-                level.getServer().execute(() -> {
-                    src.sendSuccess(() -> Component.translatable(
-                            "msg.civilizationevolution.debug_structure_getter.exported",
-                            outputFile.toString()), false);
-                });
-
-            } catch (Exception e) {
-                level.getServer().execute(() -> {
-                    src.sendFailure(Component.literal("导出失败: " + e.getMessage()));
-                });
-                CivilizationEvolution.LOGGER.error("导出结构数据失败", e);
             }
-        });
+
+            // 生成 JSON
+            JsonObject root = new JsonObject();
+            JsonObject structures = new JsonObject();
+            JsonObject structure = new JsonObject();
+
+            // controller（局部坐标，包围盒最小角为原点）
+            JsonArray controllerArr = new JsonArray();
+            controllerArr.add(controllerPos.getY() - minY);
+            controllerArr.add(controllerPos.getX() - minX);
+            controllerArr.add(controllerPos.getZ() - minZ);
+            structure.add("controller", controllerArr);
+
+            // pattern
+            JsonObject patternObj = new JsonObject();
+            for (int y = 0; y < sizeY; y++) {
+                StringBuilder layer = new StringBuilder();
+                for (int z = 0; z < sizeZ; z++) {
+                    if (z > 0) layer.append(',');
+                    for (int x = 0; x < (doubleChar ? sizeX * 2 : sizeX); x++) {
+                        layer.append(pattern[y][z][x]);
+                    }
+                }
+                patternObj.addProperty("y" + y, layer.toString());
+            }
+            structure.add("pattern", patternObj);
+
+            // key
+            JsonObject keyObj = new JsonObject();
+            for (var entry : typeToCode.entrySet()) {
+                String typeId = entry.getKey();
+                String code = entry.getValue();
+                if ("__AIR__".equals(typeId)) continue;
+
+                JsonObject keyDef = new JsonObject();
+                if ("__CONTROLLER__".equals(typeId)) {
+                    keyDef.addProperty("block", "self");
+                } else {
+                    // 去掉前缀 part: 或 block:
+                    String actualType = typeId;
+                    if (actualType.startsWith("part:")) {
+                        actualType = actualType.substring(5);
+                    } else if (actualType.startsWith("block:")) {
+                        actualType = actualType.substring(6);
+                    }
+                    keyDef.addProperty("type", actualType);
+                }
+                keyObj.add(code, keyDef);
+            }
+            structure.add("key", keyObj);
+
+            if (doubleChar) {
+                structure.addProperty("code_width", 2);
+            }
+
+            structure.addProperty("validate_interval", 30);
+            structures.add(name, structure);
+            root.add("structures", structures);
+
+            // 写入文件
+            Files.createDirectories(STRUCTURE_OUTPUT_DIR);
+            Path outputFile = STRUCTURE_OUTPUT_DIR.resolve(name + ".json");
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Files.writeString(outputFile, gson.toJson(root));
+
+            src.sendSuccess(() -> Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.exported",
+                    outputFile.toString()), false);
+
+        } catch (Exception e) {
+            src.sendFailure(Component.literal("导出失败: " + e.getMessage()));
+            CivilizationEvolution.LOGGER.error("导出结构数据失败", e);
+        }
 
         return Command.SINGLE_SUCCESS;
     }

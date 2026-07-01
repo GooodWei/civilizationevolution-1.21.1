@@ -452,6 +452,7 @@ public interface IMultiBlockMachine {
             }
 
             // 9. 验证 min_count 可行性：pattern 中该字符的出现次数 >= min_count
+            // 仅检查 pattern 中直接出现的 key（alternatives-only 的 key 在运行时通过替换满足 min_count）
             Map<Character, Integer> charCounts = new HashMap<>();
             for (int y = 0; y < height; y++) {
                 for (int z = 0; z < depth; z++) {
@@ -467,6 +468,8 @@ public interface IMultiBlockMachine {
                 char c = entry.getKey();
                 KeyDefinition kd = entry.getValue();
                 int patternCount = charCounts.getOrDefault(c, 0);
+                // 跳过 pattern 中未直接出现的 key（纯 alternatives，运行时满足）
+                if (patternCount == 0) continue;
                 if (kd.minCount > 0 && patternCount < kd.minCount) {
                     throw new JsonParseException("key '" + c + "' 的 min_count=" + kd.minCount +
                             " 但 pattern 中仅出现 " + patternCount + " 次");
@@ -692,6 +695,8 @@ public interface IMultiBlockMachine {
         List<BlockPos> newInputHatches = new ArrayList<>();
         List<BlockPos> newOutputHatches = new ArrayList<>();
         List<BlockPos> newFoodHatches = new ArrayList<>();
+        List<BlockPos> newFluidInputHatches = new ArrayList<>();
+        List<BlockPos> newFluidOutputHatches = new ArrayList<>();
         List<BlockPos> newCasingPositions = new ArrayList<>();
         Set<BlockPos> newAllParts = new LinkedHashSet<>();
 
@@ -782,6 +787,8 @@ public interface IMultiBlockMachine {
                             case IMultiBlockPart.TYPE_INPUT_HATCH -> newInputHatches.add(worldPos);
                             case IMultiBlockPart.TYPE_OUTPUT_HATCH -> newOutputHatches.add(worldPos);
                             case IMultiBlockPart.TYPE_FOOD_HATCH -> newFoodHatches.add(worldPos);
+                            case IMultiBlockPart.TYPE_FLUID_INPUT_HATCH -> newFluidInputHatches.add(worldPos);
+                            case IMultiBlockPart.TYPE_FLUID_OUTPUT_HATCH -> newFluidOutputHatches.add(worldPos);
                             default -> newCasingPositions.add(worldPos);
                         }
                     }
@@ -818,6 +825,10 @@ public interface IMultiBlockMachine {
         state.outputHatches.addAll(newOutputHatches);
         state.foodHatches.clear();
         state.foodHatches.addAll(newFoodHatches);
+        state.fluidInputHatches.clear();
+        state.fluidInputHatches.addAll(newFluidInputHatches);
+        state.fluidOutputHatches.clear();
+        state.fluidOutputHatches.addAll(newFluidOutputHatches);
         state.casingPositions.clear();
         state.casingPositions.addAll(newCasingPositions);
         state.allPartPositions.clear();
@@ -836,14 +847,16 @@ public interface IMultiBlockMachine {
      *
      * <p>两类验证：
      * <ul>
-     *   <li><b>延迟验证</b>：倒计时归零时触发（用于区块加载后延迟重试）</li>
-     *   <li><b>定时验证</b>：间隔由配置文件的 {@code validate_interval}（秒）决定，默认 30 秒</li>
+     *   <li><b>延迟验证</b>：倒计时归零时触发（用于区块加载后延迟重试），在主线程执行</li>
+     *   <li><b>定时验证</b>：间隔由配置文件的 {@code validate_interval}（秒）决定，默认 30 秒，
+     *       通过 {@link com.gooodwei.civilizationevolution.server.validation.StructureValidationService}
+     *       提交到后台线程执行，避免大型结构验证造成主线程卡顿</li>
      * </ul>
      */
     default void tickRevalidation() {
         MultiBlockState state = mbs();
 
-        // 延迟验证（区块未加载时调度）
+        // 延迟验证（区块未加载时调度）—— 保留在主线程，触发频率低
         if (state.revalidationDelay > 0) {
             state.revalidationDelay--;
             if (state.revalidationDelay == 0) {
@@ -852,15 +865,18 @@ public interface IMultiBlockMachine {
             }
         }
 
-        // 定时验证（间隔从配置读取，解析失败时使用默认值）
+        // 定时验证 —— 提交到后台线程，避免巨型结构造成主线程卡顿
         int interval = state.cachedPattern != null
                 ? state.cachedPattern.validateIntervalTicks
                 : DEFAULT_VALIDATE_INTERVAL_TICKS;
         state.periodicValidationTimer++;
         if (state.periodicValidationTimer >= interval) {
             state.periodicValidationTimer = 0;
-            validateStructure();
-            markChanged();
+            Level lvl = getLevel();
+            if (lvl instanceof net.minecraft.server.level.ServerLevel sl) {
+                com.gooodwei.civilizationevolution.server.validation.StructureValidationService
+                        .submitPeriodicValidation(this, sl);
+            }
         }
     }
 
@@ -943,6 +959,16 @@ public interface IMultiBlockMachine {
     /** 获取所有食物接口的世界坐标列表 */
     default List<BlockPos> getFoodHatches() {
         return Collections.unmodifiableList(mbs().foodHatches);
+    }
+
+    /** 获取所有流体输入接口的世界坐标列表 */
+    default List<BlockPos> getFluidInputHatches() {
+        return Collections.unmodifiableList(mbs().fluidInputHatches);
+    }
+
+    /** 获取所有流体输出接口的世界坐标列表 */
+    default List<BlockPos> getFluidOutputHatches() {
+        return Collections.unmodifiableList(mbs().fluidOutputHatches);
     }
 
     /** 获取所有外壳方块的世界坐标列表 */

@@ -48,8 +48,19 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.PRIMITIVE_STRUCTURE_CASING.get());
                         output.accept(ItemRegistry.PRIMITIVE_POPULATION_INPUT_HATCH.get());
                         output.accept(ItemRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FOOD_INPUT_HATCH.get());
                         output.accept(ItemRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH.get());
                         output.accept(ItemRegistry.PRIMITIVE_DOCTOR_CABIN.get());
+                        output.accept(ItemRegistry.PRIMITIVE_ITEM_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_ITEM_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_ITEM_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_ITEM_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FLUID_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_STRUCTURE_CASING.get());
+                        output.accept(ItemRegistry.VILLAGE_QUARRY.get());
                     }).build());
 
     /**

@@ -1,20 +1,21 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.range.RangeScanner;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+
+import java.util.List;
 
 import java.util.List;
 import java.util.Map;
@@ -63,19 +64,39 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
     /** 配置文件中此机器的 section key（如 "primitive_ranch"） */
     protected abstract String getMachineConfigKey();
 
-    /** 每个人口槽位每次工作消耗的食物量（Tier 0 = 2） */
-    protected abstract int getFoodPerPopulation();
+    /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
+    protected int getFoodPerPopulation() {
+        return PopulationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 2);
+    }
 
     // ==================== 可覆写方法（有默认值） ====================
 
-    /** 健康度波动下限 */
-    protected int getHealthFluctuateMin() { return -5; }
+    /** 牧场工作要求的职业名称 */
+    @Override
+    protected String getWorkerCareer() { return "shepherd"; }
 
-    /** 健康度波动上限 */
-    protected int getHealthFluctuateMax() { return -1; }
+    /** 每次工作周期给学徒的经验量，优先从配置读取 */
+    @Override
+    protected int getApprenticeExpPerCycle() {
+        return PopulationMachineConfig.getApprenticeExpPerCycle(getMachineConfigKey(), 1);
+    }
 
-    /** 效率 × 此倍数 = 每种动物的喂养数量 */
-    protected int getFedPerTypeMultiplier() { return 3; }
+    /** 健康度波动下限，优先从配置读取 */
+    @Override
+    protected int getHealthFluctuateMin() {
+        return PopulationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -5);
+    }
+
+    /** 健康度波动上限，优先从配置读取 */
+    @Override
+    protected int getHealthFluctuateMax() {
+        return PopulationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), -1);
+    }
+
+    /** 效率 × 此倍数 = 每种动物的喂养数量，优先从配置读取 */
+    protected int getFedPerTypeMultiplier() {
+        return PopulationMachineConfig.getFedPerTypeMultiplier(getMachineConfigKey(), 3);
+    }
 
     // ==================== ContainerData ====================
 
@@ -138,10 +159,8 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
         return slot >= 0 && slot <= 5;
     }
 
-    @Override
-    public boolean canWork() {
-        return super.canWork() && hasEnoughFood(getFoodPerPopulation());
-    }
+    // canWork 继承 AbstractRangeMachineBlockEntity（bind + 有可用工人）
+    // 食物检查已移除 —— consumeFoodWithFallback 自动处理食物不足回退
 
     // ==================== 工作周期 ====================
 
@@ -170,6 +189,9 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
             }
 
             if (this.canWork()) {
+                // 学徒系统：调用 IPopulationItem.addApprenticeExp 处理晋级
+                addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
+
                 AABB range = getSelectionRange();
                 var grouped = RangeScanner.getEntitiesGroupedByKey(
                         serverLevel, range, Animal.class,
@@ -177,11 +199,11 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
                         Animal::getClass);
 
                 if (!grouped.isEmpty()) {
-                    float foodFactor = consumeFoodForRanch();
-                    double totalWorkEfficiency = 0;
-                    for (ItemStack worker : this.getAvailableWorkers()) {
-                        totalWorkEfficiency += PopulationNBT.getWorkEfficiency(worker);
-                    }
+                    float foodFactor = consumeFoodWithFallback(
+                            getFoodPerPopulation(),
+                            total -> Math.sqrt(total),
+                            getAvailableWorkers().size());
+                    double totalWorkEfficiency = calculateTotalWorkEfficiency(this.getAvailableWorkers());
                     float efficiency = foodFactor * (float) totalWorkEfficiency;
                     feedAnimals(grouped, serverLevel, efficiency);
                 }
@@ -190,57 +212,6 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
 
         this.workProgress = 0;
         setChanged(level, pos, level.getBlockState(pos));
-    }
-
-    // ==================== 食物消耗 ====================
-
-    /**
-     * 牧场专用的食物消耗逻辑。
-     *
-     * <p>规则：
-     * <ul>
-     *   <li>每个已放入人口物品的槽位消耗指定量的食物（无论是否符合工作要求）</li>
-     *   <li>只有符合工作要求的人口槽位消耗的食物才计入食物因子计算</li>
-     * </ul>
-     *
-     * @return 食物因子（仅由符合要求的人口消耗的食物决定）
-     */
-    private float consumeFoodForRanch() {
-        int totalPopSlots = (int) populationSlots().stream()
-                .filter(slot -> !getItem(slot).isEmpty()).count();
-        int eligibleCount = getAvailableWorkers().size();
-
-        int totalNeeded = totalPopSlots * getFoodPerPopulation();
-        int eligibleNeeded = eligibleCount * getFoodPerPopulation();
-
-        int remaining = totalNeeded;
-        int eligibleRemaining = eligibleNeeded;
-        float totalNutrition = 0;
-        float totalSaturation = 0;
-
-        for (int i = 0; i < getContainerSize() && remaining > 0; i++) {
-            if (!isFoodSlot(i)) continue;
-            ItemStack stack = getItem(i);
-            if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
-
-            FoodProperties food = stack.getFoodProperties(null);
-            float nutrition = food != null ? food.nutrition() : 0;
-            float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
-
-            int toRemove = Math.min(stack.getCount(), remaining);
-            stack.shrink(toRemove);
-            remaining -= toRemove;
-
-            int eligiblePortion = Math.min(toRemove, eligibleRemaining);
-            if (eligiblePortion > 0) {
-                totalNutrition += nutrition * eligiblePortion;
-                totalSaturation += saturation * eligiblePortion;
-                eligibleRemaining -= eligiblePortion;
-            }
-        }
-
-        double factor = Math.sqrt(totalNutrition + totalSaturation);
-        return (float) (Math.round(factor * 1000.0) / 1000.0);
     }
 
     // ==================== 喂养逻辑 ====================

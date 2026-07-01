@@ -113,22 +113,8 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
         // ===== 1. 医生年龄+1（使用 ageAllPopulations 保持与系统一致的寿命→标记死亡逻辑） =====
         ageAllPopulations(getAgeIncrement());
 
-        // ===== 2. 医生职业经验 =====
-        for (int slot : populationSlots()) {
-            ItemStack stack = getItem(slot);
-            if (!stack.isEmpty() && !PopulationNBT.isDead(stack)) {
-                String career = PopulationNBT.getCareer(stack);
-                if ("unemployed".equals(career)) {
-                    int newExp = addCareerExperience(stack, "cleric", 1);
-                    if (newExp >= 8) {
-                        setCareerExperience(stack, "cleric", 0);
-                        PopulationNBT.setCareer(stack, "cleric");
-                    }
-                } else if ("cleric".equals(career)) {
-                    addCareerExperience(stack, "cleric", 1);
-                }
-            }
-        }
+        // ===== 2. 医生学徒经验（委托 IPopulationItem.addApprenticeExp） =====
+        addApprenticeExpToPopulationSlots("cleric", getApprenticeExpPerCycle());
 
         // ===== 3. 计算机器效率 =====
         List<ItemStack> doctors = getActiveDoctors();
@@ -285,11 +271,17 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
     // ==================== 食物系统 ====================
 
     /**
-     * 获取单位人口食物消耗量（从配置读取）。
-     * 子类（如 {@code PrimitiveDoctorCabinBlockEntity}）应覆写此方法。
+     * 获取单位人口食物消耗量，优先从配置读取。
      */
     protected int getFoodPerPopulation() {
-        return 1; // 默认值，子类覆写为读配置
+        return PopulationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
+    }
+
+    /**
+     * 每次工作周期给学徒的经验量，优先从配置读取。
+     */
+    protected int getApprenticeExpPerCycle() {
+        return PopulationMachineConfig.getApprenticeExpPerCycle(getConfigKey(), 1);
     }
 
     /**

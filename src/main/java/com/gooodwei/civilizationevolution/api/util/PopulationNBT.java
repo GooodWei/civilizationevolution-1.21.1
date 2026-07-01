@@ -269,6 +269,18 @@ public final class PopulationNBT {
         return getCareerExp(stack, careerName) >= threshold;
     }
 
+    /**
+     * 清除人口的所有职业学徒经验，减少 NBT 膨胀。
+     * 转职完成后调用此方法以清空不再需要的经验数据。
+     *
+     * @param stack 人口物品
+     */
+    public static void clearAllCareerExps(ItemStack stack) {
+        CompoundTag tag = getOrCopyTag(stack);
+        tag.remove(Population.TAG_CAREER_EXPS);
+        saveTag(stack, tag);
+    }
+
     // ==================== 判定 ====================
 
     /**

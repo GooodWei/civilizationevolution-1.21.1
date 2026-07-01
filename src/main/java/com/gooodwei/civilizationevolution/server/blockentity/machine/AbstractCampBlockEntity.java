@@ -51,8 +51,10 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     /** 配置文件中此机器的 section key（如 "camp"、"small_camp"） */
     protected abstract String getMachineConfigKey();
 
-    /** 每个人口槽位每次工作消耗的食物量（Tier 0 = 8） */
-    protected abstract int getFoodPerPopulation();
+    /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
+    protected int getFoodPerPopulation() {
+        return PopulationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
+    }
 
     // ==================== 可覆写方法（有默认值） ====================
 
@@ -67,17 +69,27 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         return Math.sqrt(total / 176.0);
     }
 
-    /** 父代最低生育年龄 */
-    protected int getMinParentAge() { return 18; }
+    /** 父代最低生育年龄，优先从配置读取 */
+    protected int getMinParentAge() {
+        return PopulationMachineConfig.getMinParentAge(getMachineConfigKey(), 18);
+    }
 
-    /** 父代最高生育年龄 */
-    protected int getMaxParentAge() { return 50; }
+    /** 父代最高生育年龄，优先从配置读取 */
+    protected int getMaxParentAge() {
+        return PopulationMachineConfig.getMaxParentAge(getMachineConfigKey(), 50);
+    }
 
-    /** 健康度波动下限 */
-    protected int getHealthFluctuateMin() { return -10; }
+    /** 健康度波动下限，优先从配置读取（营地波动幅度较大） */
+    @Override
+    protected int getHealthFluctuateMin() {
+        return PopulationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -10);
+    }
 
-    /** 健康度波动上限 */
-    protected int getHealthFluctuateMax() { return 5; }
+    /** 健康度波动上限，优先从配置读取（营地波动幅度较大） */
+    @Override
+    protected int getHealthFluctuateMax() {
+        return PopulationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), 5);
+    }
 
     // ==================== IPopulationMachine 实现 ====================
 
@@ -118,10 +130,6 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         if (isPopulationDead(getParentSlotA()) || isPopulationDead(getParentSlotB())) {
             return false;
         }
-        // 必须有足够食物
-        if (!hasEnoughFood(getFoodPerPopulation())) {
-            return false;
-        }
         // 营地特有：异性 + 年龄在生育范围内
         int ageA = getPopulationAge(getParentSlotA());
         int ageB = getPopulationAge(getParentSlotB());
@@ -138,8 +146,8 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
 
         if (this.canWork()) {
-            double foodFactor = this.consumeAndGetFoodFactor(getFoodPerPopulation(),
-                    this::getFoodFactorFormula);
+            float foodFactor = this.consumeFoodWithFallback(getFoodPerPopulation(),
+                    this::getFoodFactorFormula, -1);
             this.doReproduction(level, foodFactor);
         }
         BlockPos pos = this.getBlockPos();
@@ -152,7 +160,7 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     /**
      * 执行繁殖：读取父代人口物品，计算子嗣数量并产出。
      */
-    private void doReproduction(Level level, double foodFactor) {
+    private void doReproduction(Level level, float foodFactor) {
         ItemStack parentA = getItem(getParentSlotA());
         ItemStack parentB = getItem(getParentSlotB());
 

@@ -73,6 +73,12 @@ public class BlockRegistry {
             () -> new PrimitiveFoodInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
+    /** 村庄食物输入接口 —— 多方块机器食物输入口（Tier 1） */
+    public static final DeferredBlock<VillageFoodInputHatchBlock> VILLAGE_FOOD_INPUT_HATCH = BLOCKS.register(
+            "village_food_input_hatch",
+            () -> new VillageFoodInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
     /** 原始人口输出接口 —— 多方块机器人口输出口（Tier 0） */
     public static final DeferredBlock<PrimitivePopulationOutputHatchBlock> PRIMITIVE_POPULATION_OUTPUT_HATCH = BLOCKS.register(
             "primitive_population_output_hatch",
@@ -83,6 +89,75 @@ public class BlockRegistry {
     public static final DeferredBlock<PrimitiveDoctorCabin> PRIMITIVE_DOCTOR_CABIN = BLOCKS.register(
             "primitive_doctor_cabin",
             () -> new PrimitiveDoctorCabin(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始物品输入接口 —— 多方块机器物品输入口（Tier 0） */
+    public static final DeferredBlock<PrimitiveItemInputHatchBlock> PRIMITIVE_ITEM_INPUT_HATCH = BLOCKS.register(
+            "primitive_item_input_hatch",
+            () -> new PrimitiveItemInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄物品输入接口 —— 多方块机器物品输入口（Tier 1） */
+    public static final DeferredBlock<VillageItemInputHatchBlock> VILLAGE_ITEM_INPUT_HATCH = BLOCKS.register(
+            "village_item_input_hatch",
+            () -> new VillageItemInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始物品输出接口 —— 多方块机器物品输出口（Tier 0） */
+    public static final DeferredBlock<PrimitiveItemOutputHatchBlock> PRIMITIVE_ITEM_OUTPUT_HATCH = BLOCKS.register(
+            "primitive_item_output_hatch",
+            () -> new PrimitiveItemOutputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄物品输出接口 —— 多方块机器物品输出口（Tier 1） */
+    public static final DeferredBlock<VillageItemOutputHatchBlock> VILLAGE_ITEM_OUTPUT_HATCH = BLOCKS.register(
+            "village_item_output_hatch",
+            () -> new VillageItemOutputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始流体输入接口 —— 多方块机器流体输入口（Tier 0） */
+    public static final DeferredBlock<PrimitiveFluidInputHatchBlock> PRIMITIVE_FLUID_INPUT_HATCH = BLOCKS.register(
+            "primitive_fluid_input_hatch",
+            () -> new PrimitiveFluidInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄流体输入接口 —— 多方块机器流体输入口（Tier 1） */
+    public static final DeferredBlock<VillageFluidInputHatchBlock> VILLAGE_FLUID_INPUT_HATCH = BLOCKS.register(
+            "village_fluid_input_hatch",
+            () -> new VillageFluidInputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 原始流体输出接口 —— 多方块机器流体输出口（Tier 0） */
+    public static final DeferredBlock<PrimitiveFluidOutputHatchBlock> PRIMITIVE_FLUID_OUTPUT_HATCH = BLOCKS.register(
+            "primitive_fluid_output_hatch",
+            () -> new PrimitiveFluidOutputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄流体输出接口 —— 多方块机器流体输出口（Tier 1） */
+    public static final DeferredBlock<VillageFluidOutputHatchBlock> VILLAGE_FLUID_OUTPUT_HATCH = BLOCKS.register(
+            "village_fluid_output_hatch",
+            () -> new VillageFluidOutputHatchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄结构方块 —— 多方块机器填充外壳（Tier 1） */
+    public static final DeferredBlock<VillageStructureCasing> VILLAGE_STRUCTURE_CASING = BLOCKS.register(
+            "village_structure_casing",
+            () -> new VillageStructureCasing(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f))
+    );
+
+    /** 矿井管道 —— 村庄采石场结构方块，黑曜石硬度，无掉落物（Tier 1） */
+    public static final DeferredBlock<MiningShaftPipe> MINING_SHAFT_PIPE = BLOCKS.register(
+            "mining_shaft_pipe",
+            () -> new MiningShaftPipe(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE)
+                    .strength(50.0f, 1200.0f)
+                    .requiresCorrectToolForDrops())
+    );
+
+    /** 村庄采石场 —— Tier 1 采矿机器 */
+    public static final DeferredBlock<VillageQuarryBlock> VILLAGE_QUARRY = BLOCKS.register(
+            "village_quarry",
+            () -> new VillageQuarryBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
     /**

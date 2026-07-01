@@ -2,7 +2,11 @@ package com.gooodwei.civilizationevolution.client.registry;
 
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveDoctorCabinScreen;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveFarmScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.VillageQuarryScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.ItemInputHatchScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.ItemOutputHatchScreen;
 import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitiveFoodInputHatchScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.VillageFoodInputHatchScreen;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveHuntingGroundScreen;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveCampScreen;
 import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitivePopulationInputHatchScreen;
@@ -39,7 +43,12 @@ public class ScreenRegistry {
                 PrimitivePopulationInputHatchScreen::new);
         event.register(MenuRegistry.PRIMITIVE_FOOD_INPUT_HATCH_MENU.get(),
                 PrimitiveFoodInputHatchScreen::new);
+        event.register(MenuRegistry.VILLAGE_FOOD_INPUT_HATCH_MENU.get(),
+                VillageFoodInputHatchScreen::new);
         event.register(MenuRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH_MENU.get(),
                 PrimitivePopulationOutputHatchScreen::new);
+        event.register(MenuRegistry.ITEM_INPUT_HATCH_MENU.get(), ItemInputHatchScreen::new);
+        event.register(MenuRegistry.ITEM_OUTPUT_HATCH_MENU.get(), ItemOutputHatchScreen::new);
+        event.register(MenuRegistry.VILLAGE_QUARRY_MENU.get(), VillageQuarryScreen::new);
     }
 }

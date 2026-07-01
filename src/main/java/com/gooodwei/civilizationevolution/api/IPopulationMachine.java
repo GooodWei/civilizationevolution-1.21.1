@@ -166,6 +166,150 @@ public interface IPopulationMachine {
         return (float) (Math.round(factor * 1000.0) / 1000.0);
     }
 
+    /**
+     * 统一食物消耗方法，含完整三级回退链和人口喂食。
+     *
+     * <p><b>食物充足时（正常路径）：</b>
+     * <ol>
+     *   <li>消耗食物物品用于本次工作，按 {@code formula} 计算食物因子</li>
+     *   <li>额外遍历所有人口槽位：若某人口 NBT 饱食度 &lt; 100，额外消耗一份食物，
+     *       将其 {@code nutrition + saturation × 2} 加到该人口 NBT 饱食度上</li>
+     *   <li>喂食只喂饱食度 &lt; 100 的人口，喂食后允许超过 100</li>
+     *   <li>喂食消耗的食物<b>不参与</b>食物因子计算</li>
+     * </ol>
+     *
+     * <p><b>食物不足时（回退路径）：</b>
+     * <ol>
+     *   <li>不消耗任何食物物品</li>
+     *   <li>从每个人口物品的 NBT 饱食度扣除 16 点 → 食物因子 0.75</li>
+     *   <li>饱食度不足 16 时，先扣尽饱食度，差额从生命值扣除 → 食物因子 0.5</li>
+     *   <li>生命值降至 ≤ 0 时标记人口死亡</li>
+     * </ol>
+     *
+     * <p>食物因子取最差情况：只要有任何一个人口扣了生命值，整体因子就是 0.5。
+     *
+     * @param foodPerPopulation 每个人口槽位每次工作消耗的食物物品量
+     * @param formula           正常路径的食物因子计算公式
+     * @param eligibleCount     符合工作要求的人口数量（影响营养值计算比例）。
+     *                          传 -1 表示所有已填满的人口槽位均计入（营地模式）
+     * @return 食物因子（正常公式值 / 0.75 / 0.5 / 0）
+     */
+    default float consumeFoodWithFallback(int foodPerPopulation,
+                                          java.util.function.DoubleUnaryOperator formula,
+                                          int eligibleCount) {
+        Container c = getContainer();
+        int filledSlots = countPopulationSlots();
+        if (filledSlots == 0) return 0;
+
+        int actualEligible = (eligibleCount < 0) ? filledSlots : eligibleCount;
+        int totalNeeded = filledSlots * foodPerPopulation;
+        int eligibleNeeded = Math.min(actualEligible * foodPerPopulation, totalNeeded);
+
+        // ===== 第一步：统计可用食物物品总量 =====
+        int available = 0;
+        for (int i = 0; i < c.getContainerSize(); i++) {
+            if (!isFoodSlot(i)) continue;
+            ItemStack stack = c.getItem(i);
+            if (!stack.isEmpty() && stack.has(DataComponents.FOOD)) {
+                available += stack.getCount();
+                if (available >= totalNeeded) break; // 提前退出
+            }
+        }
+
+        // ===== 第二步：食物充足 → 正常路径 =====
+        if (available >= totalNeeded) {
+            // 2a. 消耗食物物品用于工作（复用现有逻辑）
+            int remaining = totalNeeded;
+            int eligibleRemaining = eligibleNeeded;
+            float totalNutrition = 0;
+            float totalSaturation = 0;
+
+            for (int i = 0; i < c.getContainerSize() && remaining > 0; i++) {
+                if (!isFoodSlot(i)) continue;
+                ItemStack stack = c.getItem(i);
+                if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
+
+                FoodProperties food = stack.getFoodProperties(null);
+                float nutrition = food != null ? food.nutrition() : 0;
+                float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
+
+                int toRemove = Math.min(stack.getCount(), remaining);
+                stack.shrink(toRemove);
+                remaining -= toRemove;
+
+                int eligiblePortion = Math.min(toRemove, eligibleRemaining);
+                if (eligiblePortion > 0) {
+                    totalNutrition += nutrition * eligiblePortion;
+                    totalSaturation += saturation * eligiblePortion;
+                    eligibleRemaining -= eligiblePortion;
+                }
+            }
+
+            double factor = formula.applyAsDouble(totalNutrition + totalSaturation);
+            float foodFactor = (float) (Math.round(factor * 1000.0) / 1000.0);
+
+            // 2b. 额外喂食：对每个饱食度 < 100 的人口，喂一份食物
+            for (int slot : populationSlots()) {
+                ItemStack popStack = getPopulationStackUnchecked(slot);
+                if (popStack == null || PopulationNBT.isDead(popStack)) continue;
+                if (PopulationNBT.getFood(popStack) >= 100) continue;
+
+                // 从食物槽位取一份食物来喂
+                for (int i = 0; i < c.getContainerSize(); i++) {
+                    if (!isFoodSlot(i)) continue;
+                    ItemStack foodStack = c.getItem(i);
+                    if (foodStack.isEmpty() || !foodStack.has(DataComponents.FOOD)) continue;
+
+                    FoodProperties foodProps = foodStack.getFoodProperties(null);
+                    int addedValue = (int) (foodProps.nutrition()
+                            + foodProps.nutrition() * foodProps.saturation() * 2);
+                    foodStack.shrink(1);
+
+                    int newFood = PopulationNBT.getFood(popStack) + addedValue;
+                    PopulationNBT.setFood(popStack, newFood);
+                    break; // 该人口已喂，处理下一个人口
+                }
+            }
+
+            return foodFactor;
+        }
+
+        // ===== 第三步：食物不足 → 回退路径 =====
+        // 不消耗任何食物物品
+        boolean anyHealthUsed = false;
+        boolean anyFoodValueUsed = false;
+
+        for (int slot : populationSlots()) {
+            ItemStack popStack = getPopulationStackUnchecked(slot);
+            if (popStack == null || PopulationNBT.isDead(popStack)) continue;
+
+            int currentFood = PopulationNBT.getFood(popStack);
+            int currentHealth = PopulationNBT.getHealth(popStack);
+
+            int need = 16;
+            int fromFood = Math.min(currentFood, need);
+            if (fromFood > 0) {
+                PopulationNBT.setFood(popStack, currentFood - fromFood);
+                need -= fromFood;
+                anyFoodValueUsed = true;
+            }
+
+            if (need > 0) {
+                int newHealth = currentHealth - need;
+                if (newHealth <= 0) {
+                    PopulationNBT.markDead(popStack);
+                } else {
+                    PopulationNBT.setHealth(popStack, newHealth);
+                }
+                anyHealthUsed = true;
+            }
+        }
+
+        if (anyHealthUsed) return 0.5f;
+        if (anyFoodValueUsed) return 0.75f;
+        return 0;
+    }
+
     // ==================== 工作逻辑 ====================
 
     /**
@@ -586,16 +730,60 @@ public interface IPopulationMachine {
     /**
      * 获得职业经验的人口基础条件检查。
      *
-     * <p>默认要求：是 {@link PopulationItem}、未死亡、当前职业为 "unemployed"。
-     * 子类（如未来的学院机器）可覆写以放宽或收紧条件。
+     * @deprecated 父职业门控逻辑已内聚到 {@link IPopulationItem#addApprenticeExp} 内部，
+     *             此方法不再被调用，保留仅供外部参考。
      *
      * @param stack 人口物品
      * @return true 表示该人口可以获得职业经验
      */
+    @Deprecated
     default boolean canGainCareerExperience(ItemStack stack) {
         if (stack.isEmpty() || !(stack.getItem() instanceof PopulationItem)) return false;
         if (PopulationNBT.isDead(stack)) return false;
         return "unemployed".equals(PopulationNBT.getCareer(stack));
+    }
+
+    /**
+     * 遍历所有人口槽位，委托 {@link IPopulationItem#addApprenticeExp} 处理学徒经验。
+     *
+     * <p>此方法仅做遍历委托，不含任何门控/晋升逻辑。
+     * 父职业门控、经验累积、阈值检查、转职、清除经验均由
+     * {@link IPopulationItem#addApprenticeExp(ItemStack, String, int)} 内部处理。
+     *
+     * <p>典型用法：在 {@code executeWorkCycle()} 的效率计算之前调用，
+     * 确保新转职人口立即参与当次工作。
+     *
+     * <pre>{@code
+     * addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
+     * }</pre>
+     *
+     * @param targetCareer 目标职业名称（如 "farmer"、"butcher"）
+     * @param amount       每次工作周期给予的经验量
+     */
+    default void addApprenticeExpToPopulationSlots(String targetCareer, int amount) {
+        for (int slot : populationSlots()) {
+            ItemStack stack = getContainer().getItem(slot);
+            if (stack.getItem() instanceof IPopulationItem popItem) {
+                popItem.addApprenticeExp(stack, targetCareer, amount);
+            }
+        }
+    }
+
+    // ==================== 辅助计算 ====================
+
+    /**
+     * 计算工人列表的总工作效率。
+     * <p>供 {@code executeWorkCycle} 中计算 {@code efficiency = foodFactor × totalWorkEfficiency} 使用。
+     *
+     * @param workers 可用工人列表（通常来自 {@code getAvailableWorkers()}）
+     * @return 总工作效率（Σ 每个工人的 {@link PopulationNBT#getWorkEfficiency}）
+     */
+    default double calculateTotalWorkEfficiency(List<ItemStack> workers) {
+        double total = 0;
+        for (ItemStack worker : workers) {
+            total += PopulationNBT.getWorkEfficiency(worker);
+        }
+        return total;
     }
 
     // ==================== 物品过滤工具 ====================

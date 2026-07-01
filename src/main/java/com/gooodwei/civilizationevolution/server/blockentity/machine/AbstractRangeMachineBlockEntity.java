@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.api.util.ParticleBorderHelper;
+import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import net.minecraft.core.BlockPos;
@@ -259,6 +260,7 @@ public abstract class AbstractRangeMachineBlockEntity
     /**
      * 从人口槽位中筛选适合工作的人口物品。
      * <p>条件：PopulationItem、年龄 18-65、未死亡。
+     * 若 {@link #getWorkerCareer()} 非空，则追加职业匹配条件。
      *
      * @return 符合工作条件的人口物品列表（可能为空）
      */
@@ -270,11 +272,38 @@ public abstract class AbstractRangeMachineBlockEntity
                 all.add(stack);
             }
         }
-        return filterAvailable(all, stack ->
+        List<ItemStack> eligible = filterAvailable(all, stack ->
                 stack.getItem() instanceof PopulationItem
                         && !PopulationNBT.isDead(stack)
                         && PopulationNBT.getAge(stack) >= 18
                         && PopulationNBT.getAge(stack) <= 65);
+
+        // 若子类指定了职业要求，追加职业筛选
+        String career = getWorkerCareer();
+        if (career != null && !career.isEmpty()) {
+            eligible = filterAvailable(eligible, stack ->
+                    Career.isKindOf(PopulationNBT.getCareer(stack), career));
+        }
+        return eligible;
+    }
+
+    // ==================== 职业/学徒（子类可覆写） ====================
+
+    /**
+     * 本机器要求的工作职业名称。
+     * 默认返回 {@code null}（无职业要求，任何成年人口均可工作）。
+     * 子类覆写以指定职业（如 "butcher"、"farmer"、"shepherd"）。
+     */
+    protected String getWorkerCareer() {
+        return null;
+    }
+
+    /**
+     * 每次工作周期给学徒的经验量。
+     * 默认 1，子类可覆写以从配置文件读取或自定义。
+     */
+    protected int getApprenticeExpPerCycle() {
+        return 1;
     }
 
     // ==================== canWork 范围守卫 ====================

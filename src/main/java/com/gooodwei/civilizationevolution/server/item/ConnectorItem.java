@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.item;
 
+import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.api.component.ConnectorTarget;
 import com.gooodwei.civilizationevolution.api.IPMController;
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
@@ -181,15 +182,26 @@ public class ConnectorItem extends Item {
             return;
         }
 
-        // 4. 已在当前核心的绑定列表中 → 拒绝
+        // 4. 机器未绑定但核心数据中有记录 → 机器状态丢失，从核心数据恢复绑定
+        //    核心数据是权威来源，机器的本地 isBound 状态可能因方块替换等原因丢失
         if (coreData.hasMachine(machinePos)) {
+            CivilizationEvolution.LOGGER.info("doBind: 从核心数据恢复机器绑定状态，机位={}", machinePos);
+            machine.setBound(true);
+            machine.setBoundCoreUuid(coreUuid);
+            // 尝试从活跃控制器获取维度信息
+            AbstractControllerBlockEntity controller = findController(level, coreUuid);
+            if (controller != null) {
+                machine.setBoundControllerDimension(level.dimension().location().toString());
+            }
+            // 若当前无活跃控制器，维度信息将在核心下次放入控制器时由 syncBoundMachinesLocation 推送
+            machineBe.setChanged();
             player.sendSystemMessage(Component.translatable(
-                    "msg.civilizationevolution.connector.bind_failed")
-                    .withStyle(ChatFormatting.RED));
+                    "msg.civilizationevolution.connector.bind_success",
+                    machinePos.getX(), machinePos.getY(), machinePos.getZ()));
             return;
         }
 
-        // 5. 执行绑定
+        // 5. 执行全新绑定
         if (performBind(player, level, coreUuid, machinePos, machine, machineBe, coreData)) {
             player.sendSystemMessage(Component.translatable(
                     "msg.civilizationevolution.connector.bind_success",
@@ -281,6 +293,15 @@ public class ConnectorItem extends Item {
         AbstractControllerBlockEntity controller = findController(level, coreUuid);
 
         if (controller != null) {
+            CivilizationEvolution.LOGGER.info("performBind: 找到控制器位于 {}，尝试绑定机位 {}", controller.getBlockPos(), machinePos);
+            // Tier 预检查：控制器只能绑定 ≤ 自身 tier 的机器
+            if (machine.getTier().getLevel() > controller.getTier().getLevel()) {
+                player.sendSystemMessage(Component.translatable(
+                        "msg.civilizationevolution.connector.tier_mismatch",
+                        machine.getTier().getLevel(), controller.getTier().getLevel())
+                        .withStyle(ChatFormatting.RED));
+                return false;
+            }
             // 距离预检查（在进 bindMachine 之前，给玩家具体的"超出范围"提示）
             int maxRange = PopulationMachineConfig.getMaxBindRange(controller.getControllerType());
             if (maxRange > 0 && !machinePos.closerThan(controller.getBlockPos(), maxRange + 1)) {
@@ -296,6 +317,7 @@ public class ConnectorItem extends Item {
                 controller.setChanged();
                 if (player instanceof ServerPlayer sp) controller.syncToPlayer(sp);
             } else {
+                CivilizationEvolution.LOGGER.warn("performBind: controller.bindMachine 返回 false，机位={}", machinePos);
                 player.sendSystemMessage(Component.translatable(
                         "msg.civilizationevolution.connector.bind_failed")
                         .withStyle(ChatFormatting.RED));

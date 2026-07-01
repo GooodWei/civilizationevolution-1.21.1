@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.blockentity.controller;
 
+import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
 import com.gooodwei.civilizationevolution.api.IPMController;
@@ -292,6 +293,8 @@ public abstract class AbstractControllerBlockEntity
 
         String uuid = CivilizationCoreItem.getUuid(stack);
 
+        boolean isNewCore = (uuid == null) || !uuid.equals(currentUuid);
+
         if (uuid == null) {
             uuid = CoreDataManager.generateUuid();
             CivilizationCoreItem.setUuid(stack, uuid);
@@ -309,6 +312,12 @@ public abstract class AbstractControllerBlockEntity
             CORE_LOCATIONS.put(uuid, getBlockPos());
             setChanged();
         }
+
+        // 核心首次放入或更换时，向所有已绑定机器推送当前控制器的维度和坐标（更新 Jade 显示）
+        if (isNewCore && coreData != null) {
+            syncBoundMachinesLocation((ServerLevel) level);
+        }
+
         notifyViewersSync();
     }
 
@@ -345,6 +354,7 @@ public abstract class AbstractControllerBlockEntity
         }
 
         String uuid = CivilizationCoreItem.getUuid(coreStack);
+        boolean coreDataJustSet = false;
 
         // 核心尚未初始化 UUID → 自动生成并写入物品
         if (uuid == null) {
@@ -366,6 +376,7 @@ public abstract class AbstractControllerBlockEntity
             }
             be.currentUuid = uuid;
             CORE_LOCATIONS.put(uuid, pos);
+            coreDataJustSet = true;
         }
 
         // 兜底：确保 coreData 非空
@@ -375,6 +386,12 @@ public abstract class AbstractControllerBlockEntity
                 be.coreData = CoreDataManager.createNew(uuid, be.getControllerType());
             }
             be.currentUuid = uuid;
+            coreDataJustSet = true;
+        }
+
+        // 核心数据刚完成初始化 → 向所有已绑定机器推送当前控制器位置（更新 Jade 显示）
+        if (coreDataJustSet) {
+            be.syncBoundMachinesLocation((ServerLevel) level);
         }
 
         // 只有结构成型时才执行机器调度（绑定/解绑仍可通过连接器操作）
@@ -454,15 +471,33 @@ public abstract class AbstractControllerBlockEntity
 
     @Override
     public boolean bindMachine(BlockPos pos, IPopulationMachine machine) {
-        if (coreData == null) return false;
-        if (machine.isBound()) return false;
-        if (coreData.hasMachine(pos)) return false;
-        if (coreData.getBoundMachines().size() >= getMaxBindCount()) return false;
+        if (coreData == null) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：coreData 为 null，控制器位于 {}", getBlockPos());
+            return false;
+        }
+        if (machine.isBound()) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：机器已绑定，机位={}，已绑核心={}", pos, machine.getBoundCoreUuid());
+            return false;
+        }
+        if (coreData.hasMachine(pos)) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：核心数据中已存在该机位 {}", pos);
+            return false;
+        }
+        if (coreData.getBoundMachines().size() >= getMaxBindCount()) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：已达最大绑定数 {}/{}", coreData.getBoundMachines().size(), getMaxBindCount());
+            return false;
+        }
         // Tier 检查：控制器只能绑定 ≤ 自身 tier 的机器
-        if (machine.getTier().getLevel() > getTier().getLevel()) return false;
+        if (machine.getTier().getLevel() > getTier().getLevel()) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：Tier 不匹配，机器 tier={} > 控制器 tier={}",
+                    machine.getTier().getLevel(), getTier().getLevel());
+            return false;
+        }
         // 距离检查：机器必须在控制器的最大绑定范围内
         int maxRange = PopulationMachineConfig.getMaxBindRange(getControllerType());
         if (maxRange > 0 && !pos.closerThan(getBlockPos(), maxRange + 1)) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：距离超出范围，机位={}，控制器={}，距离={}，最大={}",
+                    pos, getBlockPos(), Math.sqrt(pos.distSqr(getBlockPos())), maxRange);
             return false;
         }
 
@@ -611,6 +646,32 @@ public abstract class AbstractControllerBlockEntity
                 NetworkHandler.sendToPlayer(sp, empty);
             }
         }
+    }
+
+    /**
+     * 向所有已绑定到此核心的机器推送当前控制器的维度和坐标，
+     * 确保 Jade 工具提示显示正确的控制器位置。
+     *
+     * <p>核心被放入新控制器时自动调用，无论多方块结构是否成型。
+     * 仅更新已加载区块中的机器，未加载的机器在区块加载后由
+     * {@link #validateBoundMachines} 兜底。
+     */
+    void syncBoundMachinesLocation(ServerLevel serverLevel) {
+        if (coreData == null || currentUuid == null) return;
+        String dimension = serverLevel.dimension().location().toString();
+
+        for (CivilizationCoreData.BoundMachineEntry entry : coreData.getBoundMachines()) {
+            BlockPos machinePos = entry.getBlockPos();
+            if (!serverLevel.isLoaded(machinePos)) continue;
+            if (serverLevel.getBlockEntity(machinePos) instanceof IPopulationMachine machine) {
+                // 仅更新仍绑定到此核心的机器（双重校验，防止核心数据与机器状态不一致）
+                if (currentUuid.equals(machine.getBoundCoreUuid())) {
+                    machine.setBoundControllerDimension(dimension);
+                }
+            }
+        }
+        CivilizationEvolution.LOGGER.info("已向 {} 台机器推送控制器位置更新（维度={}，控制器={}）",
+                coreData.getBoundMachines().size(), dimension, getBlockPos());
     }
 
     /**

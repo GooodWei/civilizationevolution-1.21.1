@@ -51,11 +51,6 @@ public class PrimitiveHuntingGroundBlockEntity extends AbstractHuntingGroundBloc
     }
 
     @Override
-    protected int getFoodPerPopulation() {
-        return 32;
-    }
-
-    @Override
     protected TagKey<Block> getConflictTag() {
         return ModTags.HUNTING_GROUND_CONFLICTS;
     }

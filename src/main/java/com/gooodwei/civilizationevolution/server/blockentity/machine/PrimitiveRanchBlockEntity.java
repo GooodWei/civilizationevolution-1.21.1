@@ -50,11 +50,6 @@ public class PrimitiveRanchBlockEntity extends AbstractRanchBlockEntity {
     }
 
     @Override
-    protected int getFoodPerPopulation() {
-        return 2;
-    }
-
-    @Override
     protected TagKey<Block> getConflictTag() {
         return ModTags.PRIMITIVE_RANCH_CONFLICTS;
     }

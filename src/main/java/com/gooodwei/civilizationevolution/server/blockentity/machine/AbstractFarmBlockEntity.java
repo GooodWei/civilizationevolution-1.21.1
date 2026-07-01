@@ -7,13 +7,11 @@ import com.gooodwei.civilizationevolution.tags.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
@@ -77,12 +75,6 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
 
     /** 当前储水量（mB），NBT 持久化 */
     private long waterAmount = 0;
-
-    /** 失业人口转职为农民所需的职业经验阈值 */
-    private static final int CAREER_EXP_TO_BECOME_FARMER = 8;
-
-    /** 农民基职业名称 */
-    private static final String FARMER_CAREER = "farmer";
 
     /**
      * 自定义流体处理器 —— 实现 {@link IFluidHandler}，
@@ -188,16 +180,34 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     /** 配置文件中此机器的 section key（如 "primitive_farm"） */
     protected abstract String getMachineConfigKey();
 
-    /** 每个人口槽位每次工作消耗的食物量（Tier 0 = 8） */
-    protected abstract int getFoodPerPopulation();
+    /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
+    protected int getFoodPerPopulation() {
+        return PopulationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
+    }
 
     // ==================== 可覆写方法（有默认值） ====================
 
-    /** 健康度波动下限 */
-    protected int getHealthFluctuateMin() { return -5; }
+    /** 农场工作要求的职业名称 */
+    @Override
+    protected String getWorkerCareer() { return "farmer"; }
 
-    /** 健康度波动上限 */
-    protected int getHealthFluctuateMax() { return -1; }
+    /** 每次工作周期给学徒的经验量，优先从配置读取 */
+    @Override
+    protected int getApprenticeExpPerCycle() {
+        return PopulationMachineConfig.getApprenticeExpPerCycle(getMachineConfigKey(), 1);
+    }
+
+    /** 健康度波动下限，优先从配置读取 */
+    @Override
+    protected int getHealthFluctuateMin() {
+        return PopulationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -5);
+    }
+
+    /** 健康度波动上限，优先从配置读取 */
+    @Override
+    protected int getHealthFluctuateMax() {
+        return PopulationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), -1);
+    }
 
     // ==================== 公开存取器 ====================
 
@@ -291,53 +301,8 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
         return slot >= 0 && slot <= 5;
     }
 
-    /**
-     * 获取可用于农场工作的人口列表。
-     *
-     * <p>在父类年龄/存活筛选基础上，追加职业限制：
-     * 仅 {@code "farmer"} 及其派生职业（未来通过
-     * {@link Career#setParentCareerName(String)} 声明）可参与工作。
-     *
-     * @return 符合农民职业要求的可用人口列表
-     */
-    @Override
-    protected List<ItemStack> getAvailableWorkers() {
-        return filterAvailable(super.getAvailableWorkers(), stack ->
-                Career.isKindOf(PopulationNBT.getCareer(stack), FARMER_CAREER));
-    }
-
-    @Override
-    public boolean canWork() {
-        return super.canWork() && hasEnoughFood(getFoodPerPopulation());
-    }
-
-    /**
-     * 失业人口职业经验处理。
-     *
-     * <p>当农场可以正常工作（已有农民职业人口）时，
-     * 对机械内所有失业（"unemployed"）人口累加<b>农民</b>职业经验
-     * （通过 {@link #addCareerExperience(ItemStack, String, int)}）。
-     *
-     * <p>各职业经验独立存储——失业人口可能已有 7 点农民经验和 3 点牧师经验，
-     * 在农场中只累加农民经验，互不干扰。
-     *
-     * <p>经验达到 {@link #CAREER_EXP_TO_BECOME_FARMER} 后自动转职为农民，
-     * 经验清零，并立即参与当前工作周期的效率计算。
-     */
-    private void processUnemployedCareerExp() {
-        for (int slot : populationSlots()) {
-            ItemStack stack = getItem(slot);
-            if (!canGainCareerExperience(stack)) continue;
-
-            // 累加农民职业经验（各职业独立存储）
-            int newExp = this.addCareerExperience(stack, FARMER_CAREER, 1);
-            if (newExp >= CAREER_EXP_TO_BECOME_FARMER) {
-                // 转职为农民，清零该职业经验
-                PopulationNBT.setCareer(stack, FARMER_CAREER);
-                this.setCareerExperience(stack, FARMER_CAREER, 0);
-            }
-        }
-    }
+    // canWork 继承 AbstractRangeMachineBlockEntity（bind + 有可用农民）
+    // 食物检查已移除 —— consumeFoodWithFallback 自动处理食物不足回退
 
     // ==================== IClientUpdateReceiver ====================
 
@@ -385,17 +350,17 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
         BlockPos pos = this.getBlockPos();
 
         if (level instanceof ServerLevel serverLevel && this.canWork()) {
-            // 失业人口职业经验处理（放在效率计算前，让新转职农民立即参与）
-            processUnemployedCareerExp();
+            // 学徒系统：调用 IPopulationItem.addApprenticeExp 处理晋级
+            addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
             // 计算农民总工作效率
-            double totalWorkEfficiency = 0;
-            for (ItemStack worker : this.getAvailableWorkers()) {
-                totalWorkEfficiency += PopulationNBT.getWorkEfficiency(worker);
-            }
+            double totalWorkEfficiency = calculateTotalWorkEfficiency(this.getAvailableWorkers());
 
             // 消耗食物并获取食物因子
-            float foodFactor = consumeFoodForFarm();
+            float foodFactor = consumeFoodWithFallback(
+                    getFoodPerPopulation(),
+                    total -> Math.sqrt(total),
+                    getAvailableWorkers().size());
             float efficiency = foodFactor * (float) totalWorkEfficiency;
 
             // 根据效率计算可催熟作物数（至少 1）
@@ -448,57 +413,6 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
         // 重置工作进度，标记变更
         this.workProgress = 0;
         setChanged(level, pos, level.getBlockState(pos));
-    }
-
-    // ==================== 食物消耗 ====================
-
-    /**
-     * 农场专用的食物消耗逻辑。
-     *
-     * <p>规则与牧场相同：
-     * <ul>
-     *   <li>每个已放入人口物品的槽位消耗指定量的食物</li>
-     *   <li>只有符合工作要求的人口消耗的食物才计入食物因子</li>
-     * </ul>
-     *
-     * @return 食物因子（仅由符合要求的人口消耗的食物决定）
-     */
-    private float consumeFoodForFarm() {
-        int totalPopSlots = (int) populationSlots().stream()
-                .filter(slot -> !getItem(slot).isEmpty()).count();
-        int eligibleCount = getAvailableWorkers().size();
-
-        int totalNeeded = totalPopSlots * getFoodPerPopulation();
-        int eligibleNeeded = eligibleCount * getFoodPerPopulation();
-
-        int remaining = totalNeeded;
-        int eligibleRemaining = eligibleNeeded;
-        float totalNutrition = 0;
-        float totalSaturation = 0;
-
-        for (int i = 0; i < getContainerSize() && remaining > 0; i++) {
-            if (!isFoodSlot(i)) continue;
-            ItemStack stack = getItem(i);
-            if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
-
-            FoodProperties food = stack.getFoodProperties(null);
-            float nutrition = food != null ? food.nutrition() : 0;
-            float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
-
-            int toRemove = Math.min(stack.getCount(), remaining);
-            stack.shrink(toRemove);
-            remaining -= toRemove;
-
-            int eligiblePortion = Math.min(toRemove, eligibleRemaining);
-            if (eligiblePortion > 0) {
-                totalNutrition += nutrition * eligiblePortion;
-                totalSaturation += saturation * eligiblePortion;
-                eligibleRemaining -= eligiblePortion;
-            }
-        }
-
-        double factor = Math.sqrt(totalNutrition + totalSaturation);
-        return (float) (Math.round(factor * 1000.0) / 1000.0);
     }
 
     // ==================== NBT 持久化 ====================

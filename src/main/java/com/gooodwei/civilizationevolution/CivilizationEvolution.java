@@ -12,6 +12,7 @@ import com.gooodwei.civilizationevolution.api.PreviewBlockInfo;
 import com.gooodwei.civilizationevolution.network.StructurePreviewPayload;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.config.CareerConfig;
 import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
@@ -123,7 +124,12 @@ public class CivilizationEvolution {
         new ShepherdCareer();
         new ToolsmithCareer();
         new WeaponsmithCareer();
+        new MinerCareer();
         LOGGER.info("Registered {} careers", CivilizationAPI.getCareerRegistry().allCareers().size());
+
+        // 加载职业树配置并应用（必须在所有 Career 构造完成后调用）
+        CareerConfig.init();
+        CareerConfig.applyToCareers();
     }
 
     /** 模组通用初始化（逻辑端通用的设置） */
@@ -147,7 +153,28 @@ public class CivilizationEvolution {
                 BlockEntityRegistry.PRIMITIVE_FARM.get(),
                 (be, direction) -> be.getFluidHandler()
         );
-        LOGGER.info("已注册原始农场流体能力（Capabilities.FluidHandler.BLOCK）");
+        // 为四个流体仓室注册流体能力
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_FLUID_INPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        LOGGER.info("已注册原始农场和流体仓室流体能力（Capabilities.FluidHandler.BLOCK）");
     }
 
     /** 服务器启动中事件：日志输出 */
@@ -165,10 +192,11 @@ public class CivilizationEvolution {
         CoreDataManager.init(worldPath);
     }
 
-    /** 服务器停止事件：保存所有核心数据到磁盘 */
+    /** 服务器停止事件：保存所有核心数据到磁盘，关闭验证线程池 */
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
         CoreDataManager.saveAll();
+        com.gooodwei.civilizationevolution.server.validation.StructureValidationService.shutdown();
     }
 
     /**
@@ -220,16 +248,16 @@ public class CivilizationEvolution {
             return;
         }
 
-        // 手持控制器对应物品 + Shift+右键 → 切换多方块结构预览
+        // 手持木棍 + Shift+右键多方块控制器 → 切换多方块结构预览
         if (event.getEntity().isShiftKeyDown()
-                && event.getItemStack().getItem() == event.getLevel().getBlockState(event.getPos()).getBlock().asItem()) {
+                && event.getItemStack().is(net.minecraft.world.item.Items.STICK)) {
             handlePreviewToggle(event);
             return;
         }
     }
 
     /**
-     * 处理手持控制器物品 Shift+右键多方块控制器：切换结构预览。
+     * 处理手持木棍 Shift+右键多方块控制器：切换结构预览。
      *
      * <p>通用性检查（类型 + 结构成型状态）在双端都执行，
      * 确保客户端侧也能阻止 GUI 打开（各子类可能重写了 {@code useItemOn}）。

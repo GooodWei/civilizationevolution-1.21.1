@@ -29,6 +29,12 @@ public class ModTags {
             ResourceLocation.fromNamespaceAndPath("civilizationevolution", "primitive_ranch_conflicts")
     );
 
+    /** 镐子标签：包含 #minecraft:pickaxes，用于采石场镐槽过滤 */
+    public static final TagKey<Item> PICKAXES = TagKey.create(
+            Registries.ITEM,
+            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "pickaxes")
+    );
+
     /** 农场冲突检测标签：扫描范围内命中此标签的方块视为冲突，防止两个农场并发操作同一作物 */
     public static final TagKey<Block> FARM_CONFLICTS = TagKey.create(
             Registries.BLOCK,

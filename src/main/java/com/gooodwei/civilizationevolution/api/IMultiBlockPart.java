@@ -27,6 +27,12 @@ public interface IMultiBlockPart {
     String TYPE_OUTPUT_HATCH = "output_hatch";
     /** 食物输入接口 */
     String TYPE_FOOD_HATCH = "food_hatch";
+    /** 通用流体接口（向后兼容） */
+    String TYPE_FLUID_HATCH = "fluid_hatch";
+    /** 流体输入接口 */
+    String TYPE_FLUID_INPUT_HATCH = "fluid_input_hatch";
+    /** 流体输出接口 */
+    String TYPE_FLUID_OUTPUT_HATCH = "fluid_output_hatch";
 
     // ==================== 抽象/默认方法 ====================
 
