@@ -7,12 +7,15 @@ import com.gooodwei.civilizationevolution.client.screen.hatch.ItemInputHatchScre
 import com.gooodwei.civilizationevolution.client.screen.hatch.ItemOutputHatchScreen;
 import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitiveFoodInputHatchScreen;
 import com.gooodwei.civilizationevolution.client.screen.hatch.VillageFoodInputHatchScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.VillageItemInputHatchScreen;
+import com.gooodwei.civilizationevolution.client.screen.hatch.VillageItemOutputHatchScreen;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveHuntingGroundScreen;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveCampScreen;
 import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitivePopulationInputHatchScreen;
 import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitivePopulationOutputHatchScreen;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveRanchScreen;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveControllerScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.VillageControllerScreen;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.neoforged.api.distmarker.Dist;
@@ -38,6 +41,7 @@ public class ScreenRegistry {
         event.register(MenuRegistry.PRIMITIVE_RANCH_MENU.get(), PrimitiveRanchScreen::new);
         event.register(MenuRegistry.PRIMITIVE_FARM_MENU.get(), PrimitiveFarmScreen::new);
         event.register(MenuRegistry.PRIMITIVE_CONTROLLER_MENU.get(), PrimitiveControllerScreen::new);
+        event.register(MenuRegistry.VILLAGE_CONTROLLER_MENU.get(), VillageControllerScreen::new);
         event.register(MenuRegistry.PRIMITIVE_DOCTOR_CABIN_MENU.get(), PrimitiveDoctorCabinScreen::new);
         event.register(MenuRegistry.PRIMITIVE_POPULATION_INPUT_HATCH_MENU.get(),
                 PrimitivePopulationInputHatchScreen::new);
@@ -49,6 +53,8 @@ public class ScreenRegistry {
                 PrimitivePopulationOutputHatchScreen::new);
         event.register(MenuRegistry.ITEM_INPUT_HATCH_MENU.get(), ItemInputHatchScreen::new);
         event.register(MenuRegistry.ITEM_OUTPUT_HATCH_MENU.get(), ItemOutputHatchScreen::new);
+        event.register(MenuRegistry.VILLAGE_ITEM_INPUT_HATCH_MENU.get(), VillageItemInputHatchScreen::new);
+        event.register(MenuRegistry.VILLAGE_ITEM_OUTPUT_HATCH_MENU.get(), VillageItemOutputHatchScreen::new);
         event.register(MenuRegistry.VILLAGE_QUARRY_MENU.get(), VillageQuarryScreen::new);
     }
 }

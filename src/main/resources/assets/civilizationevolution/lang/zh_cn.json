@@ -5,6 +5,7 @@
   "item.civilizationevolution.recruiter": "招募者",
   "item.civilizationevolution.connector": "连接器",
   "tooltip.civilizationevolution.connector.bound_uuid": "已绑定核心 UUID: %s",
+  "item.civilizationevolution.projector": "多方块结构投影仪",
   "item.civilizationevolution.civilization_core": "文明核心",
   "item.civilizationevolution.civilization_core.uuid": "UUID: %s",
   "item.civilizationevolution.civilization_core.empty": "§7未初始化",

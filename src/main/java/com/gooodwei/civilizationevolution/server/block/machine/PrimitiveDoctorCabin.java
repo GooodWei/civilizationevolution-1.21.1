@@ -81,9 +81,10 @@ public class PrimitiveDoctorCabin extends AbstractMachineBlock {
         // 客户端不处理
         if (level.isClientSide()) return ItemInteractionResult.SUCCESS;
 
-        // 检查手持特殊物品（连接器/提取器）-> 跳过 GUI
+        // 检查手持特殊物品（连接器/提取器/投影仪）-> 跳过 GUI
         if (stack.getItem() instanceof com.gooodwei.civilizationevolution.server.item.ConnectorItem ||
                 (stack.getItem() instanceof com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem && player.isShiftKeyDown()) ||
+                stack.getItem() instanceof com.gooodwei.civilizationevolution.server.item.ProjectorItem ||
                 player.isShiftKeyDown()) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }

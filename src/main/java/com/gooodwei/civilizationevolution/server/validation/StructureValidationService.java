@@ -189,9 +189,22 @@ public final class StructureValidationService {
                     IMultiBlockMachine.KeyDefinition kd = pattern.keyDefs().get(c);
                     if (kd == null) continue;
 
-                    // 仅收集零件类型（方块/Tag 类型由后台线程读 BlockState）
-                    if (isBlockOrTagType(kd.type())) continue;
-                    if ("self".equals(kd.type())) continue;
+                    // 检查 primary key 或其 alternatives 是否需要收集零件快照
+                    boolean needsPartSnapshot = !isBlockOrTagType(kd.type())
+                            && !"self".equals(kd.type());
+                    if (!needsPartSnapshot) {
+                        // primary 是方块/Tag/self 类型，但 alternatives 可能引用零件类型
+                        for (char alt : kd.alternatives()) {
+                            IMultiBlockMachine.KeyDefinition altDef = pattern.keyDefs().get(alt);
+                            if (altDef != null
+                                    && !isBlockOrTagType(altDef.type())
+                                    && !"self".equals(altDef.type())) {
+                                needsPartSnapshot = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!needsPartSnapshot) continue;
 
                     BlockPos worldPos = worldPosFromLocal(
                             x - pattern.controllerX(),

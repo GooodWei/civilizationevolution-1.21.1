@@ -8,12 +8,15 @@ import com.gooodwei.civilizationevolution.server.menu.hatch.ItemInputHatchMenu;
 import com.gooodwei.civilizationevolution.server.menu.hatch.ItemOutputHatchMenu;
 import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitiveFoodInputHatchMenu;
 import com.gooodwei.civilizationevolution.server.menu.hatch.VillageFoodInputHatchMenu;
+import com.gooodwei.civilizationevolution.server.menu.hatch.VillageItemInputHatchMenu;
+import com.gooodwei.civilizationevolution.server.menu.hatch.VillageItemOutputHatchMenu;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveHuntingGroundMenu;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveCampMenu;
 import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitivePopulationInputHatchMenu;
 import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitivePopulationOutputHatchMenu;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveRanchMenu;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveControllerMenu;
+import com.gooodwei.civilizationevolution.server.menu.machine.VillageControllerMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -48,6 +51,10 @@ public class MenuRegistry {
     public static final Supplier<MenuType<PrimitiveControllerMenu>> PRIMITIVE_CONTROLLER_MENU =
             MENUS.register("primitive_controller", () -> IMenuTypeExtension.create(PrimitiveControllerMenu::fromNetwork));
 
+    /** 村庄控制器菜单类型（Tier 1） */
+    public static final Supplier<MenuType<VillageControllerMenu>> VILLAGE_CONTROLLER_MENU =
+            MENUS.register("village_controller", () -> IMenuTypeExtension.create(VillageControllerMenu::fromNetwork));
+
     /** 原始农场菜单类型（Tier 0） */
     public static final Supplier<MenuType<PrimitiveFarmMenu>> PRIMITIVE_FARM_MENU =
             MENUS.register("primitive_farm", () -> IMenuTypeExtension.create(PrimitiveFarmMenu::fromNetwork));
@@ -76,15 +83,25 @@ public class MenuRegistry {
             MENUS.register("primitive_population_output_hatch",
                     () -> IMenuTypeExtension.create(PrimitivePopulationOutputHatchMenu::fromNetwork));
 
-    /** 物品输入接口菜单类型（Primitive + Village 共用） */
+    /** 物品输入接口菜单类型（Primitive + Village 共用，1 槽） */
     public static final Supplier<MenuType<ItemInputHatchMenu>> ITEM_INPUT_HATCH_MENU =
             MENUS.register("item_input_hatch",
                     () -> IMenuTypeExtension.create(ItemInputHatchMenu::fromNetwork));
 
-    /** 物品输出接口菜单类型（Primitive + Village 共用） */
+    /** 物品输出接口菜单类型（Primitive + Village 共用，1 槽） */
     public static final Supplier<MenuType<ItemOutputHatchMenu>> ITEM_OUTPUT_HATCH_MENU =
             MENUS.register("item_output_hatch",
                     () -> IMenuTypeExtension.create(ItemOutputHatchMenu::fromNetwork));
+
+    /** 村庄物品输入接口菜单类型（Tier 1，27 槽潜影盒布局） */
+    public static final Supplier<MenuType<VillageItemInputHatchMenu>> VILLAGE_ITEM_INPUT_HATCH_MENU =
+            MENUS.register("village_item_input_hatch",
+                    () -> IMenuTypeExtension.create(VillageItemInputHatchMenu::fromNetwork));
+
+    /** 村庄物品输出接口菜单类型（Tier 1，27 槽潜影盒布局） */
+    public static final Supplier<MenuType<VillageItemOutputHatchMenu>> VILLAGE_ITEM_OUTPUT_HATCH_MENU =
+            MENUS.register("village_item_output_hatch",
+                    () -> IMenuTypeExtension.create(VillageItemOutputHatchMenu::fromNetwork));
 
     /** 村庄采石场菜单类型（Tier 1） */
     public static final Supplier<MenuType<VillageQuarryMenu>> VILLAGE_QUARRY_MENU =

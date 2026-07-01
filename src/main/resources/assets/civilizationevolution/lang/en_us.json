@@ -5,6 +5,7 @@
   "item.civilizationevolution.recruiter": "Recruiter",
   "item.civilizationevolution.connector": "Connector",
   "tooltip.civilizationevolution.connector.bound_uuid": "Bound Core UUID: %s",
+  "item.civilizationevolution.projector": "Multi-Block Structure Projector",
   "item.civilizationevolution.civilization_core": "Civilization Core",
   "item.civilizationevolution.civilization_core.uuid": "UUID: %s",
   "item.civilizationevolution.civilization_core.empty": "§7Not initialized",

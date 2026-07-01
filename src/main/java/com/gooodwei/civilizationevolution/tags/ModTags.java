@@ -41,6 +41,12 @@ public class ModTags {
             ResourceLocation.fromNamespaceAndPath("civilizationevolution", "farm_conflicts")
     );
 
+    /** 采石场可挖掘方块白名单：只有此标签内的方块才会被列入采掘列表 */
+    public static final TagKey<Block> QUARRY_MINEABLE = TagKey.create(
+            Registries.BLOCK,
+            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "quarry_mineable")
+    );
+
     private ModTags() {
         // 工具类，禁止实例化
     }

@@ -164,9 +164,9 @@ public final class CareerConfig {
                   apprentice_exp_threshold: 8
 
                 miner:
-                  parent: unemployed
-                  tier: 1
-                  apprentice_exp_threshold: 8
+                  parent: mason
+                  tier: 2
+                  apprentice_exp_threshold: 12
 
                 shepherd:
                   parent: unemployed

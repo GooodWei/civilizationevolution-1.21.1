@@ -6,6 +6,7 @@ import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
+import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
 import com.gooodwei.civilizationevolution.server.item.Recruiter;
 import com.gooodwei.civilizationevolution.server.registry.TieredBlockItem;
 import net.minecraft.world.item.BlockItem;
@@ -105,6 +106,11 @@ public class ItemRegistry {
     public static final DeferredItem<DebugStructureGetterItem> DEBUG_STRUCTURE_GETTER =
             ITEMS.registerItem("debug_structure_getter",
                     properties -> new DebugStructureGetterItem(properties.stacksTo(1)));
+
+    /** 多方块结构投影仪 —— 右键多方块机器核心切换结构预览渲染，最大堆叠 1 */
+    public static final DeferredItem<ProjectorItem> PROJECTOR =
+            ITEMS.registerItem("projector",
+                    properties -> new ProjectorItem(properties.stacksTo(1)));
 
     /** 原始诊所方块物品（Tier 0：原始时代） */
     public static final DeferredItem<BlockItem> PRIMITIVE_DOCTOR_CABIN =

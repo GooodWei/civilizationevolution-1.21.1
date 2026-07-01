@@ -2,23 +2,26 @@ package com.gooodwei.civilizationevolution.server.blockentity.hatch;
 
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.menu.hatch.ItemInputHatchMenu;
+import com.gooodwei.civilizationevolution.server.menu.hatch.VillageItemInputHatchMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * 村庄物品输入接口 —— Tier 1。
  *
- * <p>1 个槽位，接受任意物品。
+ * <p>27 个槽位（3×9 潜影盒布局），接受任意物品，堆叠上限 64。
  */
-public class VillageItemInputHatchBlockEntity extends AbstractItemInputHatchBlockEntity {
+public class VillageItemInputHatchBlockEntity extends AbstractHatchBlockEntity {
+
+    public static final int SIZE = 27;
 
     public VillageItemInputHatchBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(type, pos, state);
+        super(type, pos, state, SIZE);
     }
 
     @Override
@@ -27,7 +30,27 @@ public class VillageItemInputHatchBlockEntity extends AbstractItemInputHatchBloc
     }
 
     @Override
+    public int getMaxStackSize() {
+        return 64;
+    }
+
+    @Override
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public String getPartType() {
+        return TYPE_INPUT_HATCH;
+    }
+
+    @Override
+    protected String getContainerName() {
+        return "container.civilizationevolution.village_item_input_hatch";
+    }
+
+    @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        return new ItemInputHatchMenu(containerId, inventory, this);
+        return new VillageItemInputHatchMenu(containerId, inventory, this);
     }
 }

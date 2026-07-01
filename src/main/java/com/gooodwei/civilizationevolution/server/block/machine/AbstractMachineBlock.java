@@ -5,6 +5,7 @@ import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -168,6 +169,10 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
         }
         // 结构调试获取器 → 跳过方块 GUI，由物品记录坐标
         if (stack.getItem() instanceof DebugStructureGetterItem) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        // 多方块结构投影仪 → 跳过方块 GUI，由事件处理器切换预览渲染
+        if (stack.getItem() instanceof ProjectorItem) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         // 文明核心提取器 Shift+右键 → 跳过方块 GUI，交给提取器处理

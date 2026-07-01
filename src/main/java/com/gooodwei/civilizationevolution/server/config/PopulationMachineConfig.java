@@ -337,14 +337,14 @@ public final class PopulationMachineConfig {
                   # 每次工作消耗的水量（mB）
                   fluid_water_per_cycle: 100
                   # 每个人口每次工作消耗的食物份数
-                  food_per_population: 8
+                  food_per_population: 1
                   # 效率→每周期破坏方块数的乘数（效率 × 此值 = 每周期方块数）
                   blocks_per_cycle_multiplier: 2
                   # 学徒累积多少经验后转职为矿工
                   career_exp_threshold: 8
                   # 每次工作后人口健康度的随机波动范围（负数 = 下降）
-                  health_fluctuate_min: -5
-                  health_fluctuate_max: -1
+                  health_fluctuate_min: -1
+                  health_fluctuate_max: 0
                   # 每次工作周期给学徒的经验量
                   apprentice_exp_per_cycle: 1
                   # 水平挖掘范围边长（如 16 = 16×16 即 1 个区块）

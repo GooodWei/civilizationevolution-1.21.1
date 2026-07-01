@@ -12,6 +12,7 @@ import com.gooodwei.civilizationevolution.api.PreviewBlockInfo;
 import com.gooodwei.civilizationevolution.network.StructurePreviewPayload;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
 import com.gooodwei.civilizationevolution.server.config.CareerConfig;
 import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
@@ -248,9 +249,8 @@ public class CivilizationEvolution {
             return;
         }
 
-        // 手持木棍 + Shift+右键多方块控制器 → 切换多方块结构预览
-        if (event.getEntity().isShiftKeyDown()
-                && event.getItemStack().is(net.minecraft.world.item.Items.STICK)) {
+        // 手持多方块结构投影仪右键多方块机器核心 → 切换结构预览渲染
+        if (event.getItemStack().getItem() instanceof ProjectorItem) {
             handlePreviewToggle(event);
             return;
         }

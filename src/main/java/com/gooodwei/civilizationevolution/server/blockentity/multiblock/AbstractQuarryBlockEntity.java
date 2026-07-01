@@ -6,7 +6,7 @@ import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.block.part.MiningShaftPipe;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFluidHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFoodInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractItemOutputHatchBlockEntity;
+import net.minecraft.world.Container;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import com.gooodwei.civilizationevolution.server.registry.BlockRegistry;
@@ -67,6 +67,8 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
     protected final List<BlockPos> pendingBlocks = new ArrayList<>();
     /** pendingBlocks 对应的 Y 层 */
     protected int pendingY = Integer.MIN_VALUE;
+    /** 管道无法延伸时标记为 true，需玩家手动破坏障碍物并重新放置机器核心方块才能重置 */
+    protected boolean workCompleted = false;
     /** 客户端同步数据（3 字段：workProgress, workTotalTime, minKeepNumber） */
     protected final ContainerData data;
 
@@ -86,8 +88,8 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
     // ==================== 可覆写方法 ====================
 
-    /** 采石场要求的职业名称（默认 "miner"） */
-    protected String getWorkerCareer() { return "miner"; }
+    /** 采石场要求的职业名称（默认 "mason"，石匠及其子职业矿工均可工作） */
+    protected String getWorkerCareer() { return "mason"; }
 
     /** 每次工作周期给学徒的经验量，优先从配置读取 */
     protected int getApprenticeExpPerCycle() {
@@ -106,7 +108,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(getConfigKey(), 8);
+        return PopulationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
     }
 
     /**
@@ -127,12 +129,12 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
     /** 健康度波动下限，优先从配置读取 */
     protected int getHealthFluctuateMin() {
-        return PopulationMachineConfig.getHealthFluctuateMin(getConfigKey(), -5);
+        return PopulationMachineConfig.getHealthFluctuateMin(getConfigKey(), -1);
     }
 
     /** 健康度波动上限，优先从配置读取 */
     protected int getHealthFluctuateMax() {
-        return PopulationMachineConfig.getHealthFluctuateMax(getConfigKey(), -1);
+        return PopulationMachineConfig.getHealthFluctuateMax(getConfigKey(), 0);
     }
 
     // ==================== 管道位置 ====================
@@ -295,6 +297,58 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
         return (float) (Math.round(factor * 1000.0) / 1000.0);
     }
 
+    /**
+     * 额外每人口消耗 1 个食物，将食物营养值直接加到人口的饱食度上。
+     *
+     * <p>与 {@link #consumeFoodFromHatches} 独立——后者用于计算效率因子，
+     * 本方法直接提升人口 NBT 中的 food 值。
+     *
+     * @param level   服务端世界
+     * @param workers 可用工作人口列表
+     */
+    protected void feedWorkersDirectly(ServerLevel level, List<ItemStack> workers) {
+        if (workers.isEmpty()) return;
+
+        int needed = workers.size(); // 每人 1 份食物
+        List<BlockPos> foodHatches = getFoodHatches();
+        if (foodHatches.isEmpty()) return;
+
+        // 收集食物
+        record FoodItem(BlockPos pos, FoodProperties food) {}
+        List<FoodItem> available = new ArrayList<>();
+        for (BlockPos hatchPos : foodHatches) {
+            if (available.size() >= needed) break;
+            if (!(level.getBlockEntity(hatchPos) instanceof AbstractFoodInputHatchBlockEntity hatch)) continue;
+            ItemStack stack = hatch.getItem(0);
+            if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
+            int take = Math.min(stack.getCount(), needed - available.size());
+            for (int i = 0; i < take; i++) {
+                available.add(new FoodItem(hatchPos, stack.get(DataComponents.FOOD)));
+            }
+        }
+
+        if (available.isEmpty()) return;
+
+        // 每人消耗 1 份食物，累加饱食度
+        for (int i = 0; i < workers.size() && i < available.size(); i++) {
+            ItemStack workerStack = workers.get(i);
+            FoodItem foodItem = available.get(i);
+            FoodProperties food = foodItem.food();
+
+            if (food != null) {
+                int currentFood = PopulationNBT.getFood(workerStack);
+                int newFood = Math.min(100, currentFood + food.nutrition());
+                PopulationNBT.setFood(workerStack, newFood);
+            }
+
+            // 从食物输入仓扣除
+            if (level.getBlockEntity(foodItem.pos()) instanceof AbstractFoodInputHatchBlockEntity hatch) {
+                hatch.getItem(0).shrink(1);
+                hatch.setChanged();
+            }
+        }
+    }
+
     // ==================== 管道连贯性 ====================
 
     /**
@@ -366,8 +420,10 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
                 if (targetState.isAir()) continue;
                 if (!targetState.getFluidState().isEmpty()) continue;
                 if (targetState.getBlock() instanceof MiningShaftPipe) continue;
-                if (targetState.getDestroySpeed(level, targetPos) < 0) continue;
-                if (!pickaxe.isEmpty() && !pickaxe.isCorrectToolForDrops(targetState)) continue;
+                // 白名单过滤：仅挖掘采石场可挖掘标签内的方块（石头、泥土、沙砾等）
+                // 矿石、机器外壳等不在标签内的方块自动跳过
+                if (!targetState.is(com.gooodwei.civilizationevolution.tags.ModTags.QUARRY_MINEABLE))
+                    continue;
 
                 pendingBlocks.add(targetPos);
             }
@@ -399,8 +455,8 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
             if (targetState.isAir()) continue;
             if (!targetState.getFluidState().isEmpty()) continue;
             if (targetState.getBlock() instanceof MiningShaftPipe) continue;
-            if (targetState.getDestroySpeed(level, targetPos) < 0) continue;
-            if (!pickaxe.isEmpty() && !pickaxe.isCorrectToolForDrops(targetState)) continue;
+            if (!targetState.is(com.gooodwei.civilizationevolution.tags.ModTags.QUARRY_MINEABLE))
+                continue;
 
             List<ItemStack> drops = Block.getDrops(targetState, level, targetPos,
                     level.getBlockEntity(targetPos), null,
@@ -428,36 +484,42 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
     // ==================== 产物输出 ====================
 
     /**
-     * 将掉落物路由到物品输出接口，接口满则掉落在机器上方。
+     * 将掉落物路由到物品输出接口，遍历所有槽位（兼容 1 槽 Primitive 和 27 槽 Village）。
+     * 接口满则掉落在机器上方。
      */
     protected void outputToHatches(ServerLevel level, List<ItemStack> drops) {
         for (ItemStack drop : drops) {
             ItemStack remaining = drop.copy();
 
-            // 尝试合并到已有同类物品的输出仓
+            // 第一遍：合并到已有同类物品的槽位（遍历所有槽位）
             for (BlockPos hatchPos : getOutputHatches()) {
                 if (remaining.isEmpty()) break;
-                if (!(level.getBlockEntity(hatchPos) instanceof AbstractItemOutputHatchBlockEntity hatch)) continue;
-                ItemStack slotStack = hatch.getItem(0);
-                if (ItemStack.isSameItemSameComponents(slotStack, remaining)) {
-                    int space = slotStack.getMaxStackSize() - slotStack.getCount();
-                    int toMove = Math.min(space, remaining.getCount());
-                    if (toMove > 0) {
-                        slotStack.grow(toMove);
-                        remaining.shrink(toMove);
-                        hatch.setChanged();
+                if (!(level.getBlockEntity(hatchPos) instanceof Container container)) continue;
+                for (int slot = 0; slot < container.getContainerSize() && !remaining.isEmpty(); slot++) {
+                    ItemStack slotStack = container.getItem(slot);
+                    if (ItemStack.isSameItemSameComponents(slotStack, remaining)) {
+                        int space = slotStack.getMaxStackSize() - slotStack.getCount();
+                        int toMove = Math.min(space, remaining.getCount());
+                        if (toMove > 0) {
+                            slotStack.grow(toMove);
+                            remaining.shrink(toMove);
+                            container.setChanged();
+                        }
                     }
                 }
             }
 
-            // 尝试放入空输出仓
+            // 第二遍：放入空槽位
             for (BlockPos hatchPos : getOutputHatches()) {
                 if (remaining.isEmpty()) break;
-                if (!(level.getBlockEntity(hatchPos) instanceof AbstractItemOutputHatchBlockEntity hatch)) continue;
-                if (hatch.getItem(0).isEmpty()) {
-                    hatch.setItem(0, remaining.copy());
-                    hatch.setChanged();
-                    remaining.setCount(0);
+                if (!(level.getBlockEntity(hatchPos) instanceof Container container)) continue;
+                for (int slot = 0; slot < container.getContainerSize() && !remaining.isEmpty(); slot++) {
+                    if (container.getItem(slot).isEmpty()) {
+                        container.setItem(slot, remaining.copy());
+                        container.setChanged();
+                        remaining.setCount(0);
+                        break;
+                    }
                 }
             }
 
@@ -489,10 +551,14 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
         addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
         // 2. 计算工作效率
-        double totalWorkEfficiency = calculateTotalWorkEfficiency(getAvailableWorkers());
+        List<ItemStack> workers = getAvailableWorkers();
+        double totalWorkEfficiency = calculateTotalWorkEfficiency(workers);
         float foodFactor = consumeFoodFromHatches(serverLevel,
-                getFoodPerPopulation(), getAvailableWorkers().size());
+                getFoodPerPopulation(), workers.size());
         float efficiency = foodFactor * (float) totalWorkEfficiency;
+
+        // 2.5. 额外每人口消耗 1 食物直接补充人口饱食度
+        feedWorkersDirectly(serverLevel, workers);
 
         // 每周期最多破坏方块数 = floor(效率 × 乘数)，至少 1 块
         int blocksPerCycle = Math.max(1, (int) (efficiency * getBlocksPerCycleMultiplier()));
@@ -526,6 +592,9 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
             consumeFluids(serverLevel);
             level.setBlock(firstPipe, BlockRegistry.MINING_SHAFT_PIPE.get().defaultBlockState(), 3);
             minedY = firstPipe.getY();
+            // ★ 管道放置后立即在管道所在 Y 层建立待破坏方块列表
+            buildPendingBlocks(serverLevel, minedY);
+            pendingY = minedY;
             this.workProgress = 0;
             this.setChanged();
             return;
@@ -540,44 +609,80 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
             return;
         }
 
-        // 5. ★ 第一步：若上一层已清空，延长管道到已清空的 Y 层
+        // 5. ★ 待破坏列表为空 → 延伸管道到下一层并建立新列表
         if (pendingBlocks.isEmpty()) {
-            // 刚清空的 Y 层需要补上管道（首次建管后 pendingY 为 MIN_VALUE，跳过）
-            if (pendingY != Integer.MIN_VALUE) {
-                if (!checkFluidInputs(serverLevel)) {
-                    this.workProgress = 0;
-                    this.setChanged();
-                    return;
-                }
-                consumeFluids(serverLevel);
-                BlockPos pipePos = new BlockPos(getFirstPipePos().getX(), pendingY,
-                        getFirstPipePos().getZ());
-                BlockState pipeState = level.getBlockState(pipePos);
-                if (pipeState.isAir() || pipeState.canBeReplaced()) {
-                    level.setBlock(pipePos,
-                            BlockRegistry.MINING_SHAFT_PIPE.get().defaultBlockState(), 3);
-                }
-                minedY = pendingY;
+            int extendToY;
+            if (pendingY == Integer.MIN_VALUE) {
+                // 首轮：列表建立在当前管道所在层（minedY），无需延伸管道
+                extendToY = minedY;
+            } else {
+                // 上层已清空，从最深管道处向下延伸一层
+                extendToY = minedY - 1;
             }
 
-            // 建立下一层的待挖掘方块列表
-            int targetY = minedY - 1;
-            if (targetY < level.getMinBuildHeight()) {
+            if (extendToY < level.getMinBuildHeight()) {
+                // 到达世界底部，标记工作完成
+                workCompleted = true;
                 this.workProgress = 0;
                 this.setChanged();
                 return;
             }
-            buildPendingBlocks(serverLevel, targetY);
 
-            // 若目标层全空（空气/流体/不可破坏），本次无活可干，等下一周期再尝试下降
-            if (pendingBlocks.isEmpty()) {
+            // ★ 检查管道延伸路径上的方块
+            BlockPos pipePos = new BlockPos(getFirstPipePos().getX(), extendToY,
+                    getFirstPipePos().getZ());
+            BlockState pipeState = level.getBlockState(pipePos);
+
+            boolean isAir = pipeState.isAir() || pipeState.canBeReplaced();
+            boolean isMineable = !isAir
+                    && pipeState.getDestroySpeed(level, pipePos) >= 0
+                    && pipeState.is(com.gooodwei.civilizationevolution.tags.ModTags.QUARRY_MINEABLE)
+                    && !(pipeState.getBlock() instanceof MiningShaftPipe);
+
+            if (!isAir && !isMineable) {
+                // 管道延伸路径被非白名单方块（黑曜石、机器外壳等）堵住，标记工作完成
+                // 玩家需手动破坏障碍物，然后重新放置机器核心方块才能从头开始工作
+                workCompleted = true;
                 this.workProgress = 0;
                 this.setChanged();
                 return;
             }
+
+            // 消耗流体并延伸管道
+            if (!checkFluidInputs(serverLevel)) {
+                this.workProgress = 0;
+                this.setChanged();
+                return;
+            }
+            consumeFluids(serverLevel);
+
+            // 如果延伸位置是白名单方块，先破坏它
+            if (isMineable) {
+                List<ItemStack> drops = Block.getDrops(pipeState, serverLevel, pipePos,
+                        level.getBlockEntity(pipePos), null,
+                        pickaxe.isEmpty() ? ItemStack.EMPTY : pickaxe);
+                if (!drops.isEmpty()) {
+                    outputToHatches(serverLevel, drops);
+                }
+                level.destroyBlock(pipePos, false);
+            }
+
+            // 放置管道
+            level.setBlock(pipePos,
+                    BlockRegistry.MINING_SHAFT_PIPE.get().defaultBlockState(), 3);
+            minedY = extendToY;
+
+            // 在新管道所在 Y 层建立待破坏方块列表
+            buildPendingBlocks(serverLevel, minedY);
+            pendingY = minedY;
+
+            // 延伸周期不采矿，下个周期开始破坏新列表中的方块
+            this.workProgress = 0;
+            this.setChanged();
+            return;
         }
 
-        // 6. 第二步：从待挖掘列表中破坏方块（不会在本周期内延长管道）
+        // 6. 从待破坏列表中破坏方块（所有方块均在管道的 minedY 层）
         minePendingBlocks(serverLevel, blocksPerCycle,
                 pickaxe.isEmpty() ? ItemStack.EMPTY : pickaxe, efficiency);
 
@@ -614,7 +719,8 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
     @Override
     public boolean canWork() {
-        return isStructureFormed() && isBound() && !getAvailableWorkers().isEmpty();
+        return isStructureFormed() && isBound() && !getAvailableWorkers().isEmpty()
+                && !workCompleted;
     }
 
     // ==================== serverTick ====================
@@ -700,6 +806,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
         super.saveAdditional(tag, registries);
         tag.putInt("MinKeepNumber", minKeepNumber);
         tag.putInt("MinedY", minedY);
+        tag.putBoolean("WorkCompleted", workCompleted);
         // 待挖掘列表持久化（防止中途卸载/重启丢失进度）
         if (!pendingBlocks.isEmpty()) {
             tag.putInt("PendingY", pendingY);
@@ -716,6 +823,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
         super.loadAdditional(tag, registries);
         minKeepNumber = tag.getInt("MinKeepNumber");
         minedY = tag.contains("MinedY") ? tag.getInt("MinedY") : -1;
+        workCompleted = tag.getBoolean("WorkCompleted");
         // 恢复待挖掘列表
         pendingBlocks.clear();
         if (tag.contains("PendingY")) {
