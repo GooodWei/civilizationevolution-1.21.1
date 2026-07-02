@@ -172,6 +172,12 @@ public class CivilizationEvolution {
                 BlockEntityRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get(),
                 (be, direction) -> be.getFluidHandler()
         );
+        // 为村庄收割机注册流体能力（所有方向均可输入水）
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_HARVESTER.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
         LOGGER.info("已注册原始农场和流体仓室流体能力（Capabilities.FluidHandler.BLOCK）");
     }
 

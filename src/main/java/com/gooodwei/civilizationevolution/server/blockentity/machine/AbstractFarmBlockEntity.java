@@ -276,14 +276,10 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     }
 
     @Override
-    public boolean isPopulationSlot(int slot) {
-        return slot >= 6 && slot <= 8;
-    }
+    public abstract boolean isPopulationSlot(int slot);
 
     @Override
-    public List<Integer> populationSlots() {
-        return List.of(6, 7, 8);
-    }
+    public abstract List<Integer> populationSlots();
 
     @Override
     public boolean isOutputSlot(int slot) {
@@ -291,9 +287,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     }
 
     @Override
-    public boolean isFoodSlot(int slot) {
-        return slot >= 0 && slot <= 5;
-    }
+    public abstract boolean isFoodSlot(int slot);
 
     // canWork 继承 AbstractRangeMachineBlockEntity（bind + 有可用农民）
     // 食物检查已移除 —— consumeFoodWithFallback 自动处理食物不足回退
@@ -353,7 +347,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
             // 消耗食物并获取食物因子
             float foodFactor = consumeFoodWithFallback(
                     getFoodPerPopulation(),
-                    total -> Math.sqrt(total),
+                    Math::sqrt,
                     getAvailableWorkers().size());
             float efficiency = foodFactor * (float) totalWorkEfficiency;
 

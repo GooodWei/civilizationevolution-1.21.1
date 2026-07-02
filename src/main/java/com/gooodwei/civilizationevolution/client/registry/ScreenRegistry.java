@@ -47,5 +47,6 @@ public class ScreenRegistry {
         event.register(MenuRegistry.VILLAGE_RANCH_MENU.get(), VillageRanchScreen::new);
         event.register(MenuRegistry.VILLAGE_FARM_MENU.get(), VillageFarmScreen::new);
         event.register(MenuRegistry.VILLAGE_DOCTOR_CABIN_MENU.get(), VillageDoctorCabinScreen::new);
+        event.register(MenuRegistry.VILLAGE_HARVESTER_MENU.get(), VillageHarvesterScreen::new);
     }
 }

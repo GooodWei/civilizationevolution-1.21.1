@@ -303,7 +303,7 @@ public final class PopulationMachineConfig {
                   # 每个人口每次工作消耗的食物份数
                   food_per_population: 8
                   # 每次催熟作物消耗的水量（mB），每桶 = 1000 mB
-                  water_per_crop: 250
+                  water_per_crop: 10
                   # 学徒累积多少经验后转职为农民
                   career_exp_threshold: 8
                   # 每次工作后人口健康度的随机波动范围（负数 = 下降）
@@ -416,8 +416,8 @@ public final class PopulationMachineConfig {
                   age_increment: 1
                   # 每个人口每次工作消耗的食物份数（原始 8 的两倍）
                   food_per_population: 8
-                  # 每次催熟作物消耗的水量（mB），每桶 = 1000 mB（原始 250 的两倍）
-                  water_per_crop: 500
+                  # 每催熟作物消耗的水量（mB），每桶 = 1000 mB
+                  water_per_crop: 10
                   # 学徒累积多少经验后转职为农民
                   career_exp_threshold: 8
                   # 每次工作后人口健康度的随机波动范围（原始的两倍）
@@ -452,6 +452,8 @@ public final class PopulationMachineConfig {
                   health_fluctuate_max: -1
                   # 每次工作周期给学徒的经验量
                   apprentice_exp_per_cycle: 2
+                  # 每作物消耗的水量（mB），每桶 = 1000 mB
+                  water_per_crop: 10
                 
                 village_controller:
                   # 最大可绑定机器数量

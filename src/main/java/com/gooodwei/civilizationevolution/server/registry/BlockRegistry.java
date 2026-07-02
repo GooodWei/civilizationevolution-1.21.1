@@ -193,6 +193,11 @@ public class BlockRegistry {
             () -> new VillageDoctorCabin(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
+    public static final DeferredBlock<VillageHarvester> VILLAGE_HARVESTER = BLOCKS.register(
+            "village_harvester",
+            () -> new VillageHarvester(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
     /**
      * 向事件总线注册所有方块。
      * @param bus 模组事件总线

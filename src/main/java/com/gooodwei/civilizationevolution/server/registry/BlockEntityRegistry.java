@@ -9,6 +9,7 @@ import com.gooodwei.civilizationevolution.server.blockentity.multiblock.Primitiv
 import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageDoctorCabinBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageQuarryBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -205,6 +206,10 @@ public class BlockEntityRegistry {
                                     BlockEntityRegistry.VILLAGE_DOCTOR_CABIN.get(), pos, state),
                             BlockRegistry.VILLAGE_DOCTOR_CABIN.get()).build(null));
 
+    public static final Supplier<BlockEntityType<VillageHarvesterBlockEntity>> VILLAGE_HARVESTER =
+            BLOCK_ENTITIES.register("village_harvester",
+                    () -> BlockEntityType.Builder.of(VillageHarvesterBlockEntity::new,
+                            BlockRegistry.VILLAGE_HARVESTER.get()).build(null));
     /**
      * 向事件总线注册所有 BlockEntity 类型。
      * @param bus 模组事件总线

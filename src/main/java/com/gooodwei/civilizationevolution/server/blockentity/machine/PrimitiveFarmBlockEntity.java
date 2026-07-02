@@ -13,6 +13,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.List;
+
 /**
  * 原始农场方块实体（Tier 0）。
  *
@@ -67,6 +69,21 @@ public class PrimitiveFarmBlockEntity extends AbstractFarmBlockEntity {
     @Override
     public String getWorkerCareer() {
         return CareerNames.FARMER;
+    }
+
+    @Override
+    public boolean isPopulationSlot(int slot) {
+        return slot >= 6 && slot <= 8;
+    }
+
+    @Override
+    public List<Integer> populationSlots() {
+        return List.of(6, 7, 8);
+    }
+
+    @Override
+    public boolean isFoodSlot(int slot) {
+        return slot >= 0 && slot <= 5;
     }
 
     @Override

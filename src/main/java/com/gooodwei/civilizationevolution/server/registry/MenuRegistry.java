@@ -113,6 +113,9 @@ public class MenuRegistry {
     public static final Supplier<MenuType<VillageDoctorCabinMenu>> VILLAGE_DOCTOR_CABIN_MENU =
             MENUS.register("village_doctor_cabin", () -> IMenuTypeExtension.create(VillageDoctorCabinMenu::fromNetwork));
 
+    public static final  Supplier<MenuType<VillageHarvesterMenu>> VILLAGE_HARVESTER_MENU =
+            MENUS.register("village_harvester",() -> IMenuTypeExtension.create(VillageHarvesterMenu::fromNetwork));
+
     /**
      * 向事件总线注册所有 Menu 类型。
      * @param bus 模组事件总线
