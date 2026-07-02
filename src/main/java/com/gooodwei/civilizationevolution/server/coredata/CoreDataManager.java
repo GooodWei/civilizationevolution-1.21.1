@@ -1,7 +1,6 @@
 package com.gooodwei.civilizationevolution.server.coredata;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -31,17 +31,13 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 多方块结构预览渲染器。
  *
  * <p>概念借鉴 StructureLib 的两遍渲染（depth ON → depth OFF），
- * 使用原版 {@link net.minecraft.client.renderer.block.BlockRenderer#renderSingleBlock}
+ * 使用原版
  * 渲染带有实际方块纹理的半透明模型。
  *
  * <p>着色规则（通过 {@code RenderSystem.setShaderColor} 染色）：

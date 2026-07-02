@@ -2,13 +2,13 @@ package com.gooodwei.civilizationevolution.network;
 
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.client.ClientPayloadHandler;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 

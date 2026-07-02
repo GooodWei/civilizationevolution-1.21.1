@@ -1,9 +1,8 @@
 package com.gooodwei.civilizationevolution.server.block.controller;
-import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
-
 
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
+import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.mojang.serialization.MapCodec;

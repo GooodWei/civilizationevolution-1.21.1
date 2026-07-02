@@ -1,9 +1,8 @@
 package com.gooodwei.civilizationevolution.server.item;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.api.component.ConnectorTarget;
-import com.gooodwei.civilizationevolution.api.IPMController;
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
+import com.gooodwei.civilizationevolution.api.component.ConnectorTarget;
 import com.gooodwei.civilizationevolution.api.component.ModDataComponents;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;

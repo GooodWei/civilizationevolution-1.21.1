@@ -2,8 +2,9 @@ package com.gooodwei.civilizationevolution.server.config;
 
 import net.neoforged.fml.loading.FMLPaths;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * 人口默认属性配置，从 {@code population.yml} 加载。

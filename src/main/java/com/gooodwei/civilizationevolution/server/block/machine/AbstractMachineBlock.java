@@ -1,7 +1,7 @@
 package com.gooodwei.civilizationevolution.server.block.machine;
 
-import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;

@@ -19,7 +19,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * 村庄控制器 GUI 界面。
