@@ -1,22 +1,8 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveFarmMenu;
-import com.gooodwei.civilizationevolution.server.menu.machine.VillageQuarryMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.ItemInputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.ItemOutputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitiveFoodInputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.VillageFoodInputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.VillageItemInputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.VillageItemOutputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveHuntingGroundMenu;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveCampMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitivePopulationInputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitivePopulationOutputHatchMenu;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveRanchMenu;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveControllerMenu;
-import com.gooodwei.civilizationevolution.server.menu.machine.VillageControllerMenu;
+import com.gooodwei.civilizationevolution.server.menu.hatch.*;
+import com.gooodwei.civilizationevolution.server.menu.machine.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -106,6 +92,26 @@ public class MenuRegistry {
     /** 村庄采石场菜单类型（Tier 1） */
     public static final Supplier<MenuType<VillageQuarryMenu>> VILLAGE_QUARRY_MENU =
             MENUS.register("village_quarry", () -> IMenuTypeExtension.create(VillageQuarryMenu::fromNetwork));
+
+    /** 村庄营地菜单类型（Tier 1） */
+    public static final Supplier<MenuType<VillageCampMenu>> VILLAGE_CAMP_MENU =
+            MENUS.register("village_camp", () -> IMenuTypeExtension.create(VillageCampMenu::fromNetwork));
+
+    /** 村庄狩猎场菜单类型（Tier 1） */
+    public static final Supplier<MenuType<VillageHuntingGroundMenu>> VILLAGE_HUNTING_GROUND_MENU =
+            MENUS.register("village_hunting_ground", () -> IMenuTypeExtension.create(VillageHuntingGroundMenu::fromNetwork));
+
+    /** 村庄牧场菜单类型（Tier 1） */
+    public static final Supplier<MenuType<VillageRanchMenu>> VILLAGE_RANCH_MENU =
+            MENUS.register("village_ranch", () -> IMenuTypeExtension.create(VillageRanchMenu::fromNetwork));
+
+    /** 村庄农场菜单类型（Tier 1） */
+    public static final Supplier<MenuType<VillageFarmMenu>> VILLAGE_FARM_MENU =
+            MENUS.register("village_farm", () -> IMenuTypeExtension.create(VillageFarmMenu::fromNetwork));
+
+    /** 村庄诊所菜单类型（Tier 1） */
+    public static final Supplier<MenuType<VillageDoctorCabinMenu>> VILLAGE_DOCTOR_CABIN_MENU =
+            MENUS.register("village_doctor_cabin", () -> IMenuTypeExtension.create(VillageDoctorCabinMenu::fromNetwork));
 
     /**
      * 向事件总线注册所有 Menu 类型。

@@ -1,8 +1,8 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveCampMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
@@ -37,6 +37,11 @@ public class PrimitiveCampBlockEntity extends AbstractCampBlockEntity {
     @Override
     protected String getMachineConfigKey() {
         return PopulationMachineConfig.CAMP;
+    }
+
+    @Override
+    public String getWorkerCareer() {
+        return CareerNames.UNEMPLOYED;
     }
 
     // ==================== serverTick ====================

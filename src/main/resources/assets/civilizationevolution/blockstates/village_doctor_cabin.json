@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "civilizationevolution:block/village_doctor_cabin" },
+    "facing=south": { "model": "civilizationevolution:block/village_doctor_cabin", "y": 180 },
+    "facing=west":  { "model": "civilizationevolution:block/village_doctor_cabin", "y": 270 },
+    "facing=east":  { "model": "civilizationevolution:block/village_doctor_cabin", "y": 90 }
+  }
+}

@@ -1,8 +1,8 @@
 package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.AbstractHospitalBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
 import net.minecraft.core.BlockPos;
@@ -42,10 +42,15 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
     }
 
     /** 配置文件中此机器的 key */
-    private static final String CONFIG_KEY = "primitive_doctor_cabin";
+    private static final String CONFIG_KEY = PopulationMachineConfig.PRIMITIVE_DOCTOR_CABIN;
 
     public String getMachineConfigKey() {
         return CONFIG_KEY;
+    }
+
+    @Override
+    public String getWorkerCareer() {
+        return CareerNames.CLERIC;
     }
 
     @Override

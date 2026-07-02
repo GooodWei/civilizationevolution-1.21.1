@@ -1,8 +1,8 @@
 package com.gooodwei.civilizationevolution.api;
 
+import com.google.gson.*;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
-import com.google.gson.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -494,6 +494,311 @@ public interface IMultiBlockMachine {
             state.parseError = "多方块结构 \"" + configKey + "\" 解析失败：" + e.getMessage();
             return null;
         }
+    }
+
+    /**
+     * 静态方法：解析任意结构 key 的 JSON，返回 ParsedPattern。
+     * 不依赖 BlockEntity 实例，不缓存到 {@link MultiBlockState}。
+     *
+     * @param structureKey 配置文件中的结构 key（如 {@code "village_controller"}）
+     * @return 解析后的结构模式，失败时返回 null
+     */
+    @Nullable
+    static ParsedPattern parsePatternStatic(String structureKey) {
+        String json = MultiBlockConfig.getStructureJson(structureKey);
+        if (json == null) return null;
+
+        JsonObject root;
+        try {
+            root = GSON.fromJson(json, JsonObject.class);
+        } catch (JsonParseException e) {
+            return null;
+        }
+
+        try {
+            return parsePatternFromJson(root);
+        } catch (JsonParseException | NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 核心解析逻辑：从 JSON 对象解析为 ParsedPattern。
+     * 纯函数，无副作用。从 {@link #parsePattern()} 提取以支持静态调用。
+     *
+     * @param root 结构的 JSON 根对象
+     * @return 解析后的结构模式
+     * @throws JsonParseException 如果 JSON 结构不合法
+     * @throws NumberFormatException 如果数字字段格式错误
+     */
+    private static ParsedPattern parsePatternFromJson(JsonObject root) {
+        // 1. 解析 controller 坐标 [y, x, z]
+        JsonArray controllerArr = root.getAsJsonArray("controller");
+        if (controllerArr == null || controllerArr.size() != 3)
+            throw new JsonParseException("controller 必须是 [y, x, z] 三个整数的数组");
+        int controllerY = controllerArr.get(0).getAsInt();
+        int controllerX = controllerArr.get(1).getAsInt();
+        int controllerZ = controllerArr.get(2).getAsInt();
+
+        // 解析 code_width（debug 结构提取器在双字节模式下写入，默认 1）
+        int codeWidth = root.has("code_width") ? root.get("code_width").getAsInt() : 1;
+        if (codeWidth < 1)
+            throw new JsonParseException("code_width 必须 >= 1，当前: " + codeWidth);
+
+        // 2. 解析 pattern 对象（按 y0, y1, ... 排序 key）
+        JsonObject patternObj = root.getAsJsonObject("pattern");
+        if (patternObj == null)
+            throw new JsonParseException("缺少 \"pattern\" 对象");
+        List<Map.Entry<String, JsonElement>> sortedLayers = new ArrayList<>();
+        for (Map.Entry<String, JsonElement> entry : patternObj.entrySet()) {
+            sortedLayers.add(entry);
+        }
+        // 按 yN 的数字排序
+        sortedLayers.sort(Comparator.comparingInt(e -> {
+            String key = e.getKey();
+            if (!key.startsWith("y"))
+                throw new JsonParseException("pattern 的 key 必须以 'y' 开头，当前: " + key);
+            return Integer.parseInt(key.substring(1));
+        }));
+
+        int height = sortedLayers.size();
+        if (height == 0)
+            throw new JsonParseException("pattern 至少需要一个 yN 层");
+
+        // 验证 yN 从 0 开始且无跳跃
+        for (int i = 0; i < height; i++) {
+            String key = sortedLayers.get(i).getKey();
+            int n = Integer.parseInt(key.substring(1));
+            if (n != i)
+                throw new JsonParseException("y 层必须连续从 0 开始，期望 y" + i + "，实际 " + key);
+        }
+
+        // 3. 解析每层的行（支持 code_width > 1 的多字符 token）
+        List<String[]> allRows = new ArrayList<>();
+        int rawWidth = -1; // 原始行字符宽度（code_width * 实际宽度）
+        int width = -1;    // 实际逻辑宽度（单元格数）
+        int depth = -1;
+
+        for (Map.Entry<String, JsonElement> entry : sortedLayers) {
+            String layerStr = entry.getValue().getAsString();
+            String[] rows = layerStr.split(",", -1);
+            allRows.add(rows);
+
+            if (depth == -1) {
+                depth = rows.length;
+            } else if (rows.length != depth) {
+                throw new JsonParseException(
+                        "y 层 " + entry.getKey() + " 有 " + rows.length + " 行，期望 " + depth);
+            }
+            if (depth == 0)
+                throw new JsonParseException("每层至少需要 1 行");
+
+            for (String row : rows) {
+                int rowLen = row.length();
+                if (codeWidth > 1 && rowLen % codeWidth != 0) {
+                    throw new JsonParseException(
+                            "行 \"" + row + "\" 长度 " + rowLen + " 不能被 code_width(" + codeWidth + ") 整除");
+                }
+                int logicalWidth = codeWidth > 1 ? rowLen / codeWidth : rowLen;
+                if (rawWidth == -1) {
+                    rawWidth = rowLen;
+                    width = logicalWidth;
+                } else if (rowLen != rawWidth) {
+                    throw new JsonParseException(
+                            "行 \"" + row + "\" 长度为 " + rowLen + "，期望 " + rawWidth);
+                }
+            }
+        }
+
+        // token → 代理单字符的映射（仅 code_width > 1 时使用）
+        java.util.Map<String, Character> tokenToSurrogate = new LinkedHashMap<>();
+        int nextSurrogate = 0;
+        // 全下划线 token（导出时的空气占位符）映射到空格
+        tokenToSurrogate.put("_".repeat(Math.max(1, codeWidth)), ' ');
+
+        // 4. 构建三维字符数组 [y][z][x]（code_width > 1 时用代理字符）
+        char[][][] layerChars = new char[height][depth][width];
+        for (int y = 0; y < height; y++) {
+            String[] rows = allRows.get(y);
+            for (int z = 0; z < depth; z++) {
+                String row = rows[z];
+                for (int x = 0; x < width; x++) {
+                    if (codeWidth > 1) {
+                        String token = row.substring(x * codeWidth, (x + 1) * codeWidth);
+                        // 全下划线 → 空气
+                        boolean allUnderscore = true;
+                        for (int i = 0; i < token.length(); i++) {
+                            if (token.charAt(i) != '_') { allUnderscore = false; break; }
+                        }
+                        if (allUnderscore) {
+                            layerChars[y][z][x] = ' ';
+                        } else {
+                            Character surrogate = tokenToSurrogate.get(token);
+                            if (surrogate == null) {
+                                surrogate = (char) (0xE000 + nextSurrogate++);
+                                tokenToSurrogate.put(token, surrogate);
+                            }
+                            layerChars[y][z][x] = surrogate;
+                        }
+                    } else {
+                        layerChars[y][z][x] = row.charAt(x);
+                    }
+                }
+            }
+        }
+
+        // 5. 解析 key 映射 → JsonObject + KeyDefinition
+        JsonObject keyObj = root.getAsJsonObject("key");
+        if (keyObj == null)
+            throw new JsonParseException("缺少 \"key\" 对象");
+        Map<Character, JsonObject> key = new LinkedHashMap<>();
+        Map<Character, KeyDefinition> keyDefs = new LinkedHashMap<>();
+
+        for (Map.Entry<String, JsonElement> entry : keyObj.entrySet()) {
+            String keyStr = entry.getKey();
+            final char c;
+            if (codeWidth > 1) {
+                // 多字符 key：从 token→代理字符 映射中查找
+                Character surrogate = tokenToSurrogate.get(keyStr);
+                if (surrogate == null || surrogate == ' ') {
+                    throw new JsonParseException("key \"" + keyStr + "\" 未在 pattern 中出现，无法映射");
+                }
+                c = surrogate;
+            } else {
+                if (keyStr.length() != 1)
+                    throw new JsonParseException("key 的键必须是单字符，当前: " + keyStr);
+                c = keyStr.charAt(0);
+                if (c == ' ')
+                    throw new JsonParseException("空格字符不能用作 key 定义");
+            }
+            JsonObject def = entry.getValue().getAsJsonObject();
+            key.put(c, def);
+
+            // 解析 KeyDefinition
+            String type = def.has("type") ? def.get("type").getAsString() : "multi_block_part";
+
+            // 解析 alternatives
+            List<Character> alternatives = new ArrayList<>();
+            if (def.has("alternatives")) {
+                JsonArray altArr = def.getAsJsonArray("alternatives");
+                for (JsonElement altElem : altArr) {
+                    String altStr = altElem.getAsString();
+                    final char altChar;
+                    if (codeWidth > 1) {
+                        Character altSurrogate = tokenToSurrogate.get(altStr);
+                        if (altSurrogate == null || altSurrogate == ' ') {
+                            throw new JsonParseException("key '" + keyStr + "' 的 alternatives 引用 \""
+                                    + altStr + "\" 未在 pattern 中出现");
+                        }
+                        altChar = altSurrogate;
+                    } else {
+                        if (altStr.length() != 1)
+                            throw new JsonParseException("alternatives 中的值必须是单字符，当前: " + altStr);
+                        altChar = altStr.charAt(0);
+                    }
+                    alternatives.add(altChar);
+                }
+            }
+
+            // 解析 min_count / max_count（-1 = 无限制）
+            int minCount = def.has("min_count") ? def.get("min_count").getAsInt() : -1;
+            int maxCount = def.has("max_count") ? def.get("max_count").getAsInt() : Integer.MAX_VALUE;
+
+            // 验证
+            if (minCount <= 0 && def.has("min_count")) {
+                throw new JsonParseException("key '" + c + "' 的 min_count 必须大于 0，当前: " + minCount);
+            }
+            if (maxCount <= 0 && def.has("max_count")) {
+                throw new JsonParseException("key '" + c + "' 的 max_count 必须大于 0，当前: " + maxCount);
+            }
+            if (minCount > maxCount) {
+                throw new JsonParseException("key '" + c + "' 的 min_count(" + minCount +
+                        ") 不能大于 max_count(" + maxCount + ")");
+            }
+
+            keyDefs.put(c, new KeyDefinition(type, Collections.unmodifiableList(alternatives), minCount, maxCount));
+        }
+
+        // 6. 验证 alternatives 引用的字符在 key 中有定义
+        for (Map.Entry<Character, KeyDefinition> entry : keyDefs.entrySet()) {
+            for (char alt : entry.getValue().alternatives) {
+                if (!keyDefs.containsKey(alt)) {
+                    throw new JsonParseException("key '" + entry.getKey() + "' 的 alternatives 引用 '"
+                            + alt + "' 未在 key 中定义");
+                }
+                // 阻止循环引用：alternative 指向的目标 key 自身不能有 alternatives
+                if (!keyDefs.get(alt).alternatives.isEmpty()) {
+                    throw new JsonParseException("key '" + alt + "' 有 alternatives，不能作为 '" +
+                            entry.getKey() + "' 的 alternatives 目标（不支持嵌套 alternatives）");
+                }
+            }
+        }
+
+        // 7. 验证 controller 坐标有效
+        if (controllerY < 0 || controllerY >= height ||
+                controllerX < 0 || controllerX >= width ||
+                controllerZ < 0 || controllerZ >= depth) {
+            throw new JsonParseException("controller 坐标 [" + controllerY + "," + controllerX +
+                    "," + controllerZ + "] 超出范围 width=" + width + " height=" + height + " depth=" + depth);
+        }
+        char controllerChar = layerChars[controllerY][controllerZ][controllerX];
+        if (controllerChar == ' ') {
+            throw new JsonParseException("controller 坐标 [" + controllerY + "," + controllerX +
+                    "," + controllerZ + "] 为空格（任意方块），不允许");
+        }
+        if (!key.containsKey(controllerChar)) {
+            throw new JsonParseException("controller 字符 '" + controllerChar + "' 未在 key 中定义");
+        }
+
+        // 8. 验证所有非空格字符在 key 中有定义
+        for (int y = 0; y < height; y++) {
+            for (int z = 0; z < depth; z++) {
+                for (int x = 0; x < width; x++) {
+                    char c = layerChars[y][z][x];
+                    if (c != ' ' && !key.containsKey(c)) {
+                        throw new JsonParseException(
+                                "位置 [" + y + "," + x + "," + z + "] 的字符 '" + c + "' 未在 key 中定义");
+                    }
+                }
+            }
+        }
+
+        // 9. 验证 min_count 可行性：pattern 中该字符的出现次数 >= min_count
+        // 仅检查 pattern 中直接出现的 key（alternatives-only 的 key 在运行时通过替换满足 min_count）
+        Map<Character, Integer> charCounts = new HashMap<>();
+        for (int y = 0; y < height; y++) {
+            for (int z = 0; z < depth; z++) {
+                for (int x = 0; x < width; x++) {
+                    char c = layerChars[y][z][x];
+                    if (c != ' ') {
+                        charCounts.merge(c, 1, Integer::sum);
+                    }
+                }
+            }
+        }
+        for (Map.Entry<Character, KeyDefinition> entry : keyDefs.entrySet()) {
+            char c = entry.getKey();
+            KeyDefinition kd = entry.getValue();
+            int patternCount = charCounts.getOrDefault(c, 0);
+            // 跳过 pattern 中未直接出现的 key（纯 alternatives，运行时满足）
+            if (patternCount == 0) continue;
+            if (kd.minCount > 0 && patternCount < kd.minCount) {
+                throw new JsonParseException("key '" + c + "' 的 min_count=" + kd.minCount +
+                        " 但 pattern 中仅出现 " + patternCount + " 次");
+            }
+        }
+
+        // 10. 解析 validate_interval（秒 → tick，默认 30 秒 = 600 tick）
+        int validateIntervalTicks = DEFAULT_VALIDATE_INTERVAL_TICKS;
+        if (root.has("validate_interval")) {
+            int seconds = root.get("validate_interval").getAsInt();
+            if (seconds <= 0)
+                throw new JsonParseException("validate_interval 必须大于 0，当前: " + seconds);
+            validateIntervalTicks = seconds * 20;
+        }
+
+        return new ParsedPattern(width, height, depth,
+                controllerY, controllerX, controllerZ, layerChars, key, keyDefs, validateIntervalTicks);
     }
 
     /** 清除缓存的解析结果（配置变更时调用） */

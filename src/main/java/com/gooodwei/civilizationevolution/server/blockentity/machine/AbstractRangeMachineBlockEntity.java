@@ -1,8 +1,8 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
-import com.gooodwei.civilizationevolution.api.util.ParticleBorderHelper;
 import com.gooodwei.civilizationevolution.api.career.Career;
+import com.gooodwei.civilizationevolution.api.util.ParticleBorderHelper;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import net.minecraft.core.BlockPos;
@@ -291,12 +291,10 @@ public abstract class AbstractRangeMachineBlockEntity
 
     /**
      * 本机器要求的工作职业名称。
-     * 默认返回 {@code null}（无职业要求，任何成年人口均可工作）。
-     * 子类覆写以指定职业（如 "butcher"、"farmer"、"shepherd"）。
+     * 每个具体机器<b>必须</b>覆写，显式声明所需职业。
      */
-    protected String getWorkerCareer() {
-        return null;
-    }
+    @Override
+    public abstract String getWorkerCareer();
 
     /**
      * 每次工作周期给学徒的经验量。

@@ -1,22 +1,8 @@
 package com.gooodwei.civilizationevolution.client.registry;
 
-import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveDoctorCabinScreen;
-import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveFarmScreen;
-import com.gooodwei.civilizationevolution.client.screen.machine.VillageQuarryScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.ItemInputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.ItemOutputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitiveFoodInputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.VillageFoodInputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.VillageItemInputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.VillageItemOutputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveHuntingGroundScreen;
-import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveCampScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitivePopulationInputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.hatch.PrimitivePopulationOutputHatchScreen;
-import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveRanchScreen;
-import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveControllerScreen;
-import com.gooodwei.civilizationevolution.client.screen.machine.VillageControllerScreen;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
+import com.gooodwei.civilizationevolution.client.screen.hatch.*;
+import com.gooodwei.civilizationevolution.client.screen.machine.*;
 import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -56,5 +42,10 @@ public class ScreenRegistry {
         event.register(MenuRegistry.VILLAGE_ITEM_INPUT_HATCH_MENU.get(), VillageItemInputHatchScreen::new);
         event.register(MenuRegistry.VILLAGE_ITEM_OUTPUT_HATCH_MENU.get(), VillageItemOutputHatchScreen::new);
         event.register(MenuRegistry.VILLAGE_QUARRY_MENU.get(), VillageQuarryScreen::new);
+        event.register(MenuRegistry.VILLAGE_CAMP_MENU.get(), VillageCampScreen::new);
+        event.register(MenuRegistry.VILLAGE_HUNTING_GROUND_MENU.get(), VillageHuntingGroundScreen::new);
+        event.register(MenuRegistry.VILLAGE_RANCH_MENU.get(), VillageRanchScreen::new);
+        event.register(MenuRegistry.VILLAGE_FARM_MENU.get(), VillageFarmScreen::new);
+        event.register(MenuRegistry.VILLAGE_DOCTOR_CABIN_MENU.get(), VillageDoctorCabinScreen::new);
     }
 }

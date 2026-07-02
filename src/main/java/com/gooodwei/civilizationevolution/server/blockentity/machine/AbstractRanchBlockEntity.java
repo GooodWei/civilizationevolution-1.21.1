@@ -1,15 +1,12 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
-import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.range.RangeScanner;
-import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,7 +14,6 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -71,9 +67,9 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
 
     // ==================== 可覆写方法（有默认值） ====================
 
-    /** 牧场工作要求的职业名称 */
+    /** 牧场工作要求的职业名称（每个具体牧场类必须覆写） */
     @Override
-    protected String getWorkerCareer() { return "shepherd"; }
+    public abstract String getWorkerCareer();
 
     /** 每次工作周期给学徒的经验量，优先从配置读取 */
     @Override

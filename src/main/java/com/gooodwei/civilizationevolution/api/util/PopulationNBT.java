@@ -210,6 +210,18 @@ public final class PopulationNBT {
     }
 
     /**
+     * 获取人口所有职业的学徒经验映射。
+     * 返回的 CompoundTag 键为职业名称，值为经验值（int）。
+     * 若无学徒经验数据则返回空 CompoundTag。
+     *
+     * @param stack 人口物品
+     * @return 职业经验 CompoundTag，永不为 null
+     */
+    public static CompoundTag getAllCareerExps(ItemStack stack) {
+        return getTag(stack).getCompound(Population.TAG_CAREER_EXPS);
+    }
+
+    /**
      * 获取人口在指定职业上的经验值。
      *
      * @param stack      人口物品

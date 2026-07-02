@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
@@ -69,6 +70,12 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
         return "primitive_doctor_cabin";
     }
 
+    // ==================== 职业要求 ====================
+
+    /** 医院工作要求的职业名称（每个具体医院类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
+
     // ==================== serverTick ====================
 
     /**
@@ -91,8 +98,9 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             be.routeItemsToOutputHatches();
         }
 
-        // 4. 进度完成时执行工作周期
-        if (be.workProgress >= be.getWorkTotalTime() && be.canWork()) {
+        // 4. 绑定状态下由控制器统一调度工作周期，自身 ticker 仅推进 GUI 进度条。
+        //    !isBound() 守卫防止和控制器 nextTriggerProgress 双重触发。
+        if (!be.isBound() && be.workProgress >= be.getWorkTotalTime() && be.canWork()) {
             be.executeWorkCycle(level);
         }
     }
@@ -114,7 +122,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
         ageAllPopulations(getAgeIncrement());
 
         // ===== 2. 医生学徒经验（委托 IPopulationItem.addApprenticeExp） =====
-        addApprenticeExpToPopulationSlots("cleric", getApprenticeExpPerCycle());
+        addApprenticeExpToPopulationSlots(CareerNames.CLERIC, getApprenticeExpPerCycle());
 
         // ===== 3. 计算机器效率 =====
         List<ItemStack> doctors = getActiveDoctors();
@@ -243,7 +251,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             ItemStack stack = getItem(slot);
             if (stack.isEmpty() || PopulationNBT.isDead(stack)) continue;
             String career = PopulationNBT.getCareer(stack);
-            if ("cleric".equals(career) || "unemployed".equals(career)) {
+            if (CareerNames.CLERIC.equals(career) || CareerNames.UNEMPLOYED.equals(career)) {
                 doctors.add(stack);
             }
         }

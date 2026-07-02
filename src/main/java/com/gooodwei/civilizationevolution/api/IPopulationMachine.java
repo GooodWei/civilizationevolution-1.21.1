@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.api;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
@@ -152,7 +153,7 @@ public interface IPopulationMachine {
             FoodProperties food = stack.getFoodProperties(null);
             float nutrition = food != null ? food.nutrition() : 0;
             // 实际饱和度 = nutrition × saturationModifier × 2
-            float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
+            float saturation = food != null ? nutrition * food.saturation() : 0;
 
             int toRemove = Math.min(stack.getCount(), remaining);
             stack.shrink(toRemove);
@@ -339,6 +340,21 @@ public interface IPopulationMachine {
 
     /** 设置绑定的控制器所在维度 ID（绑定/解绑时由控制器调用） */
     void setBoundControllerDimension(String dimension);
+
+    /**
+     * 机器是否由自身 serverTick 驱动工作周期（而非由控制器调度）。
+     *
+     * <p>默认返回 {@code false}——机器由控制器统一调度工作周期。
+     * 若机器在 serverTick 中有独立的 {@code workProgress} 和
+     * {@code executeWorkCycle} 触发逻辑，应覆写返回 {@code true}。
+     * 控制器遍历绑定机器时会跳过自调度机器的 {@code executeWorkCycle}，
+     * 避免和工作进度双重触发。
+     *
+     * @return true 表示机器自调度，控制器不应调用 executeWorkCycle
+     */
+    default boolean isSelfScheduled() {
+        return false;
+    }
 
     /**
      * 检查是否满足工作条件。
@@ -740,7 +756,7 @@ public interface IPopulationMachine {
     default boolean canGainCareerExperience(ItemStack stack) {
         if (stack.isEmpty() || !(stack.getItem() instanceof PopulationItem)) return false;
         if (PopulationNBT.isDead(stack)) return false;
-        return "unemployed".equals(PopulationNBT.getCareer(stack));
+        return CareerNames.UNEMPLOYED.equals(PopulationNBT.getCareer(stack));
     }
 
     /**
@@ -768,6 +784,21 @@ public interface IPopulationMachine {
             }
         }
     }
+
+    // ==================== 职业要求 ====================
+
+    /**
+     * 本机器要求的工作职业名称。
+     *
+     * <p>所有机器都必须声明其所需职业。返回 {@link com.gooodwei.civilizationevolution.api.career.CareerNames#UNEMPLOYED}
+     * 表示接受任何常规职业的人口（不含 nitwit）。
+     *
+     * <p>此方法在接口层为抽象方法，强制所有实现类显式声明职业要求。
+     * 每个抽象父类必须保持为 abstract，每个具体机器类必须覆写。
+     *
+     * @return 职业名称常量（如 {@code CareerNames.FARMER}、{@code CareerNames.BUTCHER}）
+     */
+    String getWorkerCareer();
 
     // ==================== 辅助计算 ====================
 

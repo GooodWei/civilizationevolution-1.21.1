@@ -2,11 +2,13 @@ package com.gooodwei.civilizationevolution.server.population;
 
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
 import com.gooodwei.civilizationevolution.api.IPopulationManager;
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.event.PopulationDeathEvent;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -76,6 +78,27 @@ public final class Population {
     private Population() {}
 
     /**
+     * 使用中心极限定理生成近似正态分布的寿命值。
+     *
+     * <p>均值 75，标准差约 5，范围 [30, 120]。
+     * 12 个均匀分布的随机数之和近似正态分布（均值=6，标准差=1），
+     * 经缩放和偏移后得到目标分布，超出边界时钳制。
+     *
+     * @param rand 随机数生成器
+     * @return 30-120 范围内的近似正态分布寿命
+     */
+    public static int generateLifespan(RandomSource rand) {
+        // 12 个 U(0,1) 之和 ≈ N(6, 1)（中心极限定理）
+        double sum = 0.0;
+        for (int i = 0; i < 12; i++) {
+            sum += rand.nextDouble();
+        }
+        // (sum - 6) → N(0, 1)，× 5 → N(0, 5)，+ 75 → N(75, 5)
+        int lifespan = 75 + (int) Math.round((sum - 6.0) * 5.0);
+        return Mth.clamp(lifespan, 30, 120);
+    }
+
+    /**
      * 将原版村民转换为人口 ItemStack。
      * 读取村民的年龄、职业等属性，按配置生成随机的寿命、性别、生命值、饱食度等。
      * 幼年村民会得到儿童配置值，成年村民得到成人配置值。
@@ -95,7 +118,7 @@ public final class Population {
                 : PopulationConfig.ADULT_AGE;
 
         tag.putInt(TAG_AGE, age);
-        tag.putInt(TAG_LIFESPAN, rand.nextIntBetweenInclusive(PopulationConfig.LIFESPAN_MIN, PopulationConfig.LIFESPAN_MAX));
+        tag.putInt(TAG_LIFESPAN, generateLifespan(rand));
         tag.putBoolean(TAG_GENDER, rand.nextBoolean());
         tag.putInt(TAG_HEALTH, isBaby
                 ? rand.nextIntBetweenInclusive(PopulationConfig.CHILD_HEALTH_MIN, PopulationConfig.CHILD_HEALTH_MAX)
@@ -104,7 +127,7 @@ public final class Population {
                 ? rand.nextIntBetweenInclusive(PopulationConfig.CHILD_FOOD_MIN, PopulationConfig.CHILD_FOOD_MAX)
                 : rand.nextIntBetweenInclusive(PopulationConfig.ADULT_FOOD_MIN, PopulationConfig.ADULT_FOOD_MAX));
         tag.putString(TAG_CAREER, isBaby
-                ? "unemployed"
+                ? CareerNames.UNEMPLOYED
                 : CivilizationAPI.getCareerRegistry().fromVanilla(villager.getVillagerData().getProfession()).getName());
         tag.putInt(TAG_PROFICIENCY, isBaby
                 ? PopulationConfig.CHILD_PROFICIENCY

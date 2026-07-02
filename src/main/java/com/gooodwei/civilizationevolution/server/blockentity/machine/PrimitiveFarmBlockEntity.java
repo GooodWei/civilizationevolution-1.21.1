@@ -1,9 +1,8 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractFarmBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractRangeMachineBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveFarmMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
@@ -60,6 +59,14 @@ public class PrimitiveFarmBlockEntity extends AbstractFarmBlockEntity {
     @Override
     protected String getMachineConfigKey() {
         return PopulationMachineConfig.PRIMITIVE_FARM;
+    }
+
+    /**
+     * 农场工作要求的职业名称
+     */
+    @Override
+    public String getWorkerCareer() {
+        return CareerNames.FARMER;
     }
 
     @Override

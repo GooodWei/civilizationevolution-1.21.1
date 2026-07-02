@@ -1,14 +1,7 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
-import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
-import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
-import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
-import com.gooodwei.civilizationevolution.server.item.PopulationItem;
-import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
-import com.gooodwei.civilizationevolution.server.item.Recruiter;
-import com.gooodwei.civilizationevolution.server.registry.TieredBlockItem;
+import com.gooodwei.civilizationevolution.server.item.*;
 import net.minecraft.world.item.BlockItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -161,6 +154,31 @@ public class ItemRegistry {
     public static final DeferredItem<BlockItem> VILLAGE_QUARRY =
             ITEMS.registerItem("village_quarry", properties ->
                     new TieredBlockItem(BlockRegistry.VILLAGE_QUARRY.get(), properties));
+
+    /** 村庄营地方块物品（Tier 1：村庄时代） */
+    public static final DeferredItem<BlockItem> VILLAGE_CAMP_BLOCK_ITEM =
+            ITEMS.registerItem("village_camp", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_CAMP_BLOCK.get(), properties));
+
+    /** 村庄狩猎场方块物品（Tier 1：村庄时代） */
+    public static final DeferredItem<BlockItem> VILLAGE_HUNTING_GROUND =
+            ITEMS.registerItem("village_hunting_ground", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_HUNTING_GROUND.get(), properties));
+
+    /** 村庄牧地方块物品（Tier 1：村庄时代） */
+    public static final DeferredItem<BlockItem> VILLAGE_RANCH =
+            ITEMS.registerItem("village_ranch", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_RANCH_BLOCK.get(), properties));
+
+    /** 村庄农场方块物品（Tier 1：村庄时代） */
+    public static final DeferredItem<BlockItem> VILLAGE_FARM =
+            ITEMS.registerItem("village_farm", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_FARM_BLOCK.get(), properties));
+
+    /** 村庄诊所方块物品（Tier 1：村庄时代） */
+    public static final DeferredItem<BlockItem> VILLAGE_DOCTOR_CABIN =
+            ITEMS.registerItem("village_doctor_cabin", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_DOCTOR_CABIN.get(), properties));
 
     /**
      * 向事件总线注册所有物品。

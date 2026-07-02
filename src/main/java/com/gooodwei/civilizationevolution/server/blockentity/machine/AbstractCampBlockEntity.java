@@ -1,8 +1,9 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
-import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.population.Population;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -50,6 +51,10 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
 
     /** 配置文件中此机器的 section key（如 "camp"、"small_camp"） */
     protected abstract String getMachineConfigKey();
+
+    /** 营地工作要求的职业名称（每个具体营地类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
     protected int getFoodPerPopulation() {
@@ -187,10 +192,9 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         RandomSource rand = level.getRandom();
 
         PopulationNBT.setAge(baby, 0);
-        PopulationNBT.setLifespan(baby, rand.nextIntBetweenInclusive(
-                PopulationConfig.LIFESPAN_MIN, PopulationConfig.LIFESPAN_MAX));
+        PopulationNBT.setLifespan(baby, Population.generateLifespan(rand));
         PopulationNBT.setGender(baby, rand.nextBoolean());
-        PopulationNBT.setCareer(baby, "unemployed");
+        PopulationNBT.setCareer(baby, CareerNames.UNEMPLOYED);
         PopulationNBT.setHealth(baby, (
                 PopulationNBT.getHealth(parentA) + PopulationNBT.getHealth(parentB)) / 2);
         PopulationNBT.setFood(baby, (

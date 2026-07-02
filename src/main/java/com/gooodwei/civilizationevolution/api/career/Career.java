@@ -1,12 +1,13 @@
 package com.gooodwei.civilizationevolution.api.career;
 
+import com.gooodwei.civilizationevolution.api.CivilizationAPI;
 import com.gooodwei.civilizationevolution.api.ICareerRegistry;
 import com.gooodwei.civilizationevolution.api.event.CareerRegisterEvent;
-import javax.annotation.Nullable;
-import java.util.*;
-
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.neoforged.neoforge.common.NeoForge;
+
+import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * CivilizationEvolution 中所有职业的基类。
@@ -37,7 +38,7 @@ public abstract class Career {
             for (Career c : REGISTRY.values()) {
                 if (c.vanillaProfession == prof) return c;
             }
-            return byName("unemployed");
+            return byName(CareerNames.UNEMPLOYED);
         }
 
         @Override

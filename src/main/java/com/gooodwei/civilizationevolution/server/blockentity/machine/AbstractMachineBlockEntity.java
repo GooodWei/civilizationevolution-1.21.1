@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
+import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -86,6 +87,15 @@ public abstract class AbstractMachineBlockEntity
      */
     @Override
     public abstract Tier getTier();
+
+    /**
+     * 本机器要求的工作职业名称。
+     * 每个具体机器<b>必须</b>覆写，显式声明所需职业。
+     *
+     * @return 职业名称常量（如 {@code CareerNames.FARMER}）
+     */
+    @Override
+    public abstract String getWorkerCareer();
 
     @Override
     public Container getContainer() {

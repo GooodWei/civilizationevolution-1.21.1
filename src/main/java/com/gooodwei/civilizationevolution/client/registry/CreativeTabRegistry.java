@@ -62,6 +62,12 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get());
                         output.accept(ItemRegistry.VILLAGE_STRUCTURE_CASING.get());
                         output.accept(ItemRegistry.VILLAGE_QUARRY.get());
+                        output.accept(ItemRegistry.VILLAGE_CAMP_BLOCK_ITEM.get());
+                        output.accept(ItemRegistry.VILLAGE_HUNTING_GROUND.get());
+                        output.accept(ItemRegistry.VILLAGE_RANCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FARM.get());
+                        output.accept(ItemRegistry.VILLAGE_DOCTOR_CABIN.get());
+
                     }).build());
 
     /**

@@ -1,10 +1,13 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.block.controller.*;
-import com.gooodwei.civilizationevolution.server.block.machine.*;
+import com.gooodwei.civilizationevolution.server.block.controller.PrimitiveController;
+import com.gooodwei.civilizationevolution.server.block.controller.VillageController;
 import com.gooodwei.civilizationevolution.server.block.hatch.*;
-import com.gooodwei.civilizationevolution.server.block.part.*;
+import com.gooodwei.civilizationevolution.server.block.machine.*;
+import com.gooodwei.civilizationevolution.server.block.part.MiningShaftPipe;
+import com.gooodwei.civilizationevolution.server.block.part.PrimitiveStructureCasing;
+import com.gooodwei.civilizationevolution.server.block.part.VillageStructureCasing;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;
@@ -158,6 +161,36 @@ public class BlockRegistry {
     public static final DeferredBlock<VillageQuarryBlock> VILLAGE_QUARRY = BLOCKS.register(
             "village_quarry",
             () -> new VillageQuarryBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄营地 —— Tier 1 生产单位，效率为原始版本两倍 */
+    public static final DeferredBlock<VillageCampBlock> VILLAGE_CAMP_BLOCK = BLOCKS.register(
+            "village_camp",
+            () -> new VillageCampBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄狩猎场 —— Tier 1 区块内自动猎杀动物、收集战利品 */
+    public static final DeferredBlock<VillageHuntingGround> VILLAGE_HUNTING_GROUND = BLOCKS.register(
+            "village_hunting_ground",
+            () -> new VillageHuntingGround(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄牧场 —— Tier 1 喂养范围内动物的机器方块 */
+    public static final DeferredBlock<VillageRanchBlock> VILLAGE_RANCH_BLOCK = BLOCKS.register(
+            "village_ranch",
+            () -> new VillageRanchBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄农场 —— Tier 1 自动催熟范围内作物的机器方块，内置储水罐 */
+    public static final DeferredBlock<VillageFarmBlock> VILLAGE_FARM_BLOCK = BLOCKS.register(
+            "village_farm",
+            () -> new VillageFarmBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
+    );
+
+    /** 村庄诊所 —— Tier 1 多方块医院控制器 */
+    public static final DeferredBlock<VillageDoctorCabin> VILLAGE_DOCTOR_CABIN = BLOCKS.register(
+            "village_doctor_cabin",
+            () -> new VillageDoctorCabin(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).noOcclusion())
     );
 
     /**

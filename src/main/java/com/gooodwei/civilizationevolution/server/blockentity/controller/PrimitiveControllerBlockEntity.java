@@ -1,8 +1,9 @@
 package com.gooodwei.civilizationevolution.server.blockentity.controller;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveControllerMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
@@ -39,7 +40,12 @@ public class PrimitiveControllerBlockEntity extends AbstractControllerBlockEntit
 
     @Override
     public String getConfigKey() {
-        return "primitive_controller";
+        return PopulationMachineConfig.PRIMITIVE_CONTROLLER;
+    }
+
+    @Override
+    public String getWorkerCareer() {
+        return CareerNames.UNEMPLOYED;
     }
 
     @Override

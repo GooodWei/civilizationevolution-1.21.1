@@ -6,7 +6,6 @@ import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.block.part.MiningShaftPipe;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFluidHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFoodInputHatchBlockEntity;
-import net.minecraft.world.Container;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import com.gooodwei.civilizationevolution.server.registry.BlockRegistry;
@@ -17,9 +16,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.Container;
 import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -88,8 +86,9 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
     // ==================== 可覆写方法 ====================
 
-    /** 采石场要求的职业名称（默认 "mason"，石匠及其子职业矿工均可工作） */
-    protected String getWorkerCareer() { return "mason"; }
+    /** 采石场工作要求的职业名称（每个具体采石场类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
 
     /** 每次工作周期给学徒的经验量，优先从配置读取 */
     protected int getApprenticeExpPerCycle() {
@@ -592,6 +591,22 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
             consumeFluids(serverLevel);
             level.setBlock(firstPipe, BlockRegistry.MINING_SHAFT_PIPE.get().defaultBlockState(), 3);
             minedY = firstPipe.getY();
+
+            // ★ 向下扫描已有连续管道（重新放置核心时可能已有遗留管道）
+            // 逐格检查，遇到第一个非管道位置即停止——间断留给 checkPipeContinuity 修补
+            {
+                BlockPos first = getFirstPipePos();
+                while (true) {
+                    BlockPos below = new BlockPos(first.getX(), minedY - 1, first.getZ());
+                    BlockState belowState = level.getBlockState(below);
+                    if (belowState.getBlock() instanceof MiningShaftPipe) {
+                        minedY--;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
             // ★ 管道放置后立即在管道所在 Y 层建立待破坏方块列表
             buildPendingBlocks(serverLevel, minedY);
             pendingY = minedY;
@@ -639,14 +654,27 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
                     && pipeState.is(com.gooodwei.civilizationevolution.tags.ModTags.QUARRY_MINEABLE)
                     && !(pipeState.getBlock() instanceof MiningShaftPipe);
 
+            // ★ 延伸位置已有管道（旧运行遗留或中途修补）→ 直接使用，不消耗流体
+            if (pipeState.getBlock() instanceof MiningShaftPipe) {
+                minedY = extendToY;
+                buildPendingBlocks(serverLevel, minedY);
+                pendingY = minedY;
+                this.workProgress = 0;
+                this.setChanged();
+                return;
+            }
+
             if (!isAir && !isMineable) {
                 // 管道延伸路径被非白名单方块（黑曜石、机器外壳等）堵住，标记工作完成
-                // 玩家需手动破坏障碍物，然后重新放置机器核心方块才能从头开始工作
+                // 玩家需手动破坏障碍物，拆除后采石场自动恢复工作
                 workCompleted = true;
                 this.workProgress = 0;
                 this.setChanged();
                 return;
             }
+
+            // 管道延伸路径畅通，清除 workCompleted 标记（障碍物已被移除）
+            workCompleted = false;
 
             // 消耗流体并延伸管道
             if (!checkFluidInputs(serverLevel)) {
@@ -718,9 +746,16 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
     // ==================== canWork ====================
 
     @Override
+    public boolean isSelfScheduled() {
+        return true; // 采石场由自身 serverTick 驱动工作周期，不由控制器调度
+    }
+
+    @Override
     public boolean canWork() {
-        return isStructureFormed() && isBound() && !getAvailableWorkers().isEmpty()
-                && !workCompleted;
+        // 不检查 workCompleted：workCompleted 为 true 时仍需执行工作周期（年龄增长+学徒训练），
+        // 否则管道被障碍物堵住后再也无法恢复（workCompleted 永不被重置）。
+        // 管道延伸逻辑内部会检查 workCompleted 并自动重置。
+        return isStructureFormed() && isBound() && !getAvailableWorkers().isEmpty();
     }
 
     // ==================== serverTick ====================
@@ -741,7 +776,9 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
             be.routePopulationFromInputHatches();
         }
 
-        if (be.workProgress >= be.getWorkTotalTime() && be.canWork()) {
+        // 进度条满时始终执行工作周期：即使无可工作人口（全部退休），
+        // 仍需老化人口 + 健康波动 + 消耗食物，否则退休人口永不死亡 → 永不过期
+        if (be.workProgress >= be.getWorkTotalTime() && be.isStructureFormed() && be.isBound()) {
             be.executeWorkCycle(level);
         }
     }

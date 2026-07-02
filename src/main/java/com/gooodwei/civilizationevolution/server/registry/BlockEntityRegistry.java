@@ -1,26 +1,13 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveDoctorCabinBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageQuarryBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveFarmBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveHuntingGroundBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveRanchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveFluidInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveFluidOutputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveItemInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveItemOutputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.VillageFluidInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.VillageFluidOutputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.VillageItemInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.VillageItemOutputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveFoodInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.VillageFoodInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationOutputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.VillageControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.hatch.*;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.*;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveDoctorCabinBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageDoctorCabinBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageQuarryBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -185,6 +172,38 @@ public class BlockEntityRegistry {
                             (pos, state) -> new VillageQuarryBlockEntity(
                                     BlockEntityRegistry.VILLAGE_QUARRY.get(), pos, state),
                             BlockRegistry.VILLAGE_QUARRY.get()).build(null));
+
+    /** 村庄营地 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageCampBlockEntity>> VILLAGE_CAMP =
+            BLOCK_ENTITIES.register("village_camp",
+                    () -> BlockEntityType.Builder.of(VillageCampBlockEntity::new,
+                            BlockRegistry.VILLAGE_CAMP_BLOCK.get()).build(null));
+
+    /** 村庄狩猎场 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageHuntingGroundBlockEntity>> VILLAGE_HUNTING_GROUND =
+            BLOCK_ENTITIES.register("village_hunting_ground",
+                    () -> BlockEntityType.Builder.of(VillageHuntingGroundBlockEntity::new,
+                            BlockRegistry.VILLAGE_HUNTING_GROUND.get()).build(null));
+
+    /** 村庄牧场 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageRanchBlockEntity>> VILLAGE_RANCH =
+            BLOCK_ENTITIES.register("village_ranch",
+                    () -> BlockEntityType.Builder.of(VillageRanchBlockEntity::new,
+                            BlockRegistry.VILLAGE_RANCH_BLOCK.get()).build(null));
+
+    /** 村庄农场 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageFarmBlockEntity>> VILLAGE_FARM =
+            BLOCK_ENTITIES.register("village_farm",
+                    () -> BlockEntityType.Builder.of(VillageFarmBlockEntity::new,
+                            BlockRegistry.VILLAGE_FARM_BLOCK.get()).build(null));
+
+    /** 村庄诊所 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageDoctorCabinBlockEntity>> VILLAGE_DOCTOR_CABIN =
+            BLOCK_ENTITIES.register("village_doctor_cabin",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new VillageDoctorCabinBlockEntity(
+                                    BlockEntityRegistry.VILLAGE_DOCTOR_CABIN.get(), pos, state),
+                            BlockRegistry.VILLAGE_DOCTOR_CABIN.get()).build(null));
 
     /**
      * 向事件总线注册所有 BlockEntity 类型。

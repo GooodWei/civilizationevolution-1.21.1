@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
@@ -34,9 +35,6 @@ public class VillageQuarryBlockEntity extends AbstractQuarryBlockEntity
     /** 客户端同步字段编号：最低保留数量 */
     public static final int FIELD_MIN_KEEP_NUMBER = 0;
 
-    /** 配置文件中此机器的 section key */
-    private static final String CONFIG_KEY = "village_quarry";
-
     // ==================== 构造器 ====================
 
     public VillageQuarryBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -59,8 +57,14 @@ public class VillageQuarryBlockEntity extends AbstractQuarryBlockEntity
 
     @Override
     public String getConfigKey() {
-        return CONFIG_KEY;
+        return PopulationMachineConfig.VILLAGE_QUARRY;
     }
+
+    @Override
+    public String getWorkerCareer() {
+        return CareerNames.MASON;
+    }
+
 
     // ==================== Tier & Config ====================
 
@@ -71,12 +75,12 @@ public class VillageQuarryBlockEntity extends AbstractQuarryBlockEntity
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(CONFIG_KEY);
+        return PopulationMachineConfig.getWorkTotalTime(getConfigKey());
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(CONFIG_KEY);
+        return PopulationMachineConfig.getAgeIncrement(getConfigKey());
     }
 
     // ==================== serverTick ====================

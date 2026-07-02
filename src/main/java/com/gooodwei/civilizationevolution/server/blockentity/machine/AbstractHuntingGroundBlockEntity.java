@@ -1,8 +1,6 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
-import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.range.RangeScanner;
-import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -72,9 +70,9 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
 
     // ==================== 可覆写方法（有默认值） ====================
 
-    /** 狩猎场工作要求的职业名称 */
+    /** 狩猎场工作要求的职业名称（每个具体狩猎场类必须覆写） */
     @Override
-    protected String getWorkerCareer() { return "butcher"; }
+    public abstract String getWorkerCareer();
 
     /** 每次工作周期给学徒的经验量，优先从配置读取 */
     @Override

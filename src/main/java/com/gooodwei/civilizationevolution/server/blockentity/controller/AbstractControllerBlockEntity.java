@@ -1,18 +1,13 @@
 package com.gooodwei.civilizationevolution.server.blockentity.controller;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
-import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
-import com.gooodwei.civilizationevolution.api.IPMController;
-import com.gooodwei.civilizationevolution.api.IPopulationMachine;
-import com.gooodwei.civilizationevolution.api.MultiBlockState;
+import com.gooodwei.civilizationevolution.api.*;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
-import com.gooodwei.civilizationevolution.server.blockentity.controller.PrimitiveControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.controller.VillageControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.block.controller.AbstractControllerBlock;
+import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
+import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
@@ -437,6 +432,10 @@ public abstract class AbstractControllerBlockEntity
     @Override
     public abstract Tier getTier();
 
+    /** 此控制器所管理机器的职业类型（每个具体控制器类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
+
     @Override
     public Container getContainer() {
         return this;
@@ -567,9 +566,12 @@ public abstract class AbstractControllerBlockEntity
                     continue;
                 }
                 if (level.getBlockEntity(pos) instanceof IPopulationMachine machine) {
-                    machine.executeWorkCycle(level);
-                    bm.nextTriggerProgress = (this.workProgress + machine.getWorkTotalTime()) % DAY_TICKS;
-                    CoreDataManager.markDirty(currentUuid);
+                    // 自调度机器（采石场、医院等）由自身 serverTick 驱动，控制器跳过
+                    if (!machine.isSelfScheduled()) {
+                        machine.executeWorkCycle(level);
+                        bm.nextTriggerProgress = (this.workProgress + machine.getWorkTotalTime()) % DAY_TICKS;
+                        CoreDataManager.markDirty(currentUuid);
+                    }
                 }
             }
         }

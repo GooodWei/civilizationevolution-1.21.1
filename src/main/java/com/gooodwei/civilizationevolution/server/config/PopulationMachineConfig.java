@@ -41,6 +41,12 @@ public final class PopulationMachineConfig {
     public static final String PRIMITIVE_DOCTOR_CABIN = "primitive_doctor_cabin";
     public static final String VILLAGE_CONTROLLER = "village_controller";
     public static final String VILLAGE_QUARRY = "village_quarry";
+    public static final String VILLAGE_CAMP = "village_camp";
+    public static final String VILLAGE_HUNTING_GROUND = "village_hunting_ground";
+    public static final String VILLAGE_RANCH = "village_ranch";
+    public static final String VILLAGE_FARM = "village_farm";
+    public static final String VILLAGE_DOCTOR_CABIN = "village_doctor_cabin";
+    public static final String VILLAGE_HARVESTER = "village_harvester";
 
     // ==================== 内部记录 ====================
 
@@ -350,6 +356,103 @@ public final class PopulationMachineConfig {
                   # 水平挖掘范围边长（如 16 = 16×16 即 1 个区块）
                   mining_horizontal_size: 16
 
+                village_camp:
+                  # 村庄营地完成一次工作所需的 tick 数（原始 12000 的一半）
+                  work_total_time: 6000
+                  # 村庄营地每次工作后每个人口的年龄增长量（原始 1 的两倍）
+                  age_increment: 2
+                  # 每个人口每次工作消耗的食物份数（原始 8 的两倍）
+                  food_per_population: 16
+                  # 父代最低生育年龄（原始 18 的两倍）
+                  min_parent_age: 36
+                  # 父代最高生育年龄（原始 50 的两倍）
+                  max_parent_age: 100
+                  # 每次工作后人口健康度的随机波动范围（原始的两倍）
+                  health_fluctuate_min: -10
+                  health_fluctuate_max: 5
+                  # 每次工作周期给学徒的经验量（原始 1 的两倍）
+                  apprentice_exp_per_cycle: 2
+
+                village_hunting_ground:
+                  # 村庄狩猎场完成一次工作所需的 tick 数（原始 12000 的一半）
+                  work_total_time: 6000
+                  # 村庄狩猎场每次工作后每个人口的年龄增长量（原始 1 的两倍）
+                  age_increment: 1
+                  # 每个人口每次工作消耗的食物份数（原始 32 的两倍）
+                  food_per_population: 64
+                  # 学徒累积多少经验后转职为屠夫
+                  career_exp_threshold: 8
+                  # 无武器时效率百分比
+                  efficiency_no_weapon: 50
+                  # 每次工作后人口健康度的随机波动范围（原始的两倍）
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量（原始 1 的两倍）
+                  apprentice_exp_per_cycle: 2
+
+                village_ranch:
+                  # 村庄牧场完成一次工作所需的 tick 数（原始 3000 的一半）
+                  work_total_time: 1500
+                  # 村庄牧场每次工作后每个人口的年龄增长量（原始 1 的两倍）
+                  age_increment: 1
+                  # 范围内最大动物数量，超过时取消当次工作（原始 24 的两倍）
+                  max_animal_count: 24
+                  # 每个人口每次工作消耗的食物份数（原始 2 的两倍）
+                  food_per_population: 2
+                  # 效率→每种动物喂养数量的乘数（原始 3 的两倍）
+                  fed_per_type_multiplier: 6
+                  # 学徒累积多少经验后转职为牧羊人
+                  career_exp_threshold: 8
+                  # 每次工作后人口健康度的随机波动范围（原始的两倍）
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量（原始 1 的两倍）
+                  apprentice_exp_per_cycle: 2
+
+                village_farm:
+                  # 村庄农场完成一次工作所需的 tick 数（原始 1200 的一半）
+                  work_total_time: 600
+                  # 村庄农场每次工作后每个人口的年龄增长量（原始 1 的两倍）
+                  age_increment: 1
+                  # 每个人口每次工作消耗的食物份数（原始 8 的两倍）
+                  food_per_population: 8
+                  # 每次催熟作物消耗的水量（mB），每桶 = 1000 mB（原始 250 的两倍）
+                  water_per_crop: 500
+                  # 学徒累积多少经验后转职为农民
+                  career_exp_threshold: 8
+                  # 每次工作后人口健康度的随机波动范围（原始的两倍）
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量（原始 1 的两倍）
+                  apprentice_exp_per_cycle: 2
+
+                village_doctor_cabin:
+                  # 村庄诊所完成一次工作所需的 tick 数（原始 6000 的一半）
+                  work_total_time: 3000
+                  # 村庄诊所每次工作后每个人口的年龄增长量（原始 1 的两倍）
+                  age_increment: 1
+                  # 单位人口每次工作周期消耗的食物量（原始 1 的两倍）
+                  food_per_population: 1
+                  # 学徒累积多少经验后转职为牧师
+                  career_exp_threshold: 8
+                  # 每次工作周期给学徒的经验量（原始 1 的两倍）
+                  apprentice_exp_per_cycle: 2
+                
+                village_harvester:
+                  #收割间隔tick数
+                  work_total_time: 6000
+                  #每次工作后人口年龄增长量
+                  age_increment: 1
+                  #每次工作消耗食物量
+                  food_per_population: 32
+                  # 学徒累积多少经验后转职为农民
+                  career_exp_threshold: 8
+                  # 每次工作后人口健康度的随机波动范围
+                  health_fluctuate_min: -5
+                  health_fluctuate_max: -1
+                  # 每次工作周期给学徒的经验量
+                  apprentice_exp_per_cycle: 2
+                
                 village_controller:
                   # 最大可绑定机器数量
                   max_bind_count: 20

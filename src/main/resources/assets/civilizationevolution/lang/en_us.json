@@ -22,8 +22,10 @@
   "tooltip.civilizationevolution.population.gender": "Gender: %s",
   "tooltip.civilizationevolution.population.gender.male": "Male",
   "tooltip.civilizationevolution.population.gender.female": "Female",
+  "tooltip.civilizationevolution.population.apprentice_exp": "%s Apprentice: %d/%d",
   "tooltip.civilizationevolution.population.lifespan": "Lifespan: %s",
   "tooltip.civilizationevolution.population.dead": "DECEASED",
+  "tooltip.civilizationevolution.population.retired": "RETIRED",
 
   "tier.civilizationevolution.primitive": "Primitive Era",
   "tier.civilizationevolution.village": "Village Era",
@@ -54,6 +56,23 @@
   "block.civilizationevolution.mining_shaft_pipe": "Mining Shaft Pipe",
   "block.civilizationevolution.village_structure_casing": "Village Structure Casing",
   "block.civilizationevolution.village_quarry": "Village Quarry",
+  "container.civilizationevolution.village_quarry": "Village Quarry",
+
+  "block.civilizationevolution.village_camp": "Village Camp",
+  "container.civilizationevolution.village_camp": "Village Camp",
+
+  "block.civilizationevolution.village_hunting_ground": "Village Hunting Ground",
+  "container.civilizationevolution.village_hunting_ground": "Village Hunting Ground",
+
+  "block.civilizationevolution.village_ranch": "Village Ranch",
+  "container.civilizationevolution.village_ranch": "Village Ranch",
+
+  "block.civilizationevolution.village_farm": "Village Farm",
+  "container.civilizationevolution.village_farm": "Village Farm",
+
+  "block.civilizationevolution.village_doctor_cabin": "Village Clinic",
+  "container.civilizationevolution.village_doctor_cabin": "Village Clinic",
+
   "container.civilizationevolution.primitive_hunting_ground": "Hunting Ground",
   "container.civilizationevolution.primitive_ranch": "Primitive Ranch",
   "container.civilizationevolution.primitive_farm": "Primitive Farm",
@@ -68,7 +87,6 @@
   "container.civilizationevolution.village_item_input_hatch": "Village Item Input Hatch",
   "container.civilizationevolution.primitive_item_output_hatch": "Primitive Item Output Hatch",
   "container.civilizationevolution.village_item_output_hatch": "Village Item Output Hatch",
-  "container.civilizationevolution.village_quarry": "Village Quarry",
 
   "container.civilizationevolution.item_input_hatch": "Item Input Hatch",
   "container.civilizationevolution.item_output_hatch": "Item Output Hatch",

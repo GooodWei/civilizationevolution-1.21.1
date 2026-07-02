@@ -1,20 +1,15 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
-import com.gooodwei.civilizationevolution.api.career.Career;
-import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.tags.ModTags;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.CropBlock;
@@ -22,7 +17,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 import java.util.List;
 
@@ -187,9 +181,9 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
 
     // ==================== 可覆写方法（有默认值） ====================
 
-    /** 农场工作要求的职业名称 */
+    /** 农场工作要求的职业名称（每个具体农场类必须覆写） */
     @Override
-    protected String getWorkerCareer() { return "farmer"; }
+    public abstract String getWorkerCareer();
 
     /** 每次工作周期给学徒的经验量，优先从配置读取 */
     @Override
