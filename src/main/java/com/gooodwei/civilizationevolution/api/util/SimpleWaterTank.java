@@ -1,5 +1,7 @@
 package com.gooodwei.civilizationevolution.api.util;
 
+import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractFarmBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractHarvesterBlockEntity;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
