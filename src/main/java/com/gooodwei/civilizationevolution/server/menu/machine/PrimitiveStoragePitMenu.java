@@ -64,7 +64,7 @@ public class PrimitiveStoragePitMenu extends AbstractContainerMenu {
     private static final int PLAYER_INV_X = 8;
     private static final int PLAYER_INV_Y = IMAGE_HEIGHT - 84; // = 185
     private static final int PLAYER_HOTBAR_Y = IMAGE_HEIGHT - 26; // = 243
-    private static final int STORAGE_X = 7; // AE2 getSlotPos: x = 7 + col * 18
+    private static final int STORAGE_X = 8; // AE2 getSlotPos: x = 7 + col * 18
 
     // ==================== 字段 ====================
 

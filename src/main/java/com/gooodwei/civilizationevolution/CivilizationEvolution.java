@@ -148,9 +148,10 @@ public class CivilizationEvolution {
     /**
      * 注册方块实体的能力（Capability）。
      *
-     * <p>为原始农场方块注册 {@link Capabilities.FluidHandler#BLOCK} 流体能力，
+     * <p>为农场方块（原始农场、村庄农场）和流体仓室注册
+     * {@link Capabilities.FluidHandler#BLOCK} 流体能力，
      * 使所有物流模组（Pipez、Mekanism、AE2、Integrated Dynamics 等）的管道
-     * 均能通过 NeoForge 标准接口向农场储水罐输入水。
+     * 均能通过 NeoForge 标准接口向储水罐输入水。
      *
      * @param event 能力注册事件
      */
@@ -159,6 +160,12 @@ public class CivilizationEvolution {
         event.registerBlockEntity(
                 Capabilities.FluidHandler.BLOCK,
                 BlockEntityRegistry.PRIMITIVE_FARM.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        // 为村庄农场注册流体能力（所有方向均可输入水）
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_FARM.get(),
                 (be, direction) -> be.getFluidHandler()
         );
         // 为四个流体仓室注册流体能力
@@ -188,7 +195,7 @@ public class CivilizationEvolution {
                 BlockEntityRegistry.VILLAGE_HARVESTER.get(),
                 (be, direction) -> be.getFluidHandler()
         );
-        LOGGER.info("已注册原始农场和流体仓室流体能力（Capabilities.FluidHandler.BLOCK）");
+        LOGGER.info("已注册农场和流体仓室流体能力（Capabilities.FluidHandler.BLOCK）");
     }
 
     /** 服务器启动中事件：日志输出 */
