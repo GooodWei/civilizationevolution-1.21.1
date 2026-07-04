@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineBlockEntity {
@@ -55,29 +56,18 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
 
     @Override
     public void executeWorkCycle(Level level) {
-        // 人口老化
-        this.ageAllPopulations(this.getAgeIncrement());
-        this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
-        // 冲突检测
-        if (level instanceof ServerLevel serverLevel) {
-            this.scanAndMarkConflicts(serverLevel);
-        }
+        this.executeWorkCyclePrelude(level);
+
         BlockPos pos = this.getBlockPos();
         if (level instanceof ServerLevel serverLevel && this.canWork()) {
-            // 学徒系统：调用 IPopulationItem.addApprenticeExp 处理晋级
             addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
-            // 计算农民总工作效率
-            double totalWorkEfficiency = calculateTotalWorkEfficiency(this.getAvailableWorkers());
-            // 消耗食物并获取食物因子
-            float foodFactor = consumeFoodWithFallback(
-                    getFoodPerPopulation(),
-                    Math::sqrt,
-                    getAvailableWorkers().size());
-            float efficiency = foodFactor * (float) totalWorkEfficiency;
+
+            float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
             int cropCount = Math.max(1, Math.round(efficiency));
             int waterPerCrop = CivilizationMachineConfig.getWaterPerCrop(getMachineConfigKey());
             AABB range = getSelectionRange();
             int cropNum = 0;
+            List<ItemStack> allDrops = new ArrayList<>();
             for (int x = (int) range.minX; x < (int) range.maxX && cropNum < cropCount; x++) {
                 for (int z = (int) range.minZ; z < (int) range.maxZ && cropNum < cropCount; z++) {
                     for (int y = (int) range.minY; y < (int) range.maxY && cropNum < cropCount; y++) {
@@ -89,7 +79,6 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
                                     && cropBlock.isMaxAge(cropState)) {
                                 // 检查是否有足够的水
                                 if (waterTank.getWaterAmount() < waterPerCrop) {
-                                    // 水量不足，结束
                                     cropNum = cropCount; // 跳出所有循环
                                     break;
                                 }
@@ -100,47 +89,19 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
                                 waterTank.setWaterAmount(waterTank.getWaterAmount() - waterPerCrop);
 
                                 for (ItemStack drop : drops) {
-                                    // ★ 效率乘数量
                                     int newCount = Math.round(drop.getCount() * efficiency);
-                                    if (newCount <= 0) continue;
-
-                                    ItemStack remaining = drop.copyWithCount(newCount);
-                                    // 先合并到已有同类物品的输出槽
-                                    for (int i = 0; i < getContainerSize() && !remaining.isEmpty(); i++) {
-                                        if (!isOutputSlot(i)) continue;
-                                        ItemStack slotStack = getItem(i);
-                                        if (ItemStack.isSameItemSameComponents(slotStack, remaining)) {
-                                            int space = slotStack.getMaxStackSize() - slotStack.getCount();
-                                            int toMove = Math.min(space, remaining.getCount());
-                                            if (toMove > 0) {
-                                                slotStack.grow(toMove);
-                                                remaining.shrink(toMove);
-                                            }
-                                        }
+                                    if (newCount > 0) {
+                                        allDrops.add(drop.copyWithCount(newCount));
                                     }
-
-                                    // 再放入空输出槽
-                                    for (int i = 0; i < getContainerSize() && !remaining.isEmpty(); i++) {
-                                        if (!isOutputSlot(i)) continue;
-                                        if (getItem(i).isEmpty()) {
-                                            int toMove = Math.min(remaining.getMaxStackSize(), remaining.getCount());
-                                            setItem(i, remaining.copyWithCount(toMove));
-                                            remaining.shrink(toMove);
-                                        }
-                                    }
-
-                                    // 还有剩余则弹出到世界
-                                    if (!remaining.isEmpty()) {
-                                        Block.popResource(serverLevel, pos.above(), remaining);
-                                    }
-
                                 }
                                 cropNum++;
                             }
                         }
-
                     }
                 }
+            }
+            if (!allDrops.isEmpty()) {
+                outputOrDrop(serverLevel, pos, allDrops);
             }
         }
         // 重置工作进度，标记变更

@@ -1,7 +1,6 @@
 package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
 import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
-import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.block.part.MiningShaftPipe;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFluidHatchBlockEntity;
@@ -148,27 +147,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
     // ==================== 人口管理 ====================
 
-    /**
-     * 从人口槽位中筛选适合工作的人口物品。
-     * 条件：PopulationItem、年龄 18-65、未死亡、矿工职业。
-     */
-    protected List<ItemStack> getAvailableWorkers() {
-        List<ItemStack> all = new ArrayList<>();
-        for (int slot : getPopulationSlots()) {
-            ItemStack stack = getItem(slot);
-            if (!stack.isEmpty()) {
-                all.add(stack);
-            }
-        }
-        List<ItemStack> eligible = filterAvailable(all, stack ->
-                stack.getItem() instanceof PopulationItem
-                        && !PopulationNBT.isDead(stack)
-                        && PopulationNBT.getAge(stack) >= 18
-                        && PopulationNBT.getAge(stack) <= 65);
-
-        return filterAvailable(eligible, stack ->
-                Career.isKindOf(PopulationNBT.getCareer(stack), getWorkerCareer()));
-    }
+    // getAvailableWorkers() 由 IPopulationMachine 接口提供默认实现
 
     /**
      * 从人口输入仓室将 PopulationItem 路由到内部空人口槽位。

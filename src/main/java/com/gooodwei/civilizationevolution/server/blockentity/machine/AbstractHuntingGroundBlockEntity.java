@@ -10,7 +10,6 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -73,24 +72,6 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
     /** 狩猎场工作要求的职业名称（每个具体狩猎场类必须覆写） */
     @Override
     public abstract String getWorkerCareer();
-
-    /** 每次工作周期给学徒的经验量，优先从配置读取 */
-    @Override
-    protected int getApprenticeExpPerCycle() {
-        return CivilizationMachineConfig.getApprenticeExpPerCycle(getMachineConfigKey(), 1);
-    }
-
-    /** 健康度波动下限，优先从配置读取 */
-    @Override
-    protected int getHealthFluctuateMin() {
-        return CivilizationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -5);
-    }
-
-    /** 健康度波动上限，优先从配置读取 */
-    @Override
-    protected int getHealthFluctuateMax() {
-        return CivilizationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), -1);
-    }
 
     /** 无武器时效率百分比（50 = 0.5），优先从配置读取 */
     protected float getEfficiencyNoWeapon() {
@@ -170,17 +151,10 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
 
     @Override
     public void executeWorkCycle(Level level) {
-        this.ageAllPopulations(this.getAgeIncrement());
-        this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
-
-        // 任务完成前做最后一次冲突检测
-        if (level instanceof ServerLevel serverLevel) {
-            this.scanAndMarkConflicts(serverLevel);
-        }
+        this.executeWorkCyclePrelude(level);
 
         BlockPos pos = this.getBlockPos();
         if (this.canWork() && level instanceof ServerLevel serverLevel) {
-            // 学徒系统：调用 IPopulationItem.addApprenticeExp 处理晋级
             addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
             AABB range = getSelectionRange();
@@ -191,19 +165,14 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
 
             if (!grouped.isEmpty()) {
                 ItemStack weapon = this.getItem(getWeaponSlot());
-                float foodFactor = consumeFoodWithFallback(
-                        getFoodPerPopulation(),
-                        total -> Math.sqrt(total),
-                        getAvailableWorkers().size());
-                double totalWorkEfficiency = calculateTotalWorkEfficiency(this.getAvailableWorkers());
-                float efficiency = foodFactor * (float) totalWorkEfficiency;
+                float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
                 if (weapon.isEmpty()) {
                     efficiency *= getEfficiencyNoWeapon();
                 }
                 int durabilityPerKill = this.getAvailableWorkers().size();
                 List<ItemStack> drops = hunt(grouped, this.minKeepNumber, serverLevel,
                         weapon, efficiency, durabilityPerKill);
-                outputOrDrop(serverLevel, pos, this, drops);
+                outputOrDrop(serverLevel, pos, drops);
             }
         }
         this.workProgress = 0;
@@ -279,42 +248,7 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
         return allDrops;
     }
 
-    /**
-     * 将战利品尝试放入输出槽，先合并已有同类堆叠，再找空槽。
-     * 输出空间不足时，剩余部分以掉落物形式弹出到方块上方。
-     */
-    protected static void outputOrDrop(ServerLevel level, BlockPos pos,
-                                        AbstractHuntingGroundBlockEntity be, List<ItemStack> drops) {
-        for (ItemStack drop : drops) {
-            ItemStack remaining = drop.copy();
-            // 第一步：合并到已有同类物品的输出槽
-            for (int i = 0; i < be.getContainerSize() && !remaining.isEmpty(); i++) {
-                if (!be.isOutputSlot(i)) continue;
-                ItemStack slotStack = be.getItem(i);
-                if (ItemStack.isSameItemSameComponents(slotStack, remaining)) {
-                    int space = slotStack.getMaxStackSize() - slotStack.getCount();
-                    int toMove = Math.min(space, remaining.getCount());
-                    if (toMove > 0) {
-                        slotStack.grow(toMove);
-                        remaining.shrink(toMove);
-                    }
-                }
-            }
-            // 第二步：放入空输出槽
-            for (int i = 0; i < be.getContainerSize() && !remaining.isEmpty(); i++) {
-                if (!be.isOutputSlot(i)) continue;
-                if (be.getItem(i).isEmpty()) {
-                    int toMove = Math.min(remaining.getMaxStackSize(), remaining.getCount());
-                    be.setItem(i, remaining.copyWithCount(toMove));
-                    remaining.shrink(toMove);
-                }
-            }
-            // 第三步：还有剩余则掉落
-            if (!remaining.isEmpty()) {
-                Block.popResource(level, pos.above(), remaining);
-            }
-        }
-    }
+    // 物品输出路由已移至 IPopulationMachine.outputOrDrop() 统一实现
 
     // ==================== IClientUpdateReceiver ====================
 

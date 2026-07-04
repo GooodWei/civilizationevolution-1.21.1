@@ -1,10 +1,7 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
-import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.util.ParticleBorderHelper;
-import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
-import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -257,37 +254,16 @@ public abstract class AbstractRangeMachineBlockEntity
 
     // ==================== 人员管理 ====================
 
+    // getAvailableWorkers() 由 IPopulationMachine 接口提供默认实现，
+    // 使用 populationSlots() + PopulationConfig.ADULT_AGE/RETIREMENT_AGE 筛选
+
+    // ==================== 配置/参数（子类可覆写） ====================
+
     /**
-     * 从人口槽位中筛选适合工作的人口物品。
-     * <p>条件：PopulationItem、年龄 18-65、未死亡。
-     * 若 {@link #getWorkerCareer()} 非空，则追加职业匹配条件。
-     *
-     * @return 符合工作条件的人口物品列表（可能为空）
+     * 配置文件中此机器的 section key（如 "primitive_ranch"）。
+     * 范围机器子类（Ranch/HG/Farm/Harvester）必须覆写。
      */
-    protected List<ItemStack> getAvailableWorkers() {
-        List<ItemStack> all = new ArrayList<>();
-        for (int slot : populationSlots()) {
-            ItemStack stack = getItem(slot);
-            if (!stack.isEmpty()) {
-                all.add(stack);
-            }
-        }
-        List<ItemStack> eligible = filterAvailable(all, stack ->
-                stack.getItem() instanceof PopulationItem
-                        && !PopulationNBT.isDead(stack)
-                        && PopulationNBT.getAge(stack) >= 18
-                        && PopulationNBT.getAge(stack) <= 65);
-
-        // 若子类指定了职业要求，追加职业筛选
-        String career = getWorkerCareer();
-        if (career != null && !career.isEmpty()) {
-            eligible = filterAvailable(eligible, stack ->
-                    Career.isKindOf(PopulationNBT.getCareer(stack), career));
-        }
-        return eligible;
-    }
-
-    // ==================== 职业/学徒（子类可覆写） ====================
+    protected abstract String getMachineConfigKey();
 
     /**
      * 本机器要求的工作职业名称。
@@ -297,11 +273,43 @@ public abstract class AbstractRangeMachineBlockEntity
     public abstract String getWorkerCareer();
 
     /**
-     * 每次工作周期给学徒的经验量。
-     * 默认 1，子类可覆写以从配置文件读取或自定义。
+     * 每次工作周期给学徒的经验量，优先从配置读取。
+     * 子类可覆写以提供不同的默认值。
      */
     protected int getApprenticeExpPerCycle() {
-        return 1;
+        return com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig
+                .getApprenticeExpPerCycle(getMachineConfigKey(), 1);
+    }
+
+    /** 健康度波动下限，优先从配置读取，默认 -5 */
+    @Override
+    protected int getHealthFluctuateMin() {
+        return com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig
+                .getHealthFluctuateMin(getMachineConfigKey(), -5);
+    }
+
+    /** 健康度波动上限，优先从配置读取，默认 -1 */
+    @Override
+    protected int getHealthFluctuateMax() {
+        return com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig
+                .getHealthFluctuateMax(getMachineConfigKey(), -1);
+    }
+
+    // ==================== 工作周期前导 ====================
+
+    /**
+     * 工作周期前导：老化人口、健康波动、冲突检测。
+     * 供 Ranch/HG/Farm/Harvester 的 {@code executeWorkCycle} 调用。
+     *
+     * @param level 当前世界（用于冲突检测）
+     */
+    protected void executeWorkCyclePrelude(Level level) {
+        this.ageAllPopulations(this.getAgeIncrement());
+        this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel
+                && getConflictTag() != null) {
+            this.scanAndMarkConflicts(serverLevel);
+        }
     }
 
     // ==================== canWork 范围守卫 ====================

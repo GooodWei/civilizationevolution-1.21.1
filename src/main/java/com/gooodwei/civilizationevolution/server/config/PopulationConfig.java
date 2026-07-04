@@ -22,8 +22,12 @@ public final class PopulationConfig {
 
     // ==================== 成人默认值 ====================
 
-    /** 成人初始年龄 */
+    /** 成人初始年龄（也是最低工作年龄） */
     public static int ADULT_AGE;
+    /** 退休年龄：超过此年龄的人口不再工作，但仍占用槽位、消耗食物、每周期老化 */
+    public static int RETIREMENT_AGE;
+    /** 最大工作年龄：超过此年龄的人口工作效率降为零 */
+    public static int MAX_WORK_AGE;
     /** 寿命下限（tick 随机范围） */
     public static int LIFESPAN_MIN;
     /** 寿命上限 */
@@ -87,6 +91,8 @@ public final class PopulationConfig {
         String defaults = """
                 adult:
                   age: 18
+                  retirement_age: 65
+                  max_work_age: 85
                   lifespan_min: 15
                   lifespan_max: 110
                   health_min: 60
@@ -141,6 +147,8 @@ public final class PopulationConfig {
     private static void loadAdult(String key, String value) {
         switch (key) {
             case "age" -> ADULT_AGE = Integer.parseInt(value);
+            case "retirement_age" -> RETIREMENT_AGE = Integer.parseInt(value);
+            case "max_work_age" -> MAX_WORK_AGE = Integer.parseInt(value);
             case "lifespan_min" -> LIFESPAN_MIN = Integer.parseInt(value);
             case "lifespan_max" -> LIFESPAN_MAX = Integer.parseInt(value);
             case "health_min" -> ADULT_HEALTH_MIN = Integer.parseInt(value);

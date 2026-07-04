@@ -71,24 +71,6 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
     @Override
     public abstract String getWorkerCareer();
 
-    /** 每次工作周期给学徒的经验量，优先从配置读取 */
-    @Override
-    protected int getApprenticeExpPerCycle() {
-        return CivilizationMachineConfig.getApprenticeExpPerCycle(getMachineConfigKey(), 1);
-    }
-
-    /** 健康度波动下限，优先从配置读取 */
-    @Override
-    protected int getHealthFluctuateMin() {
-        return CivilizationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -5);
-    }
-
-    /** 健康度波动上限，优先从配置读取 */
-    @Override
-    protected int getHealthFluctuateMax() {
-        return CivilizationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), -1);
-    }
-
     /** 效率 × 此倍数 = 每种动物的喂养数量，优先从配置读取 */
     protected int getFedPerTypeMultiplier() {
         return CivilizationMachineConfig.getFedPerTypeMultiplier(getMachineConfigKey(), 3);
@@ -162,13 +144,7 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
 
     @Override
     public void executeWorkCycle(Level level) {
-        this.ageAllPopulations(this.getAgeIncrement());
-        this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
-
-        // 冲突检测
-        if (level instanceof ServerLevel serverLevel) {
-            this.scanAndMarkConflicts(serverLevel);
-        }
+        this.executeWorkCyclePrelude(level);
 
         BlockPos pos = this.getBlockPos();
 
@@ -185,7 +161,6 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
             }
 
             if (this.canWork()) {
-                // 学徒系统：调用 IPopulationItem.addApprenticeExp 处理晋级
                 addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
                 AABB range = getSelectionRange();
@@ -195,12 +170,7 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
                         Animal::getClass);
 
                 if (!grouped.isEmpty()) {
-                    float foodFactor = consumeFoodWithFallback(
-                            getFoodPerPopulation(),
-                            total -> Math.sqrt(total),
-                            getAvailableWorkers().size());
-                    double totalWorkEfficiency = calculateTotalWorkEfficiency(this.getAvailableWorkers());
-                    float efficiency = foodFactor * (float) totalWorkEfficiency;
+                    float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
                     feedAnimals(grouped, serverLevel, efficiency);
                 }
             }

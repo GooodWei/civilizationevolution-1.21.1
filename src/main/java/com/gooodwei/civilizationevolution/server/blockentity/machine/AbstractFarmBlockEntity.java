@@ -114,24 +114,6 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     @Override
     public abstract String getWorkerCareer();
 
-    /** 每次工作周期给学徒的经验量，优先从配置读取 */
-    @Override
-    protected int getApprenticeExpPerCycle() {
-        return CivilizationMachineConfig.getApprenticeExpPerCycle(getMachineConfigKey(), 1);
-    }
-
-    /** 健康度波动下限，优先从配置读取 */
-    @Override
-    protected int getHealthFluctuateMin() {
-        return CivilizationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -5);
-    }
-
-    /** 健康度波动上限，优先从配置读取 */
-    @Override
-    protected int getHealthFluctuateMax() {
-        return CivilizationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), -1);
-    }
-
     // ==================== 公开存取器 ====================
 
     /**
@@ -255,30 +237,14 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
      */
     @Override
     public void executeWorkCycle(Level level) {
-        // 人口老化
-        this.ageAllPopulations(this.getAgeIncrement());
-        this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
-
-        // 冲突检测
-        if (level instanceof ServerLevel serverLevel) {
-            this.scanAndMarkConflicts(serverLevel);
-        }
+        this.executeWorkCyclePrelude(level);
 
         BlockPos pos = this.getBlockPos();
 
         if (level instanceof ServerLevel serverLevel && this.canWork()) {
-            // 学徒系统：调用 IPopulationItem.addApprenticeExp 处理晋级
             addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
-            // 计算农民总工作效率
-            double totalWorkEfficiency = calculateTotalWorkEfficiency(this.getAvailableWorkers());
-
-            // 消耗食物并获取食物因子
-            float foodFactor = consumeFoodWithFallback(
-                    getFoodPerPopulation(),
-                    Math::sqrt,
-                    getAvailableWorkers().size());
-            float efficiency = foodFactor * (float) totalWorkEfficiency;
+            float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
 
             // 根据效率计算可催熟作物数（至少 1）
             int cropCount = Math.max(1, Math.round(efficiency));

@@ -53,6 +53,10 @@ public final class CivilizationMachineConfig {
 
     // ==================== 内部记录 ====================
 
+    /** 食物因子归一化分母，控制食物营养值对机器效率的影响程度。
+     * 值越大，同等食物带来的效率越低。默认 176.0（约为牛排营养值 8×22 的近似值）。 */
+    public static double FOOD_FACTOR_NORMALIZER = 176.0;
+
     /** 单台机器的配置项 */
     public record MachineSection(int workTotalTime, int ageIncrement, int maxAnimalCount,
                                  int waterPerCrop, int foodPerPopulation,

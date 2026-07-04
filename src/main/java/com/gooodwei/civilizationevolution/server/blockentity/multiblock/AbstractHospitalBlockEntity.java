@@ -334,7 +334,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             }
         }
 
-        double factor = Math.sqrt(doctorNutrition / 176.0);
+        double factor = Math.sqrt(doctorNutrition / CivilizationMachineConfig.FOOD_FACTOR_NORMALIZER);
         return (float) (Math.round(factor * 1000.0) / 1000.0);
     }
 

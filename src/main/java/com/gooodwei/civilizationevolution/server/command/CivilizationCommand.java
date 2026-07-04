@@ -859,13 +859,15 @@ public final class CivilizationCommand {
      * @param controllerPos 控制器世界坐标
      * @return 世界绝对坐标
      */
+    /**
+     * 将局部坐标根据 facing 旋转为世界绝对坐标。
+     *
+     * <p>委托给 {@link IMultiBlockMachine#worldPosFromLocal(int, int, int, Direction, BlockPos)}，
+     * 消除重复的坐标旋转逻辑。
+     */
     private static BlockPos getWorldPosStatic(int lx, int ly, int lz,
             Direction facing, BlockPos controllerPos) {
-        Direction right = facing.getClockWise();
-        return controllerPos.offset(
-                lx * right.getStepX() - lz * facing.getStepX(),
-                ly,
-                lx * right.getStepZ() - lz * facing.getStepZ());
+        return IMultiBlockMachine.worldPosFromLocal(lx, ly, lz, facing, controllerPos);
     }
 
     /**
@@ -897,26 +899,21 @@ public final class CivilizationCommand {
                             z - pattern.controllerZ(),
                             facing, controllerPos);
 
-                    // 构建允许的类型集合
-                    Set<String> allowed = new LinkedHashSet<>();
-                    allowed.add(kd.type());
-                    for (char alt : kd.alternatives()) {
-                        IMultiBlockMachine.KeyDefinition altDef = pattern.keyDefs().get(alt);
-                        if (altDef != null) allowed.add(altDef.type());
-                    }
+                    // 构建允许的类型集合（复用 IMultiBlockMachine 静态方法）
+                    Set<String> allowed = IMultiBlockMachine.buildAllowedTypes(c, pattern);
 
                     // 检查当前方块
                     BlockState currentState = level.getBlockState(worldPos);
                     boolean matched = false;
                     for (String typeStr : allowed) {
-                        if (typeStr.indexOf(':') >= 0 && !typeStr.startsWith("tag:")) {
+                        if (IMultiBlockMachine.isBlockOrTagType(typeStr)) {
                             String regName = BuiltInRegistries.BLOCK
                                     .getKey(currentState.getBlock()).toString();
                             if (regName.equals(typeStr)) {
                                 matched = true;
                                 break;
                             }
-                        } else if (typeStr.startsWith("tag:")) {
+                        } else if (IMultiBlockMachine.isTagType(typeStr)) {
                             String tagStr = typeStr.substring(4);
                             TagKey<Block> tagKey = TagKey.create(Registries.BLOCK,
                                     ResourceLocation.parse(tagStr));

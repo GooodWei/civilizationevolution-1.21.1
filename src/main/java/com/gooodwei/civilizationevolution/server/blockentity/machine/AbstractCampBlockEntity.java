@@ -69,9 +69,9 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     /** 父代槽位 B 的索引 */
     protected int getParentSlotB() { return 5; }
 
-    /** 食物因子计算公式 */
+    /** 食物因子计算公式，归一化分母引用 {@link CivilizationMachineConfig#FOOD_FACTOR_NORMALIZER} */
     protected double getFoodFactorFormula(double total) {
-        return Math.sqrt(total / 176.0);
+        return Math.sqrt(total / CivilizationMachineConfig.FOOD_FACTOR_NORMALIZER);
     }
 
     /** 父代最低生育年龄，优先从配置读取 */

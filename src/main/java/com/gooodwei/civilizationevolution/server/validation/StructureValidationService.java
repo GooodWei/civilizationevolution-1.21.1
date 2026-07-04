@@ -100,9 +100,9 @@ public final class StructureValidationService {
         // 控制器为中心的偏移量
         int offsetX = pattern.controllerX();
         int offsetZ = pattern.controllerZ();
-        BlockPos minCorner = worldPosFromLocal(-offsetX, -pattern.controllerY(), -offsetZ,
+        BlockPos minCorner = IMultiBlockMachine.worldPosFromLocal(-offsetX, -pattern.controllerY(), -offsetZ,
                 facing, controllerPos);
-        BlockPos maxCorner = worldPosFromLocal(pattern.width() - 1 - offsetX,
+        BlockPos maxCorner = IMultiBlockMachine.worldPosFromLocal(pattern.width() - 1 - offsetX,
                 pattern.height() - 1 - pattern.controllerY(),
                 pattern.depth() - 1 - offsetZ,
                 facing, controllerPos);
@@ -190,14 +190,14 @@ public final class StructureValidationService {
                     if (kd == null) continue;
 
                     // 检查 primary key 或其 alternatives 是否需要收集零件快照
-                    boolean needsPartSnapshot = !isBlockOrTagType(kd.type())
+                    boolean needsPartSnapshot = !IMultiBlockMachine.isBlockOrTagType(kd.type())
                             && !"self".equals(kd.type());
                     if (!needsPartSnapshot) {
                         // primary 是方块/Tag/self 类型，但 alternatives 可能引用零件类型
                         for (char alt : kd.alternatives()) {
                             IMultiBlockMachine.KeyDefinition altDef = pattern.keyDefs().get(alt);
                             if (altDef != null
-                                    && !isBlockOrTagType(altDef.type())
+                                    && !IMultiBlockMachine.isBlockOrTagType(altDef.type())
                                     && !"self".equals(altDef.type())) {
                                 needsPartSnapshot = true;
                                 break;
@@ -206,7 +206,7 @@ public final class StructureValidationService {
                     }
                     if (!needsPartSnapshot) continue;
 
-                    BlockPos worldPos = worldPosFromLocal(
+                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
                             x - pattern.controllerX(),
                             y - pattern.controllerY(),
                             z - pattern.controllerZ(),
@@ -270,7 +270,7 @@ public final class StructureValidationService {
                     if (kd == null) continue;
                     if ("self".equals(kd.type())) continue;
 
-                    BlockPos worldPos = worldPosFromLocal(
+                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
                             x - pattern.controllerX(),
                             y - pattern.controllerY(),
                             z - pattern.controllerZ(),
@@ -282,14 +282,14 @@ public final class StructureValidationService {
                     LevelChunk chunk = chunkMap.get(new ChunkPos(chunkX, chunkZ));
                     if (chunk == null) continue; // 不应发生（主线程已验证全部加载）
 
-                    Set<String> allowedTypes = buildAllowedTypes(c, pattern);
+                    Set<String> allowedTypes = IMultiBlockMachine.buildAllowedTypes(c, pattern);
                     boolean matched = false;
                     String matchedTypeStr = null;
 
                     for (String typeStr : allowedTypes) {
-                        if (isBlockOrTagType(typeStr)) {
+                        if (IMultiBlockMachine.isBlockOrTagType(typeStr)) {
                             BlockState blockState = chunk.getBlockState(worldPos);
-                            if (isTagType(typeStr)) {
+                            if (IMultiBlockMachine.isTagType(typeStr)) {
                                 String tagStr = typeStr.substring(4);
                                 TagKey<Block> tagKey = TagKey.create(Registries.BLOCK,
                                         ResourceLocation.parse(tagStr));
@@ -332,7 +332,7 @@ public final class StructureValidationService {
 
                     allParts.add(worldPos);
                     if (matchedTypeStr != null) {
-                        if (isBlockOrTagType(matchedTypeStr)) {
+                        if (IMultiBlockMachine.isBlockOrTagType(matchedTypeStr)) {
                             casingPositions.add(worldPos);
                         } else {
                             switch (matchedTypeStr) {
@@ -346,7 +346,7 @@ public final class StructureValidationService {
                         }
                     }
 
-                    Character matchedKey = findMatchingKey(c, matchedTypeStr, pattern);
+                    Character matchedKey = IMultiBlockMachine.findMatchingKey(c, matchedTypeStr, pattern);
                     keyCounts.merge(matchedKey, 1, Integer::sum);
                 }
             }
@@ -410,55 +410,19 @@ public final class StructureValidationService {
 
     // ==================== 辅助方法 ====================
 
-    private static BlockPos worldPosFromLocal(int lx, int ly, int lz,
-                                              Direction facing, BlockPos controllerPos) {
-        Direction right = facing.getClockWise();
-        return controllerPos.offset(
-                lx * right.getStepX() - lz * facing.getStepX(),
-                ly,
-                lx * right.getStepZ() - lz * facing.getStepZ());
-    }
-
+    /**
+     * 从 LevelChunk 解析 {@link IMultiBlockPart}。
+     * 仅在主线程调用（BlockEntity 访问安全）。
+     *
+     * @param chunk 目标区块
+     * @param pos   世界坐标
+     * @return 该位置的 IMultiBlockPart 实例，若均不匹配则返回 null
+     */
     @Nullable
     private static IMultiBlockPart resolvePartFromChunk(LevelChunk chunk, BlockPos pos) {
-        // 注意：仅在主线程 (collectPartSnapshots) 调用，BlockEntity 访问安全
         if (chunk.getBlockEntity(pos) instanceof IMultiBlockPart part) return part;
         if (chunk.getBlockState(pos).getBlock() instanceof IMultiBlockPart part) return part;
         return null;
-    }
-
-    private static boolean isBlockOrTagType(String type) {
-        return type.indexOf(':') >= 0 && !type.startsWith("tag:");
-    }
-
-    private static boolean isTagType(String type) {
-        return type.startsWith("tag:");
-    }
-
-    private static Set<String> buildAllowedTypes(char c, IMultiBlockMachine.ParsedPattern pattern) {
-        Set<String> allowed = new LinkedHashSet<>();
-        IMultiBlockMachine.KeyDefinition kd = pattern.keyDefs().get(c);
-        if (kd == null) return allowed;
-        allowed.add(kd.type());
-        for (char alt : kd.alternatives()) {
-            IMultiBlockMachine.KeyDefinition altDef = pattern.keyDefs().get(alt);
-            if (altDef != null) allowed.add(altDef.type());
-        }
-        return allowed;
-    }
-
-    private static Character findMatchingKey(char patternChar, @Nullable String matchedType,
-                                             IMultiBlockMachine.ParsedPattern pattern) {
-        if (matchedType == null) return patternChar;
-        IMultiBlockMachine.KeyDefinition selfDef = pattern.keyDefs().get(patternChar);
-        if (selfDef != null && selfDef.type().equals(matchedType)) return patternChar;
-        if (selfDef != null) {
-            for (char alt : selfDef.alternatives()) {
-                IMultiBlockMachine.KeyDefinition altDef = pattern.keyDefs().get(alt);
-                if (altDef != null && altDef.type().equals(matchedType)) return alt;
-            }
-        }
-        return patternChar;
     }
 
     // ==================== 内部类型 ====================

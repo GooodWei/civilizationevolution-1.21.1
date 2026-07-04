@@ -20,6 +20,7 @@ import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
 import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
+import com.gooodwei.civilizationevolution.server.validation.StructureValidationService;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -103,6 +104,9 @@ public class CivilizationEvolution {
         // 冻结 Tier 注册表（附属模组应在此之前注册自己的 Tier）
         TierRegistry.freeze();
         LOGGER.info("TierRegistry 已冻结，共注册 {} 个 Tier", TierRegistry.size());
+
+        // 注入多方块结构验证服务，解耦 api/ 层对 server/ 层的硬依赖
+        IMultiBlockMachine.VALIDATION_SERVICE.set(StructureValidationService::submitPeriodicValidation);
     }
 
     /**

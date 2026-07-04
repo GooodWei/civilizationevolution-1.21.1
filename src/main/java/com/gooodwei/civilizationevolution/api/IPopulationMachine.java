@@ -1,10 +1,13 @@
 package com.gooodwei.civilizationevolution.api;
 
+import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
+import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import com.gooodwei.civilizationevolution.server.population.Population;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
@@ -13,7 +16,9 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -835,5 +840,100 @@ public interface IPopulationMachine {
         return stacks.stream()
                 .filter(predicate)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    // ==================== 工人筛选 ====================
+
+    /**
+     * 从人口槽位中筛选适合工作的人口物品。
+     *
+     * <p>条件：PopulationItem、未死亡、年龄在 [{@link PopulationConfig#ADULT_AGE},
+     * {@link PopulationConfig#RETIREMENT_AGE}] 区间内。
+     * 若 {@link #getWorkerCareer()} 返回非空非空字符串，则追加职业匹配条件
+     *（通过 {@link Career#isKindOf} 沿父链追溯）。
+     *
+     * @return 符合工作条件的人口物品列表（可能为空）
+     */
+    default List<ItemStack> getAvailableWorkers() {
+        Container c = getContainer();
+        List<ItemStack> all = new ArrayList<>();
+        for (int slot : populationSlots()) {
+            ItemStack stack = c.getItem(slot);
+            if (!stack.isEmpty()) {
+                all.add(stack);
+            }
+        }
+        List<ItemStack> eligible = filterAvailable(all, stack ->
+                stack.getItem() instanceof PopulationItem
+                        && !PopulationNBT.isDead(stack)
+                        && PopulationNBT.getAge(stack) >= PopulationConfig.ADULT_AGE
+                        && PopulationNBT.getAge(stack) <= PopulationConfig.RETIREMENT_AGE);
+
+        String career = getWorkerCareer();
+        if (career != null && !career.isEmpty()) {
+            eligible = filterAvailable(eligible, stack ->
+                    Career.isKindOf(PopulationNBT.getCareer(stack), career));
+        }
+        return eligible;
+    }
+
+    // ==================== 工作效率计算 ====================
+
+    /**
+     * 计算本周期工作效率：食物因子 × Σ人口工作效率。
+     *
+     * <p>封装了"消耗食物 → 获取食物因子 → 计算总效率"的标准流程，
+     * 供 Ranch/HG/Farm/Harvester 等机器的 {@code executeWorkCycle} 使用。
+     *
+     * @param foodPerPopulation 每个人口槽位每次工作消耗的食物量
+     * @return 工作效率（0.0 ~ N）
+     */
+    default float calculateWorkEfficiency(int foodPerPopulation) {
+        List<ItemStack> workers = getAvailableWorkers();
+        float foodFactor = consumeFoodWithFallback(foodPerPopulation, Math::sqrt, workers.size());
+        return foodFactor * (float) calculateTotalWorkEfficiency(workers);
+    }
+
+    // ==================== 物品输出路由 ====================
+
+    /**
+     * 将掉落物尝试放入输出槽，先合并已有同类堆叠，再找空槽。
+     * 输出空间不足时，剩余部分以掉落物形式弹出到方块上方。
+     *
+     * @param level 当前世界
+     * @param pos   方块坐标（掉落物弹出到其上方）
+     * @param drops 待输出的物品列表
+     */
+    default void outputOrDrop(Level level, BlockPos pos, List<ItemStack> drops) {
+        Container c = getContainer();
+        for (ItemStack drop : drops) {
+            ItemStack remaining = drop.copy();
+            // 第一步：合并到已有同类物品的输出槽
+            for (int i = 0; i < c.getContainerSize() && !remaining.isEmpty(); i++) {
+                if (!isOutputSlot(i)) continue;
+                ItemStack slotStack = c.getItem(i);
+                if (ItemStack.isSameItemSameComponents(slotStack, remaining)) {
+                    int space = slotStack.getMaxStackSize() - slotStack.getCount();
+                    int toMove = Math.min(space, remaining.getCount());
+                    if (toMove > 0) {
+                        slotStack.grow(toMove);
+                        remaining.shrink(toMove);
+                    }
+                }
+            }
+            // 第二步：放入空输出槽
+            for (int i = 0; i < c.getContainerSize() && !remaining.isEmpty(); i++) {
+                if (!isOutputSlot(i)) continue;
+                if (c.getItem(i).isEmpty()) {
+                    int toMove = Math.min(remaining.getMaxStackSize(), remaining.getCount());
+                    c.setItem(i, remaining.copyWithCount(toMove));
+                    remaining.shrink(toMove);
+                }
+            }
+            // 第三步：还有剩余则掉落
+            if (!remaining.isEmpty()) {
+                Block.popResource(level, pos.above(), remaining);
+            }
+        }
     }
 }

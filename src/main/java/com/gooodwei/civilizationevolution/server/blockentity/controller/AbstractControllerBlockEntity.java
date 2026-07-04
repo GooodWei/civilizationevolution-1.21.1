@@ -248,6 +248,55 @@ public abstract class AbstractControllerBlockEntity
     // ==================== 核心槽位管理 ====================
 
     /**
+     * 初始化或加载核心 UUID 对应的 CoreData。
+     *
+     * <p>处理三种情况：
+     * <ol>
+     *   <li>UUID 为 null → 自动生成、写入物品、创建 CoreData</li>
+     *   <li>UUID 与当前不同 → 移除旧索引、加载或创建新 CoreData</li>
+     *   <li>UUID 相同但 coreData 为 null（兜底）→ 重新加载或创建</li>
+     * </ol>
+     *
+     * @param coreStack 核心槽位中的物品
+     * @return true 表示 coreData 刚被初始化（需同步机器位置）
+     */
+    boolean initOrLoadCoreUuid(ItemStack coreStack) {
+        String uuid = CivilizationCoreItem.getUuid(coreStack);
+
+        if (uuid == null) {
+            uuid = CoreDataManager.generateUuid();
+            CivilizationCoreItem.setUuid(coreStack, uuid);
+            coreData = CoreDataManager.createNew(uuid, getControllerType());
+            currentUuid = uuid;
+            CORE_LOCATIONS.put(uuid, getBlockPos());
+            return true;
+        }
+
+        if (!uuid.equals(currentUuid)) {
+            if (currentUuid != null) CORE_LOCATIONS.remove(currentUuid);
+            coreData = CoreDataManager.getOrLoad(uuid);
+            if (coreData == null) {
+                coreData = CoreDataManager.createNew(uuid, getControllerType());
+            }
+            currentUuid = uuid;
+            CORE_LOCATIONS.put(uuid, getBlockPos());
+            return true;
+        }
+
+        // 兜底：确保 coreData 非空
+        if (coreData == null) {
+            coreData = CoreDataManager.getOrLoad(uuid);
+            if (coreData == null) {
+                coreData = CoreDataManager.createNew(uuid, getControllerType());
+            }
+            currentUuid = uuid;
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * 判断指定槽位是否为文明核心槽位。
      */
     public boolean isCoreSlot(int slot) {
@@ -293,27 +342,8 @@ public abstract class AbstractControllerBlockEntity
             return;
         }
 
-        String uuid = CivilizationCoreItem.getUuid(stack);
-
-        boolean isNewCore = (uuid == null) || !uuid.equals(currentUuid);
-
-        if (uuid == null) {
-            uuid = CoreDataManager.generateUuid();
-            CivilizationCoreItem.setUuid(stack, uuid);
-            coreData = CoreDataManager.createNew(uuid, getControllerType());
-            currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, getBlockPos());
-            setChanged();
-        } else if (!uuid.equals(currentUuid)) {
-            if (currentUuid != null) CORE_LOCATIONS.remove(currentUuid);
-            coreData = CoreDataManager.getOrLoad(uuid);
-            if (coreData == null) {
-                coreData = CoreDataManager.createNew(uuid, getControllerType());
-            }
-            currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, getBlockPos());
-            setChanged();
-        }
+        boolean isNewCore = initOrLoadCoreUuid(stack);
+        if (isNewCore) setChanged();
 
         // 核心首次放入或更换时，向所有已绑定机器推送当前控制器的维度和坐标（更新 Jade 显示）
         if (isNewCore && coreData != null) {
@@ -356,39 +386,13 @@ public abstract class AbstractControllerBlockEntity
         }
 
         String uuid = CivilizationCoreItem.getUuid(coreStack);
-        boolean coreDataJustSet = false;
+        boolean wasNull = (uuid == null);
+        boolean coreDataJustSet = be.initOrLoadCoreUuid(coreStack);
 
-        // 核心尚未初始化 UUID → 自动生成并写入物品
-        if (uuid == null) {
-            uuid = CoreDataManager.generateUuid();
-            CivilizationCoreItem.setUuid(coreStack, uuid);
-            be.coreData = CoreDataManager.createNew(uuid, be.getControllerType());
-            be.currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, pos);
+        // 核心尚未初始化 UUID（刚自动生成）→ 保存后返回，下个 tick 再继续调度
+        if (wasNull && coreDataJustSet) {
             setChanged(level, pos, blockState);
             return;
-        }
-
-        // UUID 变更（玩家更换了核心物品）→ 加载/创建新数据
-        if (!uuid.equals(be.currentUuid)) {
-            if (be.currentUuid != null) CORE_LOCATIONS.remove(be.currentUuid);
-            be.coreData = CoreDataManager.getOrLoad(uuid);
-            if (be.coreData == null) {
-                be.coreData = CoreDataManager.createNew(uuid, be.getControllerType());
-            }
-            be.currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, pos);
-            coreDataJustSet = true;
-        }
-
-        // 兜底：确保 coreData 非空
-        if (be.coreData == null) {
-            be.coreData = CoreDataManager.getOrLoad(uuid);
-            if (be.coreData == null) {
-                be.coreData = CoreDataManager.createNew(uuid, be.getControllerType());
-            }
-            be.currentUuid = uuid;
-            coreDataJustSet = true;
         }
 
         // 核心数据刚完成初始化 → 向所有已绑定机器推送当前控制器位置（更新 Jade 显示）

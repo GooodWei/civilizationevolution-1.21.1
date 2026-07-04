@@ -1,12 +1,17 @@
 package com.gooodwei.civilizationevolution.server.population;
 
 import com.gooodwei.civilizationevolution.api.IWorkEfficiencyCalculator;
+import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
 
 /**
  * 根据四个因素计算人口工作效率：
  * 年龄、生命值、精神状态和熟练度。
  *
- * 基准值（返回 1.0）：
+ * <p>年龄阈值引用 {@link PopulationConfig}：
+ * 0~ADULT_AGE 线性增长，ADULT_AGE~RETIREMENT_AGE 保持 1.0，
+ * RETIREMENT_AGE~MAX_WORK_AGE 线性衰减，MAX_WORK_AGE+ 为 0。
+ *
+ * <p>基准值（返回 1.0）：
  *   age=18~65, health=50, mentalState=0.5, proficiency=100
  */
 public final class WorkEfficiency {
@@ -47,17 +52,22 @@ public final class WorkEfficiency {
     }
 
     /**
-     * 年龄因子：0-17 线性 0→1，18-65 恒为 1，66-84 线性 1→0，85+ 为 0。
+     * 年龄因子：0~ADULT_AGE 线性 0→1，ADULT_AGE~RETIREMENT_AGE 恒为 1，
+     * RETIREMENT_AGE~MAX_WORK_AGE 线性 1→0，MAX_WORK_AGE+ 为 0。
+     *
      * @param age 当前年龄（年）
      * @return 年龄因子（0.0-1.0）
      */
     static double ageFactor(int age) {
-        if (age < 18) {
-            return age / 18.0;
-        } else if (age <= 65) {
+        int adult = PopulationConfig.ADULT_AGE;
+        int retire = PopulationConfig.RETIREMENT_AGE;
+        int maxWork = PopulationConfig.MAX_WORK_AGE;
+        if (age < adult) {
+            return (double) age / adult;
+        } else if (age <= retire) {
             return 1.0;
-        } else if (age < 85) {
-            return 1.0 - (age - 65) / 20.0;
+        } else if (age < maxWork) {
+            return 1.0 - (double) (age - retire) / (maxWork - retire);
         } else {
             return 0.0;
         }
