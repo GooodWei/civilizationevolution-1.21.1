@@ -237,7 +237,7 @@ public interface IPopulationMachine {
 
                 FoodProperties food = stack.getFoodProperties(null);
                 float nutrition = food != null ? food.nutrition() : 0;
-                float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
+                float saturation = food != null ? nutrition * food.saturation() : 0;
 
                 int toRemove = Math.min(stack.getCount(), remaining);
                 stack.shrink(toRemove);
@@ -866,8 +866,8 @@ public interface IPopulationMachine {
         List<ItemStack> eligible = filterAvailable(all, stack ->
                 stack.getItem() instanceof PopulationItem
                         && !PopulationNBT.isDead(stack)
-                        && PopulationNBT.getAge(stack) >= PopulationConfig.ADULT_AGE
-                        && PopulationNBT.getAge(stack) <= PopulationConfig.RETIREMENT_AGE);
+                        && PopulationNBT.getAge(stack) >= PopulationConfig.getAdultAge()
+                        && PopulationNBT.getAge(stack) <= PopulationConfig.getRetirementAge());
 
         String career = getWorkerCareer();
         if (career != null && !career.isEmpty()) {

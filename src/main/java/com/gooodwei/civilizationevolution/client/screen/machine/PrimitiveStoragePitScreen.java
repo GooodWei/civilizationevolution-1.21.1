@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.client.screen.machine;
 
-import com.gooodwei.civilizationevolution.client.util.CountAbbreviator;
+import com.gooodwei.civilizationevolution.api.util.CountAbbreviator;
+import com.gooodwei.civilizationevolution.client.screen.hatch.AbstractHatchScreen;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveStoragePitMenu;
 import com.gooodwei.civilizationevolution.server.menu.slot.OversizedSlot;
 import com.gooodwei.civilizationevolution.network.ScrollStoragePitPayload;
@@ -210,7 +211,7 @@ public class PrimitiveStoragePitScreen extends AbstractContainerScreen<Primitive
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(this.font, this.title, 8, 6, 0x404040, false);
+        graphics.drawString(this.font, this.title, 8, 6, AbstractHatchScreen.TITLE_COLOR, false);
 
         var data = menu.getData();
         if (data.get(2) != 0) {
@@ -223,7 +224,7 @@ public class PrimitiveStoragePitScreen extends AbstractContainerScreen<Primitive
                     w, w, h,
                     Component.translatable("gui.civilizationevolution.used_slots").getString(),
                     used, total);
-            graphics.drawString(this.font, info, 8, imageHeight - 177, 0x404040, false);
+            graphics.drawString(this.font, info, 8, imageHeight - 177, AbstractHatchScreen.TITLE_COLOR, false);
         }
     }
 

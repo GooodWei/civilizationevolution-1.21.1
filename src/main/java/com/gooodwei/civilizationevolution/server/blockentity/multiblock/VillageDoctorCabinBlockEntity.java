@@ -4,7 +4,8 @@ import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
-import com.gooodwei.civilizationevolution.server.menu.machine.VillageDoctorCabinMenu;
+import com.gooodwei.civilizationevolution.server.menu.machine.DoctorCabinMenu;
+import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -85,7 +86,7 @@ public class VillageDoctorCabinBlockEntity extends AbstractHospitalBlockEntity {
 
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        return new VillageDoctorCabinMenu(containerId, inventory, this, this.data);
+        return new DoctorCabinMenu(MenuRegistry.VILLAGE_DOCTOR_CABIN_MENU.get(), containerId, inventory, this, this.data);
     }
 
     @Override

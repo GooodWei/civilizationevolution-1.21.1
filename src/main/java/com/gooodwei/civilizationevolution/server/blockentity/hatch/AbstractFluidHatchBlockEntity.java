@@ -32,6 +32,11 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
  */
 public abstract class AbstractFluidHatchBlockEntity extends AbstractHatchBlockEntity {
 
+    /** NBT key：储液量 */
+    private static final String TAG_FLUID_AMOUNT = "FluidAmount";
+    /** NBT key：存储的流体类型 */
+    private static final String TAG_STORED_FLUID = "StoredFluid";
+
     /** 当前储液量（mB） */
     protected long fluidAmount = 0;
     /** 当前存储的流体类型（持久化） */
@@ -328,18 +333,18 @@ public abstract class AbstractFluidHatchBlockEntity extends AbstractHatchBlockEn
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putLong("FluidAmount", fluidAmount);
+        tag.putLong(TAG_FLUID_AMOUNT, fluidAmount);
         if (storedFluid != Fluids.EMPTY) {
-            tag.putString("StoredFluid", BuiltInRegistries.FLUID.getKey(storedFluid).toString());
+            tag.putString(TAG_STORED_FLUID, BuiltInRegistries.FLUID.getKey(storedFluid).toString());
         }
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        fluidAmount = tag.getLong("FluidAmount");
-        if (tag.contains("StoredFluid")) {
-            ResourceLocation rl = ResourceLocation.parse(tag.getString("StoredFluid"));
+        fluidAmount = tag.getLong(TAG_FLUID_AMOUNT);
+        if (tag.contains(TAG_STORED_FLUID)) {
+            ResourceLocation rl = ResourceLocation.parse(tag.getString(TAG_STORED_FLUID));
             storedFluid = BuiltInRegistries.FLUID.getOptional(rl).orElse(Fluids.EMPTY);
         } else {
             storedFluid = Fluids.EMPTY;

@@ -7,7 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -16,7 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *
  * <p>27 个槽位（3×9 潜影盒布局），拒绝外部放入（仅代码产出），堆叠上限 64。
  */
-public class VillageItemOutputHatchBlockEntity extends AbstractHatchBlockEntity {
+public class VillageItemOutputHatchBlockEntity extends AbstractItemOutputHatchBlockEntity {
 
     public static final int SIZE = 27;
 
@@ -27,21 +26,6 @@ public class VillageItemOutputHatchBlockEntity extends AbstractHatchBlockEntity 
     @Override
     public Tier getPartTier() {
         return CivilizationTiers.VILLAGE;
-    }
-
-    @Override
-    public int getMaxStackSize() {
-        return 64;
-    }
-
-    @Override
-    public boolean canPlaceItem(int slot, ItemStack stack) {
-        return false;
-    }
-
-    @Override
-    public String getPartType() {
-        return TYPE_OUTPUT_HATCH;
     }
 
     @Override

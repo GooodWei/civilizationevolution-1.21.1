@@ -59,9 +59,9 @@ public final class WorkEfficiency {
      * @return 年龄因子（0.0-1.0）
      */
     static double ageFactor(int age) {
-        int adult = PopulationConfig.ADULT_AGE;
-        int retire = PopulationConfig.RETIREMENT_AGE;
-        int maxWork = PopulationConfig.MAX_WORK_AGE;
+        int adult = PopulationConfig.getAdultAge();
+        int retire = PopulationConfig.getRetirementAge();
+        int maxWork = PopulationConfig.getMaxWorkAge();
         if (age < adult) {
             return (double) age / adult;
         } else if (age <= retire) {

@@ -31,6 +31,6 @@ public class VillageItemOutputHatchScreen extends AbstractHatchScreen<VillageIte
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, TITLE_COLOR, false);
     }
 }

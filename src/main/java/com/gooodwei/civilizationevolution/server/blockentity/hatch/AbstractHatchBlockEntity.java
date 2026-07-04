@@ -42,6 +42,11 @@ public abstract class AbstractHatchBlockEntity extends BlockEntity
     /** 槽位数量（缓存，等于 items.size()） */
     private final int slotCount;
 
+    /** NBT key：控制器 X/Y/Z 坐标 */
+    private static final String TAG_OWNC_X = "OwningControllerX";
+    private static final String TAG_OWNC_Y = "OwningControllerY";
+    private static final String TAG_OWNC_Z = "OwningControllerZ";
+
     /** 认领此仓室的控制器坐标（NBT 持久化）。null = 未认领 */
     @Nullable
     private BlockPos owningController;
@@ -127,9 +132,9 @@ public abstract class AbstractHatchBlockEntity extends BlockEntity
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, items, registries);
         if (owningController != null) {
-            tag.putInt("OwningControllerX", owningController.getX());
-            tag.putInt("OwningControllerY", owningController.getY());
-            tag.putInt("OwningControllerZ", owningController.getZ());
+            tag.putInt(TAG_OWNC_X, owningController.getX());
+            tag.putInt(TAG_OWNC_Y, owningController.getY());
+            tag.putInt(TAG_OWNC_Z, owningController.getZ());
         }
     }
 
@@ -137,11 +142,11 @@ public abstract class AbstractHatchBlockEntity extends BlockEntity
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, items, registries);
-        if (tag.contains("OwningControllerX")) {
+        if (tag.contains(TAG_OWNC_X)) {
             owningController = new BlockPos(
-                    tag.getInt("OwningControllerX"),
-                    tag.getInt("OwningControllerY"),
-                    tag.getInt("OwningControllerZ"));
+                    tag.getInt(TAG_OWNC_X),
+                    tag.getInt(TAG_OWNC_Y),
+                    tag.getInt(TAG_OWNC_Z));
         } else {
             owningController = null;
         }

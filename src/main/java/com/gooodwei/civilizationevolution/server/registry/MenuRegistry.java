@@ -46,8 +46,9 @@ public class MenuRegistry {
             MENUS.register("primitive_farm", () -> IMenuTypeExtension.create(PrimitiveFarmMenu::fromNetwork));
 
     /** 原始诊所菜单类型（Tier 0） */
-    public static final Supplier<MenuType<PrimitiveDoctorCabinMenu>> PRIMITIVE_DOCTOR_CABIN_MENU =
-            MENUS.register("primitive_doctor_cabin", () -> IMenuTypeExtension.create(PrimitiveDoctorCabinMenu::fromNetwork));
+    public static final Supplier<MenuType<DoctorCabinMenu>> PRIMITIVE_DOCTOR_CABIN_MENU =
+            MENUS.register("primitive_doctor_cabin",
+                    () -> IMenuTypeExtension.create(DoctorCabinMenu::fromNetworkPrimitive));
 
     /** 原始人口输入接口菜单类型（Tier 0） */
     public static final Supplier<MenuType<PrimitivePopulationInputHatchMenu>> PRIMITIVE_POPULATION_INPUT_HATCH_MENU =
@@ -55,14 +56,14 @@ public class MenuRegistry {
                     () -> IMenuTypeExtension.create(PrimitivePopulationInputHatchMenu::fromNetwork));
 
     /** 原始食物输入接口菜单类型（Tier 0） */
-    public static final Supplier<MenuType<PrimitiveFoodInputHatchMenu>> PRIMITIVE_FOOD_INPUT_HATCH_MENU =
+    public static final Supplier<MenuType<FoodInputHatchMenu>> PRIMITIVE_FOOD_INPUT_HATCH_MENU =
             MENUS.register("primitive_food_input_hatch",
-                    () -> IMenuTypeExtension.create(PrimitiveFoodInputHatchMenu::fromNetwork));
+                    () -> IMenuTypeExtension.create(FoodInputHatchMenu::fromNetworkPrimitive));
 
     /** 村庄食物输入接口菜单类型（Tier 1） */
-    public static final Supplier<MenuType<VillageFoodInputHatchMenu>> VILLAGE_FOOD_INPUT_HATCH_MENU =
+    public static final Supplier<MenuType<FoodInputHatchMenu>> VILLAGE_FOOD_INPUT_HATCH_MENU =
             MENUS.register("village_food_input_hatch",
-                    () -> IMenuTypeExtension.create(VillageFoodInputHatchMenu::fromNetwork));
+                    () -> IMenuTypeExtension.create(FoodInputHatchMenu::fromNetworkVillage));
 
     /** 原始人口输出接口菜单类型（Tier 0） */
     public static final Supplier<MenuType<PrimitivePopulationOutputHatchMenu>> PRIMITIVE_POPULATION_OUTPUT_HATCH_MENU =
@@ -110,8 +111,9 @@ public class MenuRegistry {
             MENUS.register("village_farm", () -> IMenuTypeExtension.create(VillageFarmMenu::fromNetwork));
 
     /** 村庄诊所菜单类型（Tier 1） */
-    public static final Supplier<MenuType<VillageDoctorCabinMenu>> VILLAGE_DOCTOR_CABIN_MENU =
-            MENUS.register("village_doctor_cabin", () -> IMenuTypeExtension.create(VillageDoctorCabinMenu::fromNetwork));
+    public static final Supplier<MenuType<DoctorCabinMenu>> VILLAGE_DOCTOR_CABIN_MENU =
+            MENUS.register("village_doctor_cabin",
+                    () -> IMenuTypeExtension.create(DoctorCabinMenu::fromNetworkVillage));
 
     public static final  Supplier<MenuType<VillageHarvesterMenu>> VILLAGE_HARVESTER_MENU =
             MENUS.register("village_harvester",() -> IMenuTypeExtension.create(VillageHarvesterMenu::fromNetwork));

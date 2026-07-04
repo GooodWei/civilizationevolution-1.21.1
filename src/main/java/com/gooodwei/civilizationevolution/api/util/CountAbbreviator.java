@@ -1,4 +1,4 @@
-package com.gooodwei.civilizationevolution.client.util;
+package com.gooodwei.civilizationevolution.api.util;
 
 import java.util.Locale;
 

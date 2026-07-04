@@ -735,7 +735,7 @@ public final class CivilizationCommand {
                     }
 
                     // 计算世界坐标
-                    BlockPos worldPos = getWorldPosStatic(
+                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
                             x - pattern.controllerX(),
                             y - pattern.controllerY(),
                             z - pattern.controllerZ(),
@@ -860,17 +860,6 @@ public final class CivilizationCommand {
      * @return 世界绝对坐标
      */
     /**
-     * 将局部坐标根据 facing 旋转为世界绝对坐标。
-     *
-     * <p>委托给 {@link IMultiBlockMachine#worldPosFromLocal(int, int, int, Direction, BlockPos)}，
-     * 消除重复的坐标旋转逻辑。
-     */
-    private static BlockPos getWorldPosStatic(int lx, int ly, int lz,
-            Direction facing, BlockPos controllerPos) {
-        return IMultiBlockMachine.worldPosFromLocal(lx, ly, lz, facing, controllerPos);
-    }
-
-    /**
      * 放置后验证：检查结构每个位置是否匹配 pattern。
      *
      * @return true 表示所有位置均匹配
@@ -893,7 +882,7 @@ public final class CivilizationCommand {
                     if (kd == null) continue;
                     if ("self".equals(kd.type())) continue;
 
-                    BlockPos worldPos = getWorldPosStatic(
+                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
                             x - pattern.controllerX(),
                             y - pattern.controllerY(),
                             z - pattern.controllerZ(),

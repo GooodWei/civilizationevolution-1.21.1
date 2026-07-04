@@ -88,14 +88,19 @@ public final class Population {
      * @return 30-120 范围内的近似正态分布寿命
      */
     public static int generateLifespan(RandomSource rand) {
+        int mean = PopulationConfig.getLifespanMean();
+        int min = PopulationConfig.getLifespanMin();
+        int max = PopulationConfig.getLifespanMax();
+        // 标准差取均值的约 1/15，保证生成值在合理范围内分散
+        int stddev = Math.max(1, mean / 15);
         // 12 个 U(0,1) 之和 ≈ N(6, 1)（中心极限定理）
         double sum = 0.0;
         for (int i = 0; i < 12; i++) {
             sum += rand.nextDouble();
         }
-        // (sum - 6) → N(0, 1)，× 5 → N(0, 5)，+ 75 → N(75, 5)
-        int lifespan = 75 + (int) Math.round((sum - 6.0) * 5.0);
-        return Mth.clamp(lifespan, 30, 120);
+        // (sum - 6) → N(0, 1)，× stddev → N(0, stddev)，+ mean → N(mean, stddev)
+        int lifespan = mean + (int) Math.round((sum - 6.0) * stddev);
+        return Mth.clamp(lifespan, min, max);
     }
 
     /**
@@ -115,29 +120,29 @@ public final class Population {
         boolean isBaby = villager.isBaby();
         int age = isBaby
                 ? Math.max(0, (int) ((villager.getAge() / (double) Villager.BABY_START_AGE) * 18))
-                : PopulationConfig.ADULT_AGE;
+                : PopulationConfig.getAdultAge();
 
         tag.putInt(TAG_AGE, age);
         tag.putInt(TAG_LIFESPAN, generateLifespan(rand));
         tag.putBoolean(TAG_GENDER, rand.nextBoolean());
         tag.putInt(TAG_HEALTH, isBaby
-                ? rand.nextIntBetweenInclusive(PopulationConfig.CHILD_HEALTH_MIN, PopulationConfig.CHILD_HEALTH_MAX)
-                : rand.nextIntBetweenInclusive(PopulationConfig.ADULT_HEALTH_MIN, PopulationConfig.ADULT_HEALTH_MAX));
+                ? rand.nextIntBetweenInclusive(PopulationConfig.getChildHealthMin(), PopulationConfig.getChildHealthMax())
+                : rand.nextIntBetweenInclusive(PopulationConfig.getAdultHealthMin(), PopulationConfig.getAdultHealthMax()));
         tag.putInt(TAG_FOOD, isBaby
-                ? rand.nextIntBetweenInclusive(PopulationConfig.CHILD_FOOD_MIN, PopulationConfig.CHILD_FOOD_MAX)
-                : rand.nextIntBetweenInclusive(PopulationConfig.ADULT_FOOD_MIN, PopulationConfig.ADULT_FOOD_MAX));
+                ? rand.nextIntBetweenInclusive(PopulationConfig.getChildFoodMin(), PopulationConfig.getChildFoodMax())
+                : rand.nextIntBetweenInclusive(PopulationConfig.getAdultFoodMin(), PopulationConfig.getAdultFoodMax()));
         tag.putString(TAG_CAREER, isBaby
                 ? CareerNames.UNEMPLOYED
                 : CivilizationAPI.getCareerRegistry().fromVanilla(villager.getVillagerData().getProfession()).getName());
         tag.putInt(TAG_PROFICIENCY, isBaby
-                ? PopulationConfig.CHILD_PROFICIENCY
-                : PopulationConfig.ADULT_PROFICIENCY);
+                ? PopulationConfig.getChildProficiency()
+                : PopulationConfig.getAdultProficiency());
         tag.putDouble(TAG_WORK_EFFICIENCY, isBaby
-                ? PopulationConfig.CHILD_WORK_EFFICIENCY
-                : PopulationConfig.ADULT_WORK_EFFICIENCY);
+                ? PopulationConfig.getChildWorkEfficiency()
+                : PopulationConfig.getAdultWorkEfficiency());
         tag.putDouble(TAG_MENTAL_STATE, isBaby
-                ? rand.nextDouble() * (PopulationConfig.CHILD_MENTAL_STATE_MAX - PopulationConfig.CHILD_MENTAL_STATE_MIN) + PopulationConfig.CHILD_MENTAL_STATE_MIN
-                : PopulationConfig.ADULT_MENTAL_STATE);
+                ? rand.nextDouble() * (PopulationConfig.getChildMentalStateMax() - PopulationConfig.getChildMentalStateMin()) + PopulationConfig.getChildMentalStateMin()
+                : PopulationConfig.getAdultMentalState());
 
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return stack;

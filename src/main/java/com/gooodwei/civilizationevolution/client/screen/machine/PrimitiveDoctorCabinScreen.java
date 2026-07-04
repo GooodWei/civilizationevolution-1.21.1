@@ -3,7 +3,7 @@ import com.gooodwei.civilizationevolution.client.screen.IntegerInputScreen;
 
 
 import com.gooodwei.civilizationevolution.network.UpdateMachineFieldPayload;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
+import com.gooodwei.civilizationevolution.server.menu.machine.DoctorCabinMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -26,7 +26,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * 需要设计诊所专用 GUI 纹理。详见 {@code dontpush/gui_design_tasks.md}。</p>
  */
 @OnlyIn(Dist.CLIENT)
-public class PrimitiveDoctorCabinScreen extends AbstractContainerScreen<PrimitiveDoctorCabinMenu> {
+public class PrimitiveDoctorCabinScreen extends AbstractContainerScreen<DoctorCabinMenu> {
 
     /** 原始诊所 GUI 背景贴图（TODO：替换为诊所专用纹理，当前为牧场占位副本） */
     private static final ResourceLocation TEXTURE =
@@ -49,11 +49,11 @@ public class PrimitiveDoctorCabinScreen extends AbstractContainerScreen<Primitiv
     /**
      * 构造原始诊所 Screen。
      *
-     * @param menu            服务端对应的 {@link PrimitiveDoctorCabinMenu}
+     * @param menu            服务端对应的 {@link DoctorCabinMenu}
      * @param playerInventory 玩家物品栏
      * @param title           界面标题
      */
-    public PrimitiveDoctorCabinScreen(PrimitiveDoctorCabinMenu menu, Inventory playerInventory, Component title) {
+    public PrimitiveDoctorCabinScreen(DoctorCabinMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 166;

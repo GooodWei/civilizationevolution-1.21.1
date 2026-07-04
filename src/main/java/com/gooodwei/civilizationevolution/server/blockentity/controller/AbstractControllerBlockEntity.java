@@ -7,6 +7,7 @@ import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
 import com.gooodwei.civilizationevolution.server.block.controller.AbstractControllerBlock;
 import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
@@ -759,7 +760,7 @@ public abstract class AbstractControllerBlockEntity
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("WorkProgress", workProgress);
+        tag.putInt(AbstractMachineBlockEntity.TAG_WORK_PROGRESS, workProgress);
         ContainerHelper.saveAllItems(tag, items, registries);
         saveMultiBlockNBT(tag);
     }
@@ -767,7 +768,7 @@ public abstract class AbstractControllerBlockEntity
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        workProgress = tag.getInt("WorkProgress");
+        workProgress = tag.getInt(AbstractMachineBlockEntity.TAG_WORK_PROGRESS);
         ContainerHelper.loadAllItems(tag, items, registries);
         loadMultiBlockNBT(tag);
     }

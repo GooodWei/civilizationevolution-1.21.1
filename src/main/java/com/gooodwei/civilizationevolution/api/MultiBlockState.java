@@ -23,6 +23,9 @@ import java.util.Set;
  */
 public class MultiBlockState {
 
+    /** NBT key：结构是否完整成型 */
+    public static final String TAG_STRUCTURE_FORMED = "StructureFormed";
+
     /** 结构是否完整成型 */
     public boolean structureFormed;
 
@@ -62,7 +65,7 @@ public class MultiBlockState {
      * @param tag 目标 CompoundTag
      */
     public void saveToNBT(CompoundTag tag) {
-        tag.putBoolean("StructureFormed", structureFormed);
+        tag.putBoolean(TAG_STRUCTURE_FORMED, structureFormed);
     }
 
     /**
@@ -74,7 +77,7 @@ public class MultiBlockState {
      * @param tag 源 CompoundTag
      */
     public void loadFromNBT(CompoundTag tag) {
-        structureFormed = tag.getBoolean("StructureFormed");
+        structureFormed = tag.getBoolean(TAG_STRUCTURE_FORMED);
     }
 
     // ==================== 缓存清理 ====================

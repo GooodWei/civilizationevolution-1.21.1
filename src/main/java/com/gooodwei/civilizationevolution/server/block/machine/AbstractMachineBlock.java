@@ -74,6 +74,14 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
     protected void preOpenMenu(Level level, BlockPos pos) {
     }
 
+    /**
+     * 在打开 GUI 之前调用（服务端），返回 false 以阻止打开。
+     * 默认返回 true。子类（如诊所）可覆写以在结构不完整时阻止交互。
+     */
+    protected boolean canOpenMenu(Level level, BlockPos pos, Player player) {
+        return true;
+    }
+
     // ==================== 方向属性 ====================
 
     /**
@@ -186,6 +194,9 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
 
+            // 子类钩子：在结构检查之前运行（多方块机器可在此处触发结构验证）
+            preOpenMenu(level, pos);
+
             // 检查多方块结构解析错误 → 红字警告但不阻止打开 GUI
             if (be instanceof IMultiBlockMachine mbe && mbe.hasParseError()) {
                 player.sendSystemMessage(Component.literal(mbe.getParseError()).withStyle(ChatFormatting.RED));
@@ -197,7 +208,11 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
                         Component.translatable("msg.civilizationevolution.structure_incomplete"), true);
             }
 
-            preOpenMenu(level, pos);
+            // 子类钩子：返回 false 阻止打开 GUI（诊所等机器在结构不完整时使用）
+            if (!canOpenMenu(level, pos, player)) {
+                return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            }
+
             if (be instanceof MenuProvider menuProvider) {
                 player.openMenu(menuProvider, pos);
             }

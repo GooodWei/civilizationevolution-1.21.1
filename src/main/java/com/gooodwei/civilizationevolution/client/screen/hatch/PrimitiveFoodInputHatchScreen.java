@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.client.screen.hatch;
 
-import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitiveFoodInputHatchMenu;
+import com.gooodwei.civilizationevolution.server.menu.hatch.FoodInputHatchMenu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -11,14 +11,14 @@ import net.minecraft.world.entity.player.Inventory;
  * <p>TODO：当前 GUI 背景纹理是原始营地（primitive_camp.png）的副本占位，
  * 需要设计 hatch 食物输入接口专用 GUI 纹理。详见 {@code dontpush/gui_design_tasks.md}。</p>
  */
-public class PrimitiveFoodInputHatchScreen extends AbstractHatchScreen<PrimitiveFoodInputHatchMenu> {
+public class PrimitiveFoodInputHatchScreen extends AbstractHatchScreen<FoodInputHatchMenu> {
 
     /** TODO：替换为 hatch 食物输入专用纹理，当前为营地占位副本 */
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath("civilizationevolution",
                     "textures/gui/container/primitive_food_input_hatch.png");
 
-    public PrimitiveFoodInputHatchScreen(PrimitiveFoodInputHatchMenu menu,
+    public PrimitiveFoodInputHatchScreen(FoodInputHatchMenu menu,
                                           Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
     }

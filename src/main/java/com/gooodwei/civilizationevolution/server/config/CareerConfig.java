@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.config;
 
 import com.gooodwei.civilizationevolution.api.career.Career;
+import com.gooodwei.civilizationevolution.api.util.SimpleYamlParser;
 import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.IOException;
@@ -187,48 +188,20 @@ public final class CareerConfig {
     }
 
     private static void load() throws IOException {
-        String content = Files.readString(CONFIG_FILE);
-        String[] lines = content.split("\\R");
-        String currentSection = "";
-        String parent = null;
-        int tier = 0;
-        int apprenticeExpThreshold = 8;
+        Map<String, Map<String, String>> sections = SimpleYamlParser.parse(CONFIG_FILE);
+        for (var sectionEntry : sections.entrySet()) {
+            String section = sectionEntry.getKey();
+            Map<String, String> kv = sectionEntry.getValue();
 
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
-
-            if (trimmed.endsWith(":")) {
-                // 遇到新 section 时先保存上一个
-                if (!currentSection.isEmpty()) {
-                    ENTRIES.put(currentSection, new CareerEntry(parent, tier, apprenticeExpThreshold));
-                }
-                currentSection = trimmed.substring(0, trimmed.length() - 1).trim();
+            String parent = kv.get("parent");
+            if (parent != null && parent.isEmpty()) {
                 parent = null;
-                tier = 0;
-                apprenticeExpThreshold = 8;
-                continue;
             }
+            int tier = Integer.parseInt(kv.getOrDefault("tier", "0"));
+            int apprenticeExpThreshold = Integer.parseInt(
+                    kv.getOrDefault("apprentice_exp_threshold", "8"));
 
-            int colon = trimmed.indexOf(':');
-            if (colon == -1) continue;
-            String key = trimmed.substring(0, colon).trim();
-            String value = trimmed.substring(colon + 1).trim();
-
-            switch (key) {
-                case "parent" -> {
-                    if (!value.isEmpty()) {
-                        parent = value;
-                    }
-                }
-                case "tier" -> tier = Integer.parseInt(value);
-                case "apprentice_exp_threshold" -> apprenticeExpThreshold = Integer.parseInt(value);
-            }
-        }
-
-        // 保存最后一个 section
-        if (!currentSection.isEmpty()) {
-            ENTRIES.put(currentSection, new CareerEntry(parent, tier, apprenticeExpThreshold));
+            ENTRIES.put(section, new CareerEntry(parent, tier, apprenticeExpThreshold));
         }
     }
 }

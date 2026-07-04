@@ -224,9 +224,6 @@ public interface IMultiBlockMachine {
 
     // ==================== JSON 解析 ====================
 
-    /** Gson 实例，供 parsePattern 使用 */
-    Gson GSON = new Gson();
-
     /**
      * 解析 {@link MultiBlockConfig} 中对应结构 key 的 JSON 字符串。
      *
@@ -250,7 +247,7 @@ public interface IMultiBlockMachine {
 
         JsonObject root;
         try {
-            root = GSON.fromJson(json, JsonObject.class);
+            root = new Gson().fromJson(json, JsonObject.class);
         } catch (JsonParseException e) {
             state.parseError = "多方块结构 \"" + configKey + "\" JSON 解析失败：" + e.getMessage();
             return null;
@@ -281,7 +278,7 @@ public interface IMultiBlockMachine {
 
         JsonObject root;
         try {
-            root = GSON.fromJson(json, JsonObject.class);
+            root = new Gson().fromJson(json, JsonObject.class);
         } catch (JsonParseException e) {
             return null;
         }

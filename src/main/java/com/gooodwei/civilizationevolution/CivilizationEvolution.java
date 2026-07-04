@@ -135,6 +135,9 @@ public class CivilizationEvolution {
         // 加载职业树配置并应用（必须在所有 Career 构造完成后调用）
         CareerConfig.init();
         CareerConfig.applyToCareers();
+
+        // 在所有 Career 构造和配置加载完成后，统一发送注册事件
+        Career.fireRegisterEvents();
     }
 
     /** 模组通用初始化（逻辑端通用的设置） */

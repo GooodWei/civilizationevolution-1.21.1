@@ -249,7 +249,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
             FoodProperties food = stack.get(DataComponents.FOOD);
             float nut = food != null ? food.nutrition() : 0;
-            float sat = food != null ? nut * food.saturation() * 2 : 0;
+            float sat = food != null ? nut * food.saturation() : 0;
 
             int take = Math.min(stack.getCount(), totalNeeded - collected);
             consumed.add(new FoodEntry(hatchPos, take, nut, sat));

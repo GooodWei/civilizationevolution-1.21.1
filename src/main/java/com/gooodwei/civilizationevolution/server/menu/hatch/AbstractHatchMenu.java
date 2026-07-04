@@ -15,6 +15,10 @@ import net.minecraft.world.inventory.MenuType;
  */
 public abstract class AbstractHatchMenu extends MachineMenu {
 
+    /** 单槽 hatch 的 GUI 槽位坐标（居中） */
+    protected static final int SINGLE_SLOT_X = 80;
+    protected static final int SINGLE_SLOT_Y = 35;
+
     /** hatch 的容器，供 Screen 访问 */
     public final Container container;
 

@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
+import com.gooodwei.civilizationevolution.api.MultiBlockState;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.api.inventory.OversizedStackHandler;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveStoragePitMenu;
@@ -445,7 +446,7 @@ public class PrimitiveStoragePitBlockEntity extends BaseContainerBlockEntity imp
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putBoolean("StructureFormed", structureFormed);
+        tag.putBoolean(MultiBlockState.TAG_STRUCTURE_FORMED, structureFormed);
         tag.putInt("InteriorWidth", interiorWidth);
         tag.putInt("InteriorHeight", interiorHeight);
         // 使用 OversizedStackHandler 序列化物品（count 不限于 99）
@@ -458,7 +459,7 @@ public class PrimitiveStoragePitBlockEntity extends BaseContainerBlockEntity imp
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        structureFormed = tag.getBoolean("StructureFormed");
+        structureFormed = tag.getBoolean(MultiBlockState.TAG_STRUCTURE_FORMED);
         interiorWidth = tag.getInt("InteriorWidth");
         interiorHeight = tag.getInt("InteriorHeight");
 

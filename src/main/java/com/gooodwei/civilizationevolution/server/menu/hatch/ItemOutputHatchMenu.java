@@ -1,11 +1,13 @@
 package com.gooodwei.civilizationevolution.server.menu.hatch;
 
-import com.gooodwei.civilizationevolution.server.menu.slot.PopulationMachineResultSlot;
 import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
@@ -20,7 +22,13 @@ public class ItemOutputHatchMenu extends AbstractHatchMenu {
 
     public ItemOutputHatchMenu(int containerId, Inventory playerInventory, Container container) {
         super(MenuRegistry.ITEM_OUTPUT_HATCH_MENU.get(), containerId, container);
-        this.addSlot(new PopulationMachineResultSlot(container, 0, SLOT_X, SLOT_Y));
+        // 只读产物槽位：拒绝玩家/漏斗放入，仅代码产出
+        this.addSlot(new Slot(container, 0, SLOT_X, SLOT_Y) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return false;
+            }
+        });
         addPlayerSlots(playerInventory, 84);
     }
 
@@ -31,7 +39,8 @@ public class ItemOutputHatchMenu extends AbstractHatchMenu {
         if (be instanceof Container container) {
             return new ItemOutputHatchMenu(containerId, playerInventory, container);
         }
-        return null;
+        // BE 不在场时返回带空容器的占位菜单（防止客户端 NPE）
+        return new ItemOutputHatchMenu(containerId, playerInventory, new SimpleContainer(1));
     }
 
     @Override

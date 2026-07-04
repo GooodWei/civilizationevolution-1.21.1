@@ -31,6 +31,6 @@ public class VillageItemInputHatchScreen extends AbstractHatchScreen<VillageItem
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         // 仅在顶部绘制标题，不绘制"物品栏"标签（潜影盒纹理自带）
-        graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, TITLE_COLOR, false);
     }
 }

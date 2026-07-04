@@ -42,7 +42,7 @@ public abstract class Career {
         }
 
         @Override
-        public Map<String, Career> getRegistry() { return REGISTRY; }
+        public Map<String, Career> getRegistry() { return Collections.unmodifiableMap(REGISTRY); }
     };
 
     private final String name;
@@ -53,16 +53,16 @@ public abstract class Career {
     /** 父职业名称（null 表示此为根职业，如 "unemployed" 等初始职业） */
     @Nullable
     private String parentCareerName = null;
-    private final List<Career> upgrades = new ArrayList<>();
     /** 子职业列表（由 CareerConfig 在配置加载后填充） */
     private final List<Career> children = new ArrayList<>();
-    /** 晋升为该职业所需学徒经验阈值（≤0 表示不可通过学徒晋升） */
-    private int apprenticeExpThreshold = 8;
+    /** 晋升为该职业所需学徒经验阈值（0 = 不可晋升，需由 CareerConfig 覆盖为实际值） */
+    private int apprenticeExpThreshold = 0;
 
     /**
      * 构造一个职业实例并自动注册到内部注册表。
-     * 构造完成后会向 NeoForge 事件总线发送 {@link CareerRegisterEvent}，
-     * 供附属模组监听新职业的注册。
+     *
+     * <p>注意：事件 {@link CareerRegisterEvent} 不再在构造器中触发，
+     * 而是在所有 Career 构造完毕后由 {@link #fireRegisterEvents()} 统一发送。
      *
      * @param name              职业唯一名称（如 "armorer"）
      * @param tier              职业等级（0 = 无业/傻子，1 = 初始职业）
@@ -74,7 +74,16 @@ public abstract class Career {
         this.vanillaProfession = vanillaProfession;
         this.modelIndex = nextModelIndex++;
         REGISTRY.put(name, this);
-        NeoForge.EVENT_BUS.post(new CareerRegisterEvent(this));
+    }
+
+    /**
+     * 在所有 Career 实例构造完成后，统一向 NeoForge 事件总线发送 {@link CareerRegisterEvent}。
+     * 应由 {@code CivilizationEvolution} 在初始化末尾调用。
+     */
+    public static void fireRegisterEvents() {
+        for (Career career : REGISTRY.values()) {
+            NeoForge.EVENT_BUS.post(new CareerRegisterEvent(career));
+        }
     }
 
     /**
@@ -104,17 +113,6 @@ public abstract class Career {
     /** @return 对应的原版村民职业，无对应则为 null */
     @Nullable
     public VillagerProfession getVanillaProfession() { return vanillaProfession; }
-
-    /** @return 该职业可用升级方向的不可修改列表 */
-    public List<Career> getUpgrades() { return Collections.unmodifiableList(upgrades); }
-
-    /**
-     * 向该职业添加一个升级方向（如学徒 → 大师）。
-     * 仅供子类或初始化代码调用。
-     *
-     * @param career 升级目标职业
-     */
-    protected void addUpgrade(Career career) { this.upgrades.add(career); }
 
     /** @return 父职业名称，null 表示此为根职业 */
     @Nullable

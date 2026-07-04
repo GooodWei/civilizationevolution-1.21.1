@@ -47,6 +47,8 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
     /** 默认健康阈值（0-100） */
     protected int healthThreshold = 40;
+    /** NBT key：健康阈值 */
+    private static final String TAG_HEALTH_THRESHOLD = "HealthThreshold";
     /** 治疗槽位数量 */
     public static final int SIZE = 2;
 
@@ -319,7 +321,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
                 FoodProperties food = stack.getFoodProperties(null);
                 float nutrition = food != null ? food.nutrition() : 0;
-                float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
+                float saturation = food != null ? nutrition * food.saturation() : 0;
                 float unitNutrition = nutrition + saturation;
 
                 int toRemove = Math.min(stack.getCount(), remaining);
@@ -421,14 +423,14 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
     @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("HealthThreshold", healthThreshold);
+        tag.putInt(TAG_HEALTH_THRESHOLD, healthThreshold);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        healthThreshold = tag.getInt("HealthThreshold");
-        if (healthThreshold == 0 && tag.contains("HealthThreshold")) {
+        healthThreshold = tag.getInt(TAG_HEALTH_THRESHOLD);
+        if (healthThreshold == 0 && tag.contains(TAG_HEALTH_THRESHOLD)) {
             // 已正确加载
         } else if (healthThreshold == 0) {
             healthThreshold = 40; // 默认值

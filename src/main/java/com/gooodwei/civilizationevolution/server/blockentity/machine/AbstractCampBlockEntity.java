@@ -227,6 +227,7 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
      * 获取当前工作进度比例（0.0 ~ 1.0），供 GUI 进度条使用。
      */
     public float getWorkProgressRatio() {
-        return (float) workProgress / getWorkTotalTime();
+        int total = getWorkTotalTime();
+        return total == 0 ? 0f : (float) workProgress / total;
     }
 }

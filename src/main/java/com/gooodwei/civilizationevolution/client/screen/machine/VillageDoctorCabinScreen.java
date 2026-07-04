@@ -3,7 +3,7 @@ import com.gooodwei.civilizationevolution.client.screen.IntegerInputScreen;
 
 
 import com.gooodwei.civilizationevolution.network.UpdateMachineFieldPayload;
-import com.gooodwei.civilizationevolution.server.menu.machine.VillageDoctorCabinMenu;
+import com.gooodwei.civilizationevolution.server.menu.machine.DoctorCabinMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -26,11 +26,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * 需要设计诊所专用 GUI 纹理。详见 {@code dontpush/gui_design_tasks.md}。</p>
  */
 @OnlyIn(Dist.CLIENT)
-public class VillageDoctorCabinScreen extends AbstractContainerScreen<VillageDoctorCabinMenu> {
+public class VillageDoctorCabinScreen extends AbstractContainerScreen<DoctorCabinMenu> {
 
     /** 村庄诊所 GUI 背景贴图（TODO：替换为诊所专用纹理，当前为原始诊所占位副本） */
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "textures/gui/container/primitive_doctor_cabin.png");
+            ResourceLocation.fromNamespaceAndPath("civilizationevolution", "textures/gui/container/village_doctor_cabin.png");
 
     /** 工作进度条贴图 */
     private static final ResourceLocation PROGRESS =
@@ -53,7 +53,7 @@ public class VillageDoctorCabinScreen extends AbstractContainerScreen<VillageDoc
      * @param playerInventory 玩家物品栏
      * @param title           界面标题
      */
-    public VillageDoctorCabinScreen(VillageDoctorCabinMenu menu, Inventory playerInventory, Component title) {
+    public VillageDoctorCabinScreen(DoctorCabinMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 166;

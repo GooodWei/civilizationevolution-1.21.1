@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.config;
 
+import com.gooodwei.civilizationevolution.api.util.SimpleYamlParser;
 import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.IOException;
@@ -135,31 +136,31 @@ public final class CivilizationMachineConfig {
     /** 按机器 key 获取每次工作消耗的岩浆量（mB），未配置时返回指定默认值 */
     public static int getFluidLavaPerCycle(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.fluidLavaPerCycle() > 0 ? s.fluidLavaPerCycle() : defaultVal;
+        return s != null && s.fluidLavaPerCycle() >= 0 ? s.fluidLavaPerCycle() : defaultVal;
     }
 
     /** 按机器 key 获取每次工作消耗的水量（mB），未配置时返回指定默认值 */
     public static int getFluidWaterPerCycle(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.fluidWaterPerCycle() > 0 ? s.fluidWaterPerCycle() : defaultVal;
+        return s != null && s.fluidWaterPerCycle() >= 0 ? s.fluidWaterPerCycle() : defaultVal;
     }
 
     /** 按机器 key 获取效率→方块数的乘数，未配置时返回指定默认值 */
     public static int getBlocksPerCycleMultiplier(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.blocksPerCycleMultiplier() > 0 ? s.blocksPerCycleMultiplier() : defaultVal;
+        return s != null && s.blocksPerCycleMultiplier() >= 0 ? s.blocksPerCycleMultiplier() : defaultVal;
     }
 
     /** 按机器 key 获取单位人口食物消耗量，未配置时返回指定默认值（重载） */
     public static int getFoodPerPopulation(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.foodPerPopulation() > 0 ? s.foodPerPopulation() : defaultVal;
+        return s != null && s.foodPerPopulation() >= 0 ? s.foodPerPopulation() : defaultVal;
     }
 
     /** 按机器 key 获取学徒转职经验阈值，未配置时返回指定默认值 */
     public static int getCareerExpThreshold(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.careerExpThreshold() > 0 ? s.careerExpThreshold() : defaultVal;
+        return s != null && s.careerExpThreshold() >= 0 ? s.careerExpThreshold() : defaultVal;
     }
 
     /** 按机器 key 获取健康度波动下限，未配置时返回指定默认值 */
@@ -183,31 +184,31 @@ public final class CivilizationMachineConfig {
     /** 按机器 key 获取效率→喂养数乘数，未配置时返回指定默认值 */
     public static int getFedPerTypeMultiplier(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.fedPerTypeMultiplier() > 0 ? s.fedPerTypeMultiplier() : defaultVal;
+        return s != null && s.fedPerTypeMultiplier() >= 0 ? s.fedPerTypeMultiplier() : defaultVal;
     }
 
     /** 按机器 key 获取最低生育年龄，未配置时返回指定默认值 */
     public static int getMinParentAge(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.minParentAge() > 0 ? s.minParentAge() : defaultVal;
+        return s != null && s.minParentAge() >= 0 ? s.minParentAge() : defaultVal;
     }
 
     /** 按机器 key 获取最高生育年龄，未配置时返回指定默认值 */
     public static int getMaxParentAge(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.maxParentAge() > 0 ? s.maxParentAge() : defaultVal;
+        return s != null && s.maxParentAge() >= 0 ? s.maxParentAge() : defaultVal;
     }
 
     /** 按机器 key 获取水平挖掘范围边长，未配置时返回指定默认值 */
     public static int getMiningHorizontalSize(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.miningHorizontalSize() > 0 ? s.miningHorizontalSize() : defaultVal;
+        return s != null && s.miningHorizontalSize() >= 0 ? s.miningHorizontalSize() : defaultVal;
     }
 
     /** 按机器 key 获取每次工作周期给学徒的经验量，未配置时返回指定默认值 */
     public static int getApprenticeExpPerCycle(String machine, int defaultVal) {
         MachineSection s = SECTIONS.get(machine);
-        return s != null && s.apprenticeExpPerCycle() > 0 ? s.apprenticeExpPerCycle() : defaultVal;
+        return s != null && s.apprenticeExpPerCycle() >= 0 ? s.apprenticeExpPerCycle() : defaultVal;
     }
 
     // ==================== 储物容器访问器 ====================
@@ -508,156 +509,63 @@ public final class CivilizationMachineConfig {
     }
 
     private static void load() throws IOException {
-        String content = Files.readString(CONFIG_FILE);
-        String[] lines = content.split("\\R");
-        String currentSection = "";
-        boolean isController = false;
-        // 机器字段
-        int workTotalTime = 0;
-        int ageIncrement = 0;
-        int maxAnimalCount = 0;
-        int waterPerCrop = 0;
-        int foodPerPopulation = 1;
-        int fluidLavaPerCycle = 0;
-        int fluidWaterPerCycle = 0;
-        int blocksPerCycleMultiplier = 0;
-        int careerExpThreshold = 0;
-        int healthFluctuateMin = 0;
-        int healthFluctuateMax = 0;
-        int efficiencyNoWeapon = 0;
-        int fedPerTypeMultiplier = 0;
-        int minParentAge = 0;
-        int maxParentAge = 0;
-        int miningHorizontalSize = 0;
-        int apprenticeExpPerCycle = 1;
-        // 控制器字段
-        int maxBindCount = 0;
-        int maxBindRange = 0;
-        boolean allowCrossDimension = false;
-        // 储物容器字段
-        String pitWallBlockTags = "";
-        int maxInteriorWidth = 7;
-        int maxInteriorHeight = 7;
-        boolean isStorage = false;
+        Map<String, Map<String, String>> sections = SimpleYamlParser.parse(CONFIG_FILE);
+        for (var sectionEntry : sections.entrySet()) {
+            String name = sectionEntry.getKey();
+            Map<String, String> kv = sectionEntry.getValue();
 
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
-
-            if (trimmed.endsWith(":")) {
-                // 遇到新 section 时先保存上一个
-                if (!currentSection.isEmpty()) {
-                    if (isStorage) {
-                        STORAGE_SECTIONS.put(currentSection,
-                                new StorageSection(parseJsonArray(pitWallBlockTags), maxInteriorWidth, maxInteriorHeight));
-                    } else {
-                        saveSection(currentSection, isController,
-                                workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
-                                foodPerPopulation,
-                                fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
-                                careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
-                                efficiencyNoWeapon, fedPerTypeMultiplier,
-                                minParentAge, maxParentAge, miningHorizontalSize,
-                                apprenticeExpPerCycle,
-                                maxBindCount, maxBindRange, allowCrossDimension);
-                    }
-                }
-                currentSection = trimmed.substring(0, trimmed.length() - 1).trim();
-                isController = false;
-                workTotalTime = 12000;
-                ageIncrement = 1;
-                maxAnimalCount = 0;
-                waterPerCrop = 0;
-                foodPerPopulation = 1;
-                fluidLavaPerCycle = 0;
-                fluidWaterPerCycle = 0;
-                blocksPerCycleMultiplier = 0;
-                careerExpThreshold = 0;
-                healthFluctuateMin = 0;
-                healthFluctuateMax = 0;
-                efficiencyNoWeapon = 0;
-                fedPerTypeMultiplier = 0;
-                minParentAge = 0;
-                maxParentAge = 0;
-                miningHorizontalSize = 0;
-                apprenticeExpPerCycle = 1;
-                maxBindCount = 10;
-                maxBindRange = 64;
-                allowCrossDimension = false;
-                pitWallBlockTags = "";
-                maxInteriorWidth = 7;
-                maxInteriorHeight = 7;
-                isStorage = false;
-                continue;
-            }
-
-            int colon = trimmed.indexOf(':');
-            if (colon == -1) continue;
-            String key = trimmed.substring(0, colon).trim();
-            String value = trimmed.substring(colon + 1).trim();
-
-            switch (key) {
-                case "work_total_time" -> workTotalTime = Integer.parseInt(value);
-                case "age_increment" -> ageIncrement = Integer.parseInt(value);
-                case "max_animal_count" -> maxAnimalCount = Integer.parseInt(value);
-                case "water_per_crop" -> waterPerCrop = Integer.parseInt(value);
-                case "food_per_population" -> foodPerPopulation = Integer.parseInt(value);
-                case "fluid_lava_per_cycle" -> fluidLavaPerCycle = Integer.parseInt(value);
-                case "fluid_water_per_cycle" -> fluidWaterPerCycle = Integer.parseInt(value);
-                case "blocks_per_cycle_multiplier" -> blocksPerCycleMultiplier = Integer.parseInt(value);
-                case "career_exp_threshold" -> careerExpThreshold = Integer.parseInt(value);
-                case "health_fluctuate_min" -> healthFluctuateMin = Integer.parseInt(value);
-                case "health_fluctuate_max" -> healthFluctuateMax = Integer.parseInt(value);
-                case "efficiency_no_weapon" -> efficiencyNoWeapon = Integer.parseInt(value);
-                case "fed_per_type_multiplier" -> fedPerTypeMultiplier = Integer.parseInt(value);
-                case "min_parent_age" -> minParentAge = Integer.parseInt(value);
-                case "max_parent_age" -> maxParentAge = Integer.parseInt(value);
-                case "mining_horizontal_size" -> miningHorizontalSize = Integer.parseInt(value);
-                case "apprentice_exp_per_cycle" -> apprenticeExpPerCycle = Integer.parseInt(value);
-                case "max_bind_count" -> {
-                    maxBindCount = Integer.parseInt(value);
-                    isController = true;
-                }
-                case "max_bind_range" -> {
-                    maxBindRange = Integer.parseInt(value);
-                    isController = true;
-                }
-                case "allow_cross_dimension" -> {
-                    allowCrossDimension = Boolean.parseBoolean(value);
-                    isController = true;
-                }
-                case "pit_wall_block_tags" -> {
-                    pitWallBlockTags = value;
-                    isStorage = true;
-                }
-                case "max_interior_width" -> {
-                    maxInteriorWidth = Integer.parseInt(value);
-                    isStorage = true;
-                }
-                case "max_interior_height" -> {
-                    maxInteriorHeight = Integer.parseInt(value);
-                    isStorage = true;
-                }
-            }
-        }
-
-        // 保存最后一个 section
-        if (!currentSection.isEmpty()) {
-            if (isStorage) {
-                STORAGE_SECTIONS.put(currentSection,
-                        new StorageSection(parseJsonArray(pitWallBlockTags), maxInteriorWidth, maxInteriorHeight));
+            if (kv.containsKey("pit_wall_block_tags")) {
+                // 储物容器 section
+                STORAGE_SECTIONS.put(name, new StorageSection(
+                        parseJsonArray(kv.get("pit_wall_block_tags")),
+                        getInt(kv, "max_interior_width", 7),
+                        getInt(kv, "max_interior_height", 7)));
+            } else if (kv.containsKey("max_bind_count")) {
+                // 控制器 section
+                CONTROLLERS.put(name, new ControllerSection(
+                        getInt(kv, "max_bind_count", 10),
+                        getInt(kv, "max_bind_range", 64),
+                        getBool(kv, "allow_cross_dimension", false)));
             } else {
-                saveSection(currentSection, isController,
-                        workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
-                        foodPerPopulation,
-                        fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
-                        careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
-                        efficiencyNoWeapon, fedPerTypeMultiplier,
-                        minParentAge, maxParentAge, miningHorizontalSize,
-                        apprenticeExpPerCycle,
-                        maxBindCount, maxBindRange, allowCrossDimension);
+                // 机器 section
+                SECTIONS.put(name, new MachineSection(
+                        getInt(kv, "work_total_time", 12000),
+                        getInt(kv, "age_increment", 1),
+                        getInt(kv, "max_animal_count", 0),
+                        getInt(kv, "water_per_crop", 0),
+                        getInt(kv, "food_per_population", 1),
+                        getInt(kv, "fluid_lava_per_cycle", 0),
+                        getInt(kv, "fluid_water_per_cycle", 0),
+                        getInt(kv, "blocks_per_cycle_multiplier", 0),
+                        getInt(kv, "career_exp_threshold", 0),
+                        getInt(kv, "health_fluctuate_min", 0),
+                        getInt(kv, "health_fluctuate_max", 0),
+                        getInt(kv, "efficiency_no_weapon", 0),
+                        getInt(kv, "fed_per_type_multiplier", 0),
+                        getInt(kv, "min_parent_age", 0),
+                        getInt(kv, "max_parent_age", 0),
+                        getInt(kv, "mining_horizontal_size", 0),
+                        getInt(kv, "apprentice_exp_per_cycle", 1)));
             }
         }
+    }
+
+    /** 从键值映射中读取 int，缺失或空值时返回默认值 */
+    private static int getInt(Map<String, String> kv, String key, int defaultVal) {
+        String val = kv.get(key);
+        if (val == null || val.isEmpty()) return defaultVal;
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            return defaultVal;
+        }
+    }
+
+    /** 从键值映射中读取 boolean，缺失时返回默认值 */
+    private static boolean getBool(Map<String, String> kv, String key, boolean defaultVal) {
+        String val = kv.get(key);
+        if (val == null || val.isEmpty()) return defaultVal;
+        return Boolean.parseBoolean(val);
     }
 
     /**
@@ -676,29 +584,4 @@ public final class CivilizationMachineConfig {
                 .toList();
     }
 
-    /** 根据 section 类型保存到对应的 Map */
-    private static void saveSection(String name, boolean isController,
-                                     int workTotalTime, int ageIncrement, int maxAnimalCount,
-                                     int waterPerCrop, int foodPerPopulation,
-                                     int fluidLavaPerCycle, int fluidWaterPerCycle,
-                                     int blocksPerCycleMultiplier,
-                                     int careerExpThreshold,
-                                     int healthFluctuateMin, int healthFluctuateMax,
-                                     int efficiencyNoWeapon, int fedPerTypeMultiplier,
-                                     int minParentAge, int maxParentAge,
-                                     int miningHorizontalSize,
-                                     int apprenticeExpPerCycle,
-                                     int maxBindCount, int maxBindRange, boolean allowCrossDimension) {
-        if (isController) {
-            CONTROLLERS.put(name, new ControllerSection(maxBindCount, maxBindRange, allowCrossDimension));
-        } else {
-            SECTIONS.put(name, new MachineSection(workTotalTime, ageIncrement, maxAnimalCount,
-                    waterPerCrop, foodPerPopulation, fluidLavaPerCycle, fluidWaterPerCycle,
-                    blocksPerCycleMultiplier, careerExpThreshold,
-                    healthFluctuateMin, healthFluctuateMax,
-                    efficiencyNoWeapon, fedPerTypeMultiplier,
-                    minParentAge, maxParentAge, miningHorizontalSize,
-                    apprenticeExpPerCycle));
-        }
-    }
 }

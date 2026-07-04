@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.client.screen;
 
+import com.gooodwei.civilizationevolution.client.screen.hatch.AbstractHatchScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -136,7 +137,7 @@ public class IntegerInputScreen extends Screen {
 
         // 标题文字
         guiGraphics.drawCenteredString(this.font, this.title,
-                this.width / 2, panelY + 8, 0x404040);
+                this.width / 2, panelY + 8, AbstractHatchScreen.TITLE_COLOR);
 
         // 控件渲染（不调用 super.render 以跳过原版渐变背景）
         for (Renderable widget : this.renderables) {
