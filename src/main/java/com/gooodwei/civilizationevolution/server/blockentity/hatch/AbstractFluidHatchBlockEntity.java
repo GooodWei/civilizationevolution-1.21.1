@@ -32,8 +32,6 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
  */
 public abstract class AbstractFluidHatchBlockEntity extends AbstractHatchBlockEntity {
 
-    /** 默认储罐容量（mB） */
-    protected static final long DEFAULT_CAPACITY = 8000;
     /** 当前储液量（mB） */
     protected long fluidAmount = 0;
     /** 当前存储的流体类型（持久化） */
@@ -85,11 +83,21 @@ public abstract class AbstractFluidHatchBlockEntity extends AbstractHatchBlockEn
     }
 
     /**
-     * 供多方块控制器内部调用的直接提取方法。
-     * 默认委托给 IFluidHandler.drain()，输入接口子类覆写以绕过外部限制。
+     * 获取此 hatch 的储罐容量（mB）。
+     * 子类可覆写以提供不同容量（如 Tier 1 更大）。
+     *
+     * @return 储罐容量（mB），默认 8000（8 桶）
      */
-    public FluidStack drainInternal(int maxDrain) {
-        return getFluidHandler().drain(maxDrain, IFluidHandler.FluidAction.EXECUTE);
+    protected long getDefaultTankCapacity() {
+        return 8000;
+    }
+
+    /**
+     * 安全地将 long 型液量截断为 int（上限 Integer.MAX_VALUE）。
+     * 避免多次重复的 {@code (int) Math.min(value, Integer.MAX_VALUE)} 模式。
+     */
+    protected static int toIntAmount(long value) {
+        return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
     }
 
     /**
@@ -104,17 +112,132 @@ public abstract class AbstractFluidHatchBlockEntity extends AbstractHatchBlockEn
         // 流体类型兼容：仓室为空或已有相同流体
         if (storedFluid != Fluids.EMPTY && !stack.is(storedFluid)) return false;
         // 容量检查
-        if (fluidAmount >= DEFAULT_CAPACITY) return false;
+        if (fluidAmount >= getDefaultTankCapacity()) return false;
         return true;
     }
 
     /**
+     * 供多方块控制器内部调用的直接提取方法。
+     * 绕过方向限制直接操作储罐，输入/输出接口均可使用。
+     *
+     * <p><b>修复了 drain bug</b>：在清空 storedFluid 之前保存引用，
+     * 确保返回的 FluidStack 携带正确的流体类型。
+     */
+    public FluidStack drainInternal(int maxDrain) {
+        if (fluidAmount <= 0 || maxDrain <= 0) return FluidStack.EMPTY;
+        int toDrain = Math.min(maxDrain, toIntAmount(fluidAmount));
+        Fluid savedFluid = storedFluid; // 保存引用，防止清空后丢失
+        fluidAmount -= toDrain;
+        if (fluidAmount <= 0) {
+            storedFluid = Fluids.EMPTY;
+        }
+        setChanged();
+        return new FluidStack(savedFluid, toDrain);
+    }
+
+    /**
      * 供多方块控制器或桶交互直接填充的方法。
-     * 默认委托给 IFluidHandler.fill()，输出接口子类覆写以绕过外部限制。
+     * 绕过方向限制直接操作储罐，输入/输出接口均可使用。
      */
     public int fillInternal(FluidStack stack) {
         if (!canFill(stack)) return 0;
-        return getFluidHandler().fill(stack, IFluidHandler.FluidAction.EXECUTE);
+        long capacity = getDefaultTankCapacity();
+        long canFill = capacity - fluidAmount;
+        if (canFill <= 0) return 0;
+        int toFill = (int) Math.min(canFill, (long) stack.getAmount());
+        if (storedFluid == Fluids.EMPTY) {
+            storedFluid = stack.getFluid();
+        }
+        fluidAmount += toFill;
+        setChanged();
+        return toFill;
+    }
+
+    /**
+     * 创建带方向限制的流体处理器。
+     *
+     * <p>流体接口有两类：
+     * <ul>
+     *   <li><b>输入接口（isInput=true）</b>：允许外部管道填充（fill），拒绝外部提取（drain 返回空）</li>
+     *   <li><b>输出接口（isInput=false）</b>：允许外部管道提取（drain），拒绝外部填充（fill 返回 0）</li>
+     * </ul>
+     *
+     * <p>内部调用（多方块控制器、桶交互）使用 {@link #fillInternal} / {@link #drainInternal}，
+     * 绕过此方向限制。
+     *
+     * @param isInput true 为输入接口，false 为输出接口
+     * @return 带方向限制的 IFluidHandler 实例
+     */
+    protected IFluidHandler createFluidHandler(boolean isInput) {
+        return new IFluidHandler() {
+            @Override
+            public int getTanks() {
+                return 1;
+            }
+
+            @Override
+            public FluidStack getFluidInTank(int tank) {
+                if (fluidAmount <= 0) return FluidStack.EMPTY;
+                return new FluidStack(storedFluid, toIntAmount(fluidAmount));
+            }
+
+            @Override
+            public int getTankCapacity(int tank) {
+                return toIntAmount(getDefaultTankCapacity());
+            }
+
+            @Override
+            public boolean isFluidValid(int tank, FluidStack stack) {
+                return storedFluid == Fluids.EMPTY || stack.is(storedFluid);
+            }
+
+            @Override
+            public int fill(FluidStack resource, FluidAction action) {
+                if (!isInput) return 0; // 输出接口拒绝外部填充
+                if (!canFill(resource)) return 0;
+                long capacity = getDefaultTankCapacity();
+                long canFill = capacity - fluidAmount;
+                if (canFill <= 0) return 0;
+                int toFill = (int) Math.min(canFill, (long) resource.getAmount());
+                if (action.execute()) {
+                    if (storedFluid == Fluids.EMPTY) {
+                        storedFluid = resource.getFluid();
+                    }
+                    fluidAmount += toFill;
+                    setChanged();
+                }
+                return toFill;
+            }
+
+            @Override
+            public FluidStack drain(FluidStack resource, FluidAction action) {
+                if (isInput) return FluidStack.EMPTY; // 输入接口拒绝外部提取
+                if (resource.isEmpty() || fluidAmount <= 0) return FluidStack.EMPTY;
+                if (storedFluid != Fluids.EMPTY && !resource.is(storedFluid)) return FluidStack.EMPTY;
+                int toDrain = Math.min(resource.getAmount(), toIntAmount(fluidAmount));
+                Fluid savedFluid = storedFluid; // 保存引用，防清空后丢失
+                if (action.execute()) {
+                    fluidAmount -= toDrain;
+                    if (fluidAmount <= 0) storedFluid = Fluids.EMPTY;
+                    setChanged();
+                }
+                return new FluidStack(savedFluid, toDrain);
+            }
+
+            @Override
+            public FluidStack drain(int maxDrain, FluidAction action) {
+                if (isInput) return FluidStack.EMPTY; // 输入接口拒绝外部提取
+                if (fluidAmount <= 0 || maxDrain <= 0) return FluidStack.EMPTY;
+                int toDrain = Math.min(maxDrain, toIntAmount(fluidAmount));
+                Fluid savedFluid = storedFluid; // 保存引用，防清空后丢失
+                if (action.execute()) {
+                    fluidAmount -= toDrain;
+                    if (fluidAmount <= 0) storedFluid = Fluids.EMPTY;
+                    setChanged();
+                }
+                return new FluidStack(savedFluid, toDrain);
+            }
+        };
     }
 
     // ==================== 桶交互（供 Block.useItemOn 调用） ====================

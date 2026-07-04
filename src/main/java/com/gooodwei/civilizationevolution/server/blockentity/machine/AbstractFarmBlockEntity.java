@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.util.SimpleWaterTank;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.tags.ModTags;
 import net.minecraft.core.BlockPos;
@@ -7,7 +8,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
@@ -15,7 +15,6 @@ import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import java.util.List;
@@ -65,89 +64,18 @@ import java.util.List;
  */
 public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockEntity {
 
-    // ==================== 储水字段 ====================
-
-    /** 当前储水量（mB），NBT 持久化 */
-    private long waterAmount = 0;
+    // ==================== 储水系统 ====================
 
     /**
-     * 自定义流体处理器 —— 实现 {@link IFluidHandler}，
-     * 仅接受水（通过 {@link FluidTags#WATER} 标签判断），
-     * 容量由 {@link #getTankCapacity()} 动态查询。
+     * 水罐 —— 实现 {@link IFluidHandler}，仅接受水。
      *
      * <p>所有物流模组的管道均通过 {@code Capabilities.FluidHandler.BLOCK} 与此接口交互。
+     * 容量由 {@link #getTankCapacity()} 动态查询。
      */
-    protected final IFluidHandler fluidHandler = new IFluidHandler() {
-        @Override
-        public int getTanks() {
-            return 1; // 单储罐
-        }
-
-        @Override
-        public FluidStack getFluidInTank(int tank) {
-            if (waterAmount <= 0) {
-                return FluidStack.EMPTY;
-            }
-            // 返回当前储罐中的水量和流体类型
-            return new FluidStack(net.minecraft.world.level.material.Fluids.WATER, (int) Math.min(waterAmount, Integer.MAX_VALUE));
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            long cap = AbstractFarmBlockEntity.this.getTankCapacity();
-            return cap > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) cap;
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, FluidStack stack) {
-            // 仅接受水（通过 FluidTags.WATER 标签判断，兼容其他模组的修改版水）
-            return stack.is(FluidTags.WATER);
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || !resource.is(FluidTags.WATER)) {
-                return 0;
-            }
-            long capacity = AbstractFarmBlockEntity.this.getTankCapacity();
-            if (waterAmount >= capacity) {
-                return 0; // 储罐已满
-            }
-            long canFill = capacity - waterAmount;
-            int toFill = (int) Math.min(canFill, (long) resource.getAmount());
-            if (action.execute()) {
-                waterAmount += toFill;
-                setChanged();
-            }
-            return toFill;
-        }
-
-        @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || !resource.is(FluidTags.WATER) || waterAmount <= 0) {
-                return FluidStack.EMPTY;
-            }
-            int toDrain = Math.min(resource.getAmount(), (int) Math.min(waterAmount, Integer.MAX_VALUE));
-            if (action.execute()) {
-                waterAmount -= toDrain;
-                setChanged();
-            }
-            return new FluidStack(net.minecraft.world.level.material.Fluids.WATER, toDrain);
-        }
-
-        @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            if (waterAmount <= 0 || maxDrain <= 0) {
-                return FluidStack.EMPTY;
-            }
-            int toDrain = Math.min(maxDrain, (int) Math.min(waterAmount, Integer.MAX_VALUE));
-            if (action.execute()) {
-                waterAmount -= toDrain;
-                setChanged();
-            }
-            return new FluidStack(net.minecraft.world.level.material.Fluids.WATER, toDrain);
-        }
-    };
+    protected final SimpleWaterTank waterTank = new SimpleWaterTank(
+            this::getTankCapacity,
+            this::setChanged
+    );
 
     // ==================== 构造器 ====================
 
@@ -212,7 +140,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
      * @return 此农场方块实体的 {@link IFluidHandler} 实例
      */
     public IFluidHandler getFluidHandler() {
-        return fluidHandler;
+        return waterTank;
     }
 
     /**
@@ -221,7 +149,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
      * @return 当前储水量（mB）
      */
     public long getWaterAmount() {
-        return waterAmount;
+        return waterTank.getWaterAmount();
     }
 
     // ==================== ContainerData ====================
@@ -242,7 +170,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
                 return switch (index) {
                     case 0 -> workProgress;
                     case 1 -> getWorkTotalTime();
-                    case 2 -> (int) Math.min(waterAmount, Integer.MAX_VALUE);
+                    case 2 -> (int) Math.min(waterTank.getWaterAmount(), Integer.MAX_VALUE);
                     default -> 0;
                 };
             }
@@ -378,7 +306,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
                             }
 
                             // 检查是否有足够的水
-                            if (waterAmount < waterPerCrop) {
+                            if (waterTank.getWaterAmount() < waterPerCrop) {
                                 // 水量不足，结束催熟
                                 cropsFertilized = cropCount; // 跳出所有循环
                                 break;
@@ -386,7 +314,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
 
                             if (bonemealable.isValidBonemealTarget(serverLevel, cropPos, cropState)) {
                                 // 消耗水
-                                waterAmount -= waterPerCrop;
+                                waterTank.setWaterAmount(waterTank.getWaterAmount() - waterPerCrop);
                                 // 催熟作物（消耗骨粉效果）
                                 bonemealable.performBonemeal(serverLevel,
                                         serverLevel.getRandom(), cropPos, cropState);
@@ -408,13 +336,13 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putLong("WaterAmount", waterAmount);
+        tag.putLong("WaterAmount", waterTank.getWaterAmount());
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        waterAmount = tag.getLong("WaterAmount");
+        waterTank.setWaterAmount(tag.getLong("WaterAmount"));
     }
 
     // ==================== 冲突检测 ====================

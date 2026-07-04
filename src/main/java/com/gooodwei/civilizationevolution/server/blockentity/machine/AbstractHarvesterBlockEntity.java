@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.tier.Tier;
+import com.gooodwei.civilizationevolution.api.util.SimpleWaterTank;
 import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.tags.ModTags;
@@ -10,7 +11,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -21,9 +21,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import java.util.List;
@@ -31,91 +29,26 @@ import java.util.List;
 public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineBlockEntity {
 
     /**
-     * 机器中储罐容积
+     * 水罐 —— 实现 {@link IFluidHandler}，仅接受水。
+     *
+     * <p>所有物流模组的管道均通过 {@code Capabilities.FluidHandler.BLOCK} 与此接口交互。
+     * 容量由 {@link #getTankCapacity()} 动态查询。
      */
-    private long waterAmount = 0;
-
-    protected final IFluidHandler fluidHandler = new IFluidHandler() {
-
-        @Override
-        public int getTanks() {
-            return 1;
-        }
-
-        @Override
-        public FluidStack getFluidInTank(int tank) {
-            if (waterAmount <= 0) {
-                return FluidStack.EMPTY;
-            }
-            return new FluidStack(Fluids.WATER, (int) Math.min(waterAmount, Integer.MAX_VALUE));
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            long cap = AbstractHarvesterBlockEntity.this.getTankCapacity();
-            return cap > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) cap;
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, FluidStack fluidStack) {
-            return fluidStack.is(FluidTags.WATER);
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction fluidAction) {
-            if (resource.isEmpty() || !resource.is(FluidTags.WATER)) {
-                return 0;
-            }
-            long capacity = AbstractHarvesterBlockEntity.this.getTankCapacity();
-            if (waterAmount >= capacity) {
-                return 0; // 储罐已满
-            }
-            long canFill = capacity - waterAmount;
-            int toFill = (int) Math.min(canFill, (long) resource.getAmount());
-            if (fluidAction.execute()) {
-                waterAmount += toFill;
-                setChanged();
-            }
-            return toFill;
-        }
-
-        @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || !resource.is(FluidTags.WATER) || waterAmount <= 0) {
-                return FluidStack.EMPTY;
-            }
-            int toDrain = Math.min(resource.getAmount(), (int) Math.min(waterAmount, Integer.MAX_VALUE));
-            if (action.execute()) {
-                waterAmount -= toDrain;
-                setChanged();
-            }
-            return new FluidStack(Fluids.WATER, toDrain);
-        }
-
-        @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            if (waterAmount <= 0 || maxDrain <= 0) {
-                return FluidStack.EMPTY;
-            }
-            int toDrain = Math.min(maxDrain, (int) Math.min(waterAmount, Integer.MAX_VALUE));
-            if (action.execute()) {
-                waterAmount -= toDrain;
-                setChanged();
-            }
-            return new FluidStack(Fluids.WATER, toDrain);
-        }
-    };
+    protected final SimpleWaterTank waterTank = new SimpleWaterTank(
+            this::getTankCapacity,
+            this::setChanged
+    );
 
     protected AbstractHarvesterBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int size) {
         super(type, pos, state, size);
     }
 
     public long getWaterAmount() {
-        return waterAmount;
+        return waterTank.getWaterAmount();
     }
 
     public IFluidHandler getFluidHandler() {
-        return fluidHandler;
+        return waterTank;
     }
 
     // ==================== ContainerData ====================
@@ -155,7 +88,7 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
                             if (cropState.getBlock() instanceof CropBlock cropBlock
                                     && cropBlock.isMaxAge(cropState)) {
                                 // 检查是否有足够的水
-                                if (waterAmount < waterPerCrop) {
+                                if (waterTank.getWaterAmount() < waterPerCrop) {
                                     // 水量不足，结束
                                     cropNum = cropCount; // 跳出所有循环
                                     break;
@@ -164,7 +97,7 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
                                 List<ItemStack> drops = Block.getDrops(cropState, serverLevel, cropPos,
                                         serverLevel.getBlockEntity(cropPos), null, ItemStack.EMPTY);
                                 serverLevel.setBlock(cropPos, cropState.setValue(CropBlock.AGE, 0), CropBlock.UPDATE_CLIENTS);
-                                waterAmount -= waterPerCrop;
+                                waterTank.setWaterAmount(waterTank.getWaterAmount() - waterPerCrop);
 
                                 for (ItemStack drop : drops) {
                                     // ★ 效率乘数量
@@ -231,7 +164,7 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
                 return switch (index) {
                     case 0 -> workProgress;
                     case 1 -> getWorkTotalTime();
-                    case 2 -> (int) Math.min(waterAmount, Integer.MAX_VALUE);
+                    case 2 -> (int) Math.min(waterTank.getWaterAmount(), Integer.MAX_VALUE);
                     default -> 0;
                 };
             }
@@ -313,12 +246,12 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putLong("WaterAmount", waterAmount);
+        tag.putLong("WaterAmount", waterTank.getWaterAmount());
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        waterAmount = tag.getLong("WaterAmount");
+        waterTank.setWaterAmount(tag.getLong("WaterAmount"));
     }
 }
