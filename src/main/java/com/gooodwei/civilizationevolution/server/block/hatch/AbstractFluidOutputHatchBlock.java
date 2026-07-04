@@ -28,6 +28,11 @@ public abstract class AbstractFluidOutputHatchBlock extends AbstractHatchBlock {
         super(properties);
     }
 
+    @Override
+    public String getPartType() {
+        return TYPE_FLUID_OUTPUT_HATCH;
+    }
+
     /** 流体接口不提供 GUI，纯通过 IFluidHandler 交互 */
     @Override
     @Nullable

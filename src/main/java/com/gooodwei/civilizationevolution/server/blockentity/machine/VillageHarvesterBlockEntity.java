@@ -4,10 +4,14 @@ import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
+import com.gooodwei.civilizationevolution.server.menu.machine.VillageHarvesterMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -87,6 +91,11 @@ public class VillageHarvesterBlockEntity extends AbstractHarvesterBlockEntity {
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.civilizationevolution.village_harvester");
+    }
+
+    @Override
+    protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
+        return new VillageHarvesterMenu(containerId, inventory, this, this.createData());
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, VillageHarvesterBlockEntity blockEntity) {

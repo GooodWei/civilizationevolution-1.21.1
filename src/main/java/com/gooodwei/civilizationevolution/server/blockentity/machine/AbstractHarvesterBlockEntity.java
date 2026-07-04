@@ -292,9 +292,7 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
      * @return 此机器的 Tier 等级
      */
     @Override
-    public Tier getTier() {
-        return null;
-    }
+    public abstract Tier getTier();
 
     @Override
     public int getWorkTotalTime() {
@@ -307,14 +305,10 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
     }
 
     @Override
-    protected Component getDefaultName() {
-        return null;
-    }
+    protected abstract Component getDefaultName();
 
     @Override
-    protected AbstractContainerMenu createMenu(int i, Inventory inventory) {
-        return null;
-    }
+    protected abstract AbstractContainerMenu createMenu(int i, Inventory inventory);
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {

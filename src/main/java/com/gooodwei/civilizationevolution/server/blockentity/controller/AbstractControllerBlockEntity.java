@@ -153,6 +153,13 @@ public abstract class AbstractControllerBlockEntity
     /** 控制器类型标识，用于 CoreDataManager 和配置查找 */
     public abstract String getControllerType();
 
+    /**
+     * 创建此控制器对应的菜单。
+     * 由 {@link #createMenu(int, Inventory, Player)} 在玩家打开 GUI 时调用。
+     * 每个子类必须覆写以返回正确的 Menu 实例。
+     */
+    protected abstract AbstractContainerMenu createMenu(int containerId, Inventory inventory);
+
     /** 区块强加载半径（1 = 3×3 区块，2 = 5×5 区块） */
     protected abstract int getChunkLoadRadius();
 

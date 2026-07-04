@@ -12,4 +12,9 @@ public abstract class AbstractItemOutputHatchBlock extends AbstractHatchBlock {
     protected AbstractItemOutputHatchBlock(Properties properties) {
         super(properties);
     }
+
+    @Override
+    public String getPartType() {
+        return TYPE_OUTPUT_HATCH;
+    }
 }

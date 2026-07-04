@@ -6,7 +6,7 @@ import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -64,11 +64,10 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
     /**
      * 返回 {@code config/civilizationevolution/multi_blocks.json} 中对应的结构 key。
+     * 每个子类必须覆写以返回正确的结构标识。
      */
     @Override
-    public String getConfigKey() {
-        return "primitive_doctor_cabin";
-    }
+    public abstract String getConfigKey();
 
     // ==================== 职业要求 ====================
 
@@ -219,7 +218,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
                                         com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationInputHatchBlockEntity sourceHatch) {
         for (BlockPos hatchPos : getOutputHatches()) {
             BlockEntity be = level.getBlockEntity(hatchPos);
-            if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationOutputHatchBlockEntity outHatch))
+            if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationOutputHatchBlockEntity outHatch))
                 continue;
             ItemStack outStack = outHatch.getItem(0);
             if (outStack.isEmpty()) {
@@ -299,7 +298,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
      * @param doctorCount 活跃医生数
      * @return 食物因子（0.0 ~ N），取小数点后三位
      */
-    private float consumeFoodAndGetFactor(int totalMouths, int doctorCount) {
+    protected float consumeFoodAndGetFactor(int totalMouths, int doctorCount) {
         int fp = getFoodPerPopulation();
         int totalNeeded = totalMouths * fp;
         int doctorNeeded = doctorCount * fp;
@@ -403,16 +402,19 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
     // ==================== 菜单 ====================
 
+    /**
+     * 创建此医院对应的菜单。
+     * 每个子类必须覆写以返回正确的 Menu 实例。
+     */
     @Override
-    protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        if (!isStructureFormed()) return null;
-        return new PrimitiveDoctorCabinMenu(containerId, inventory, this, this.data);
-    }
+    protected abstract AbstractContainerMenu createMenu(int containerId, Inventory inventory);
 
+    /**
+     * 获取此医院方块的默认显示名称。
+     * 每个子类必须覆写以返回正确的翻译组件。
+     */
     @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.civilizationevolution.primitive_doctor_cabin");
-    }
+    protected abstract Component getDefaultName();
 
     // ==================== NBT 持久化 ====================
 

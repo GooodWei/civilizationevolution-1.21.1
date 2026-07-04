@@ -6,6 +6,7 @@ import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
@@ -44,6 +45,11 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
     /** 配置文件中此机器的 key */
     private static final String CONFIG_KEY = CivilizationMachineConfig.PRIMITIVE_DOCTOR_CABIN;
 
+    @Override
+    public String getConfigKey() {
+        return CONFIG_KEY;
+    }
+
     public String getMachineConfigKey() {
         return CONFIG_KEY;
     }
@@ -81,5 +87,10 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
         return new PrimitiveDoctorCabinMenu(containerId, inventory, this, this.data);
+    }
+
+    @Override
+    protected Component getDefaultName() {
+        return Component.translatable("container.civilizationevolution.primitive_doctor_cabin");
     }
 }
