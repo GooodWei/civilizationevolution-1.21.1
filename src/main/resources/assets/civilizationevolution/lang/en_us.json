@@ -5,6 +5,7 @@
   "item.civilizationevolution.recruiter": "Recruiter",
   "item.civilizationevolution.connector": "Connector",
   "tooltip.civilizationevolution.connector.bound_uuid": "Bound Core UUID: %s",
+  "item.civilizationevolution.projector": "Multi-Block Structure Projector",
   "item.civilizationevolution.civilization_core": "Civilization Core",
   "item.civilizationevolution.civilization_core.uuid": "UUID: %s",
   "item.civilizationevolution.civilization_core.empty": "§7Not initialized",
@@ -21,8 +22,10 @@
   "tooltip.civilizationevolution.population.gender": "Gender: %s",
   "tooltip.civilizationevolution.population.gender.male": "Male",
   "tooltip.civilizationevolution.population.gender.female": "Female",
+  "tooltip.civilizationevolution.population.apprentice_exp": "%s Apprentice: %d/%d",
   "tooltip.civilizationevolution.population.lifespan": "Lifespan: %s",
   "tooltip.civilizationevolution.population.dead": "DECEASED",
+  "tooltip.civilizationevolution.population.retired": "RETIRED",
 
   "tier.civilizationevolution.primitive": "Primitive Era",
   "tier.civilizationevolution.village": "Village Era",
@@ -40,14 +43,63 @@
   "block.civilizationevolution.primitive_structure_casing": "Primitive Structure Casing",
   "block.civilizationevolution.primitive_population_input_hatch": "Primitive Population Input Hatch",
   "block.civilizationevolution.primitive_food_input_hatch": "Primitive Food Input Hatch",
+  "block.civilizationevolution.village_food_input_hatch": "Village Food Input Hatch",
   "block.civilizationevolution.primitive_population_output_hatch": "Primitive Population Output Hatch",
+  "block.civilizationevolution.primitive_item_input_hatch": "Primitive Item Input Hatch",
+  "block.civilizationevolution.village_item_input_hatch": "Village Item Input Hatch",
+  "block.civilizationevolution.primitive_item_output_hatch": "Primitive Item Output Hatch",
+  "block.civilizationevolution.village_item_output_hatch": "Village Item Output Hatch",
+  "block.civilizationevolution.primitive_fluid_input_hatch": "Primitive Fluid Input Hatch",
+  "block.civilizationevolution.village_fluid_input_hatch": "Village Fluid Input Hatch",
+  "block.civilizationevolution.primitive_fluid_output_hatch": "Primitive Fluid Output Hatch",
+  "block.civilizationevolution.village_fluid_output_hatch": "Village Fluid Output Hatch",
+  "block.civilizationevolution.mining_shaft_pipe": "Mining Shaft Pipe",
+  "block.civilizationevolution.village_structure_casing": "Village Structure Casing",
+  "block.civilizationevolution.village_quarry": "Village Quarry",
+  "container.civilizationevolution.village_quarry": "Village Quarry",
+
+  "block.civilizationevolution.village_camp": "Village Camp",
+  "container.civilizationevolution.village_camp": "Village Camp",
+
+  "block.civilizationevolution.village_hunting_ground": "Village Hunting Ground",
+  "container.civilizationevolution.village_hunting_ground": "Village Hunting Ground",
+
+  "block.civilizationevolution.village_ranch": "Village Ranch",
+  "container.civilizationevolution.village_ranch": "Village Ranch",
+
+  "block.civilizationevolution.village_farm": "Village Farm",
+  "container.civilizationevolution.village_farm": "Village Farm",
+
+  "block.civilizationevolution.village_harvester": "Village Harvester",
+  "container.civilizationevolution.village_harvester": "Village Harvester",
+
+  "block.civilizationevolution.village_doctor_cabin": "Village Clinic",
+  "container.civilizationevolution.village_doctor_cabin": "Village Clinic",
+
+  "block.civilizationevolution.primitive_storage_pit": "Storage Pit",
+  "container.civilizationevolution.primitive_storage_pit": "Storage Pit",
+  "gui.civilizationevolution.search": "",
+  "gui.civilizationevolution.search_hint": "Search...",
+  "gui.civilizationevolution.used_slots": "Used Slots",
+
   "container.civilizationevolution.primitive_hunting_ground": "Hunting Ground",
   "container.civilizationevolution.primitive_ranch": "Primitive Ranch",
   "container.civilizationevolution.primitive_farm": "Primitive Farm",
   "container.civilizationevolution.primitive_controller": "Primitive Controller",
   "container.civilizationevolution.village_controller": "Village Controller",
   "container.civilizationevolution.primitive_doctor_cabin": "Primitive Doctor Cabin",
+  "container.civilizationevolution.primitive_food_input_hatch": "Primitive Food Input Hatch",
+  "container.civilizationevolution.village_food_input_hatch": "Village Food Input Hatch",
+  "container.civilizationevolution.primitive_population_input_hatch": "Primitive Population Input Hatch",
+  "container.civilizationevolution.primitive_population_output_hatch": "Primitive Population Output Hatch",
+  "container.civilizationevolution.primitive_item_input_hatch": "Primitive Item Input Hatch",
+  "container.civilizationevolution.village_item_input_hatch": "Village Item Input Hatch",
+  "container.civilizationevolution.primitive_item_output_hatch": "Primitive Item Output Hatch",
+  "container.civilizationevolution.village_item_output_hatch": "Village Item Output Hatch",
 
+  "container.civilizationevolution.item_input_hatch": "Item Input Hatch",
+  "container.civilizationevolution.item_output_hatch": "Item Output Hatch",
+  "container.civilizationevolution.fluid_hatch": "Fluid Hatch",
   "container.civilizationevolution.population_input_hatch": "Population Input Hatch",
   "container.civilizationevolution.food_input_hatch": "Food Input Hatch",
   "container.civilizationevolution.population_output_hatch": "Population Output Hatch",
@@ -83,6 +135,7 @@
   "msg.civilizationevolution.connector.target_cleared": "§eCore UUID record cleared",
   "msg.civilizationevolution.connector.bind_success": "§aSuccessfully bound machine at (%d, %d, %d)",
   "msg.civilizationevolution.connector.bind_failed": "§cBind failed, the machine may already be bound to another controller",
+  "msg.civilizationevolution.connector.tier_mismatch": "§cCannot bind: machine tier (%s) is higher than controller tier (%s), use a higher-tier controller",
   "msg.civilizationevolution.connector.cross_dimension_denied": "§cThis controller does not support cross-dimension binding",
   "msg.civilizationevolution.connector.out_of_range": "§cTarget machine is out of range (max %d blocks)",
   "msg.civilizationevolution.connector.controller_full": "§cController has reached its maximum bind count",
@@ -95,7 +148,7 @@
   "msg.civilizationevolution.extractor.success": "§aCore extracted, UUID: %s",
   "msg.civilizationevolution.extractor.not_bound": "§cThis machine is not bound to any civilization core",
 
-  "msg.civilizationevolution.structure_incomplete": "§cMulti-block structure incomplete, please build a 2×2×2 structure",
+  "msg.civilizationevolution.structure_incomplete": "§cMulti-block structure incomplete",
   "msg.civilizationevolution.structure_not_formed": "§cMulti-block structure not formed, machine scheduling paused. Please build the structure as configured",
 
   "config.jade.plugin_civilizationevolution.machine": "Civilization Evolution: Machine Info",
@@ -117,5 +170,6 @@
   "msg.civilizationevolution.debug_structure_getter.exported": "Structure exported to: %s",
   "msg.civilizationevolution.debug_structure_getter.not_holding": "You must hold a Debug Structure Getter",
   "msg.civilizationevolution.debug_structure_getter.controller_out_of_bounds": "Controller position is outside the selection area",
-  "msg.civilizationevolution.debug_structure_getter.chunk_not_loaded": "Selection contains unloaded chunks, cannot export"
+  "msg.civilizationevolution.debug_structure_getter.chunk_not_loaded": "Selection contains unloaded chunks, cannot export",
+  "config.jade.plugin_civilizationevolution.machine_data": "Machine Data Collection"
 }

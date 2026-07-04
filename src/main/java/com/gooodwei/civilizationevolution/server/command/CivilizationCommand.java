@@ -1,16 +1,18 @@
 package com.gooodwei.civilizationevolution.server.command;
 
-import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.api.CivilizationAPI;
-import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
-import com.gooodwei.civilizationevolution.api.career.Career;
-import com.gooodwei.civilizationevolution.api.component.DebugStructureData;
-import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
-import com.gooodwei.civilizationevolution.server.population.Population;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.gooodwei.civilizationevolution.CivilizationEvolution;
+import com.gooodwei.civilizationevolution.api.CivilizationAPI;
+import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
+import com.gooodwei.civilizationevolution.api.career.Career;
+import com.gooodwei.civilizationevolution.api.component.DebugStructureData;
+import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
+import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.population.Population;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -20,18 +22,23 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -43,7 +50,6 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -114,6 +120,14 @@ public final class CivilizationCommand {
                 builder.suggest(String.valueOf(blockHit.getBlockPos().getZ()));
             }
         } catch (CommandSyntaxException ignored) {}
+        return builder.buildFuture();
+    };
+
+    /** 自动填充 multi_blocks.json 中所有可用的结构 key */
+    private static final SuggestionProvider<CommandSourceStack> STRUCTURE_KEY_SUGGESTIONS = (ctx, builder) -> {
+        for (String key : MultiBlockConfig.getStructureKeys()) {
+            builder.suggest(key);
+        }
         return builder.buildFuture();
     };
 
@@ -199,6 +213,27 @@ public final class CivilizationCommand {
                                             IntegerArgumentType.getInteger(ctx, "y"),
                                             IntegerArgumentType.getInteger(ctx, "z"),
                                             StringArgumentType.getString(ctx, "name")
+                                        ))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    .then(Commands.literal("setStructure")
+                        .then(Commands.argument("x", IntegerArgumentType.integer())
+                            .suggests(TARGET_BLOCK_X)
+                            .then(Commands.argument("y", IntegerArgumentType.integer())
+                                .suggests(TARGET_BLOCK_Y)
+                                .then(Commands.argument("z", IntegerArgumentType.integer())
+                                    .suggests(TARGET_BLOCK_Z)
+                                    .then(Commands.argument("structureKey", StringArgumentType.word())
+                                        .suggests(STRUCTURE_KEY_SUGGESTIONS)
+                                        .executes(ctx -> doSetStructure(
+                                            ctx.getSource(),
+                                            IntegerArgumentType.getInteger(ctx, "x"),
+                                            IntegerArgumentType.getInteger(ctx, "y"),
+                                            IntegerArgumentType.getInteger(ctx, "z"),
+                                            StringArgumentType.getString(ctx, "structureKey")
                                         ))
                                     )
                                 )
@@ -404,195 +439,181 @@ public final class CivilizationCommand {
             }
         }
 
-        // 9. 拷贝 final 变量供工作线程使用
-        final BlockPos fControllerPos = controllerPos;
-        final int fMinX = minX, fMinY = minY, fMinZ = minZ;
-        final int fMaxX = maxX, fMaxY = maxY, fMaxZ = maxZ;
-        final int fSizeX = sizeX, fSizeY = sizeY, fSizeZ = sizeZ;
-        final String fName = name;
+        // 9. 同步导出（直接在主线程执行，确保 chunk 数据读取安全和文件写入可靠）
+        try {
+            // 收集方块类型
+            Map<String, List<int[]>> typeToLocalPos = new LinkedHashMap<>();
 
-        // 10. 异步处理（工作线程）
-        CompletableFuture.runAsync(() -> {
-            try {
-                // 收集方块类型
-                Map<String, List<int[]>> typeToLocalPos = new LinkedHashMap<>();
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    for (int x = minX; x <= maxX; x++) {
+                        BlockPos worldPos = new BlockPos(x, y, z);
+                        int chunkX = x >> 4;
+                        int chunkZ = z >> 4;
+                        LevelChunk chunk = chunkMap.get(new ChunkPos(chunkX, chunkZ));
+                        if (chunk == null) continue;
 
-                for (int y = fMinY; y <= fMaxY; y++) {
-                    for (int z = fMinZ; z <= fMaxZ; z++) {
-                        for (int x = fMinX; x <= fMaxX; x++) {
-                            BlockPos worldPos = new BlockPos(x, y, z);
-                            int chunkX = x >> 4;
-                            int chunkZ = z >> 4;
-                            LevelChunk chunk = chunkMap.get(new ChunkPos(chunkX, chunkZ));
-                            if (chunk == null) continue;
+                        BlockState state = chunk.getBlockState(worldPos);
+                        // 局部坐标（包围盒最小角为原点，保证全部非负）
+                        int lx = x - minX;
+                        int ly = y - minY;
+                        int lz = z - minZ;
 
-                            BlockState state = chunk.getBlockState(worldPos);
-                            // 局部坐标（包围盒最小角为原点，保证全部非负）
-                            int lx = x - fMinX;
-                            int ly = y - fMinY;
-                            int lz = z - fMinZ;
-
-                            String typeId;
-                            if (worldPos.equals(fControllerPos)) {
-                                typeId = "__CONTROLLER__";
-                            } else if (state.isAir()) {
-                                typeId = "__AIR__";
-                            } else {
-                                BlockEntity be = chunk.getBlockEntity(worldPos);
-                                if (be instanceof IMultiBlockPart part) {
-                                    typeId = "part:" + part.getPartType();
-                                } else if (state.getBlock() instanceof IMultiBlockPart part) {
-                                    typeId = "part:" + part.getPartType();
-                                } else {
-                                    typeId = "block:" + BuiltInRegistries.BLOCK.getKey(state.getBlock());
-                                }
-                            }
-
-                            typeToLocalPos.computeIfAbsent(typeId, k -> new ArrayList<>())
-                                    .add(new int[]{lx, ly, lz});
-                        }
-                    }
-                }
-
-                // 分配字符编码
-                Map<String, String> typeToCode = assignCodes(typeToLocalPos);
-
-                // 判断是否使用双字节模式
-                boolean doubleChar = typeToCode.values().stream().anyMatch(s -> s.length() == 2);
-
-                // 构建 pattern 三维字符数组
-                char[][][] pattern = new char[fSizeY][fSizeZ][fSizeX * (doubleChar ? 2 : 1)];
-                // 初始化为空格
-                for (int y = 0; y < fSizeY; y++) {
-                    for (int z = 0; z < fSizeZ; z++) {
-                        int width = fSizeX * (doubleChar ? 2 : 1);
-                        for (int x = 0; x < width; x++) {
-                            pattern[y][z][x] = ' ';
-                        }
-                    }
-                }
-
-                // 填充 pattern
-                for (var entry : typeToLocalPos.entrySet()) {
-                    String typeId = entry.getKey();
-                    String code = typeToCode.get(typeId);
-                    if (code == null || "__AIR__".equals(typeId)) continue;
-
-                    for (int[] pos : entry.getValue()) {
-                        int lx = pos[0];
-                        int ly = pos[1];
-                        int lz = pos[2];
-                        // 验证局部坐标范围
-                        if (ly < 0 || ly >= fSizeY || lz < 0 || lz >= fSizeZ || lx < 0 || lx >= fSizeX) continue;
-
-                        if (doubleChar) {
-                            int cx2 = lx * 2;
-                            if (code.length() == 2) {
-                                pattern[ly][lz][cx2] = code.charAt(0);
-                                pattern[ly][lz][cx2 + 1] = code.charAt(1);
-                            } else {
-                                // 单字节 code：填充 _ 后缀
-                                pattern[ly][lz][cx2] = code.charAt(0);
-                                pattern[ly][lz][cx2 + 1] = '_';
-                            }
+                        String typeId;
+                        if (worldPos.equals(controllerPos)) {
+                            typeId = "__CONTROLLER__";
+                        } else if (state.isAir()) {
+                            typeId = "__AIR__";
                         } else {
-                            pattern[ly][lz][lx] = code.charAt(0);
+                            BlockEntity be = chunk.getBlockEntity(worldPos);
+                            if (be instanceof IMultiBlockPart part) {
+                                typeId = "part:" + part.getPartType();
+                            } else if (state.getBlock() instanceof IMultiBlockPart part) {
+                                typeId = "part:" + part.getPartType();
+                            } else {
+                                typeId = "block:" + BuiltInRegistries.BLOCK.getKey(state.getBlock());
+                            }
                         }
+
+                        typeToLocalPos.computeIfAbsent(typeId, k -> new ArrayList<>())
+                                .add(new int[]{lx, ly, lz});
                     }
                 }
+            }
 
-                // 通配符位置（空气）在双字节模式下写为 __
-                if (doubleChar) {
-                    for (int y = 0; y < fSizeY; y++) {
-                        for (int z = 0; z < fSizeZ; z++) {
-                            for (int x = 0; x < fSizeX; x++) {
-                                if (pattern[y][z][x * 2] == ' ' && pattern[y][z][x * 2 + 1] == ' ') {
-                                    pattern[y][z][x * 2] = '_';
-                                    pattern[y][z][x * 2 + 1] = '_';
-                                }
+            // 分配字符编码
+            Map<String, String> typeToCode = assignCodes(typeToLocalPos);
+
+            // 判断是否使用双字节模式
+            boolean doubleChar = typeToCode.values().stream().anyMatch(s -> s.length() == 2);
+
+            // 构建 pattern 三维字符数组
+            char[][][] pattern = new char[sizeY][sizeZ][sizeX * (doubleChar ? 2 : 1)];
+            // 初始化为空格
+            for (int y = 0; y < sizeY; y++) {
+                for (int z = 0; z < sizeZ; z++) {
+                    int width = sizeX * (doubleChar ? 2 : 1);
+                    for (int x = 0; x < width; x++) {
+                        pattern[y][z][x] = ' ';
+                    }
+                }
+            }
+
+            // 填充 pattern
+            for (var entry : typeToLocalPos.entrySet()) {
+                String typeId = entry.getKey();
+                String code = typeToCode.get(typeId);
+                if (code == null || "__AIR__".equals(typeId)) continue;
+
+                for (int[] pos : entry.getValue()) {
+                    int lx = pos[0];
+                    int ly = pos[1];
+                    int lz = pos[2];
+                    // 验证局部坐标范围
+                    if (ly < 0 || ly >= sizeY || lz < 0 || lz >= sizeZ || lx < 0 || lx >= sizeX) continue;
+
+                    if (doubleChar) {
+                        int cx2 = lx * 2;
+                        if (code.length() == 2) {
+                            pattern[ly][lz][cx2] = code.charAt(0);
+                            pattern[ly][lz][cx2 + 1] = code.charAt(1);
+                        } else {
+                            // 单字节 code：填充 _ 后缀
+                            pattern[ly][lz][cx2] = code.charAt(0);
+                            pattern[ly][lz][cx2 + 1] = '_';
+                        }
+                    } else {
+                        pattern[ly][lz][lx] = code.charAt(0);
+                    }
+                }
+            }
+
+            // 通配符位置（空气）在双字节模式下写为 __
+            if (doubleChar) {
+                for (int y = 0; y < sizeY; y++) {
+                    for (int z = 0; z < sizeZ; z++) {
+                        for (int x = 0; x < sizeX; x++) {
+                            if (pattern[y][z][x * 2] == ' ' && pattern[y][z][x * 2 + 1] == ' ') {
+                                pattern[y][z][x * 2] = '_';
+                                pattern[y][z][x * 2 + 1] = '_';
                             }
                         }
                     }
                 }
-
-                // 生成 JSON
-                JsonObject root = new JsonObject();
-                JsonObject structures = new JsonObject();
-                JsonObject structure = new JsonObject();
-
-                // controller（局部坐标，包围盒最小角为原点）
-                JsonArray controllerArr = new JsonArray();
-                controllerArr.add(fControllerPos.getY() - fMinY);
-                controllerArr.add(fControllerPos.getX() - fMinX);
-                controllerArr.add(fControllerPos.getZ() - fMinZ);
-                structure.add("controller", controllerArr);
-
-                // pattern
-                JsonObject patternObj = new JsonObject();
-                for (int y = 0; y < fSizeY; y++) {
-                    StringBuilder layer = new StringBuilder();
-                    for (int z = 0; z < fSizeZ; z++) {
-                        if (z > 0) layer.append(',');
-                        for (int x = 0; x < (doubleChar ? fSizeX * 2 : fSizeX); x++) {
-                            layer.append(pattern[y][z][x]);
-                        }
-                    }
-                    patternObj.addProperty("y" + y, layer.toString());
-                }
-                structure.add("pattern", patternObj);
-
-                // key
-                JsonObject keyObj = new JsonObject();
-                for (var entry : typeToCode.entrySet()) {
-                    String typeId = entry.getKey();
-                    String code = entry.getValue();
-                    if ("__AIR__".equals(typeId)) continue;
-
-                    JsonObject keyDef = new JsonObject();
-                    if ("__CONTROLLER__".equals(typeId)) {
-                        keyDef.addProperty("block", "self");
-                    } else {
-                        // 去掉前缀 part: 或 block:
-                        String actualType = typeId;
-                        if (actualType.startsWith("part:")) {
-                            actualType = actualType.substring(5);
-                        } else if (actualType.startsWith("block:")) {
-                            actualType = actualType.substring(6);
-                        }
-                        keyDef.addProperty("type", actualType);
-                    }
-                    keyObj.add(code, keyDef);
-                }
-                structure.add("key", keyObj);
-
-                if (doubleChar) {
-                    structure.addProperty("code_width", 2);
-                }
-
-                structure.addProperty("validate_interval", 30);
-                structures.add(fName, structure);
-                root.add("structures", structures);
-
-                // 写入文件
-                Files.createDirectories(STRUCTURE_OUTPUT_DIR);
-                Path outputFile = STRUCTURE_OUTPUT_DIR.resolve(fName + ".json");
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                Files.writeString(outputFile, gson.toJson(root));
-
-                // 回到主线程通知玩家
-                level.getServer().execute(() -> {
-                    src.sendSuccess(() -> Component.translatable(
-                            "msg.civilizationevolution.debug_structure_getter.exported",
-                            outputFile.toString()), false);
-                });
-
-            } catch (Exception e) {
-                level.getServer().execute(() -> {
-                    src.sendFailure(Component.literal("导出失败: " + e.getMessage()));
-                });
-                CivilizationEvolution.LOGGER.error("导出结构数据失败", e);
             }
-        });
+
+            // 生成 JSON
+            JsonObject root = new JsonObject();
+            JsonObject structures = new JsonObject();
+            JsonObject structure = new JsonObject();
+
+            // controller（局部坐标，包围盒最小角为原点）
+            JsonArray controllerArr = new JsonArray();
+            controllerArr.add(controllerPos.getY() - minY);
+            controllerArr.add(controllerPos.getX() - minX);
+            controllerArr.add(controllerPos.getZ() - minZ);
+            structure.add("controller", controllerArr);
+
+            // pattern
+            JsonObject patternObj = new JsonObject();
+            for (int y = 0; y < sizeY; y++) {
+                StringBuilder layer = new StringBuilder();
+                for (int z = 0; z < sizeZ; z++) {
+                    if (z > 0) layer.append(',');
+                    for (int x = 0; x < (doubleChar ? sizeX * 2 : sizeX); x++) {
+                        layer.append(pattern[y][z][x]);
+                    }
+                }
+                patternObj.addProperty("y" + y, layer.toString());
+            }
+            structure.add("pattern", patternObj);
+
+            // key
+            JsonObject keyObj = new JsonObject();
+            for (var entry : typeToCode.entrySet()) {
+                String typeId = entry.getKey();
+                String code = entry.getValue();
+                if ("__AIR__".equals(typeId)) continue;
+
+                JsonObject keyDef = new JsonObject();
+                if ("__CONTROLLER__".equals(typeId)) {
+                    keyDef.addProperty("block", "self");
+                } else {
+                    // 去掉前缀 part: 或 block:
+                    String actualType = typeId;
+                    if (actualType.startsWith("part:")) {
+                        actualType = actualType.substring(5);
+                    } else if (actualType.startsWith("block:")) {
+                        actualType = actualType.substring(6);
+                    }
+                    keyDef.addProperty("type", actualType);
+                }
+                keyObj.add(code, keyDef);
+            }
+            structure.add("key", keyObj);
+
+            if (doubleChar) {
+                structure.addProperty("code_width", 2);
+            }
+
+            structure.addProperty("validate_interval", 30);
+            structures.add(name, structure);
+            root.add("structures", structures);
+
+            // 写入文件
+            Files.createDirectories(STRUCTURE_OUTPUT_DIR);
+            Path outputFile = STRUCTURE_OUTPUT_DIR.resolve(name + ".json");
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Files.writeString(outputFile, gson.toJson(root));
+
+            src.sendSuccess(() -> Component.translatable(
+                    "msg.civilizationevolution.debug_structure_getter.exported",
+                    outputFile.toString()), false);
+
+        } catch (Exception e) {
+            src.sendFailure(Component.literal("导出失败: " + e.getMessage()));
+            CivilizationEvolution.LOGGER.error("导出结构数据失败", e);
+        }
 
         return Command.SINGLE_SUCCESS;
     }
@@ -627,5 +648,290 @@ public final class CivilizationCommand {
         }
 
         return result;
+    }
+
+    // ==================== 结构生成命令 ====================
+
+    /**
+     * 执行结构生成命令：在指定坐标根据结构 key 放置完整的控制器+多方块结构。
+     *
+     * @param src          命令来源
+     * @param cx           控制器 X 世界坐标
+     * @param cy           控制器 Y 世界坐标
+     * @param cz           控制器 Z 世界坐标
+     * @param structureKey 配置文件中的结构 key
+     */
+    private static int doSetStructure(CommandSourceStack src, int cx, int cy, int cz, String structureKey)
+            throws CommandSyntaxException {
+        // 1. 必须由玩家执行（需要朝向）
+        ServerPlayer player = src.getPlayerOrException();
+
+        // 2. 验证 structureKey 存在
+        String structureJson = MultiBlockConfig.getStructureJson(structureKey);
+        if (structureJson == null) {
+            String validKeys = String.join(", ", MultiBlockConfig.getStructureKeys());
+            src.sendFailure(Component.literal(
+                    "Unknown structure key: " + structureKey + ". Valid keys: " + validKeys));
+            return 0;
+        }
+
+        // 3. 解析结构 pattern
+        IMultiBlockMachine.ParsedPattern pattern = IMultiBlockMachine.parsePatternStatic(structureKey);
+        if (pattern == null) {
+            src.sendFailure(Component.literal("Failed to parse structure key: " + structureKey));
+            return 0;
+        }
+
+        ServerLevel level = player.serverLevel();
+        BlockPos controllerPos = new BlockPos(cx, cy, cz);
+
+        // 4. 检查区块已加载
+        if (!level.isLoaded(controllerPos)) {
+            src.sendFailure(Component.literal("Chunk not loaded at controller position: "
+                    + controllerPos.toShortString()));
+            return 0;
+        }
+
+        // 5. 取玩家水平朝向作为结构 facing 方向
+        Direction facing = player.getDirection();
+
+        // 6. 解析控制器方块并放置
+        ResourceLocation controllerBlockId = ResourceLocation.fromNamespaceAndPath(
+                CivilizationEvolution.MODID, structureKey);
+        Block controllerBlock = BuiltInRegistries.BLOCK.get(controllerBlockId);
+        if (controllerBlock == BuiltInRegistries.BLOCK.get(
+                ResourceLocation.fromNamespaceAndPath("minecraft", "air"))) {
+            src.sendFailure(Component.literal("Controller block not found for key: " + structureKey));
+            return 0;
+        }
+        BlockState controllerState = controllerBlock.defaultBlockState();
+        if (controllerState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+            controllerState = controllerState.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
+        }
+        level.setBlock(controllerPos, controllerState, Block.UPDATE_ALL);
+
+        int placed = 0;
+        int skipped = 0;
+
+        // 7. 遍历 pattern，放置所有非空格、非 self 位置的方块
+        for (int y = 0; y < pattern.height(); y++) {
+            for (int z = 0; z < pattern.depth(); z++) {
+                for (int x = 0; x < pattern.width(); x++) {
+                    char c = pattern.layerChars()[y][z][x];
+
+                    // 跳过空格（该位置可为任意方块）
+                    if (c == ' ') continue;
+
+                    // 跳过控制器自身（"block": "self"）
+                    IMultiBlockMachine.KeyDefinition kd = pattern.keyDefs().get(c);
+                    if (kd == null) continue;
+                    if ("self".equals(kd.type())) continue;
+
+                    // 跳过控制器局部坐标（已在步骤 6 放置）
+                    if (y == pattern.controllerY()
+                            && x == pattern.controllerX()
+                            && z == pattern.controllerZ()) {
+                        continue;
+                    }
+
+                    // 计算世界坐标
+                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
+                            x - pattern.controllerX(),
+                            y - pattern.controllerY(),
+                            z - pattern.controllerZ(),
+                            facing, controllerPos);
+
+                    // 解析要放置的 BlockState
+                    BlockState targetState = resolveBlockState(c, pattern, level);
+                    if (targetState == null) {
+                        skipped++;
+                        continue;
+                    }
+
+                    // 如果当前位置已是正确方块则跳过
+                    BlockState existingState = level.getBlockState(worldPos);
+                    if (existingState.getBlock() == targetState.getBlock()) {
+                        continue;
+                    }
+
+                    // 放置方块
+                    level.setBlock(worldPos, targetState, Block.UPDATE_ALL);
+                    placed++;
+                }
+            }
+        }
+
+        // 8. 执行放置后验证
+        boolean allMatch = performStructureValidation(pattern, facing, controllerPos, level);
+
+        // 9. 反馈结果
+        int finalPlaced = placed;
+        int finalSkipped = skipped;
+        src.sendSuccess(() -> Component.literal(
+                "Structure \"" + structureKey + "\": placed " + (finalPlaced + 1) + " blocks (含控制器)"
+                        + (finalSkipped > 0 ? ", skipped " + finalSkipped : "")
+                        + ". Validation: " + (allMatch ? "PASSED" : "FAILED")),
+                true);
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * 根据 key 字符定义解析实际要放置的 BlockState。
+     *
+     * @param c       pattern 中的字符
+     * @param pattern 解析后的结构模式
+     * @param level   世界实例（用于 tag 解析）
+     * @return 解析出的 BlockState，无法解析时返回 null
+     */
+    private static BlockState resolveBlockState(char c,
+            IMultiBlockMachine.ParsedPattern pattern, ServerLevel level) {
+        IMultiBlockMachine.KeyDefinition kd = pattern.keyDefs().get(c);
+        if (kd == null) return null;
+
+        String type = kd.type();
+
+        // 1. 方块注册名（含 ":" 且不以 "tag:" 开头）
+        if (type.indexOf(':') >= 0 && !type.startsWith("tag:")) {
+            ResourceLocation rl = ResourceLocation.parse(type);
+            Block block = BuiltInRegistries.BLOCK.get(rl);
+            if (block == BuiltInRegistries.BLOCK.get(
+                    ResourceLocation.fromNamespaceAndPath("minecraft", "air"))) {
+                return null;
+            }
+            return block.defaultBlockState();
+        }
+
+        // 2. Block Tag（以 "tag:" 开头）
+        if (type.startsWith("tag:")) {
+            String tagStr = type.substring(4);
+            TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, ResourceLocation.parse(tagStr));
+            var optionalBlocks = level.registryAccess()
+                    .registryOrThrow(Registries.BLOCK)
+                    .getTag(tagKey);
+            if (optionalBlocks.isPresent()) {
+                for (var holder : optionalBlocks.get()) {
+                    return holder.value().defaultBlockState();
+                }
+            }
+            return null;
+        }
+
+        // 3. 零件类型（不含 ":"）
+        return resolveBlockStateFromPartType(type);
+    }
+
+    /**
+     * 从零件类型字符串扫描 BuiltInRegistries.BLOCK 找到匹配的方块。
+     * 选择 tier 最低的匹配方块。
+     *
+     * @param partType 零件类型字符串（如 "multi_block_part"）
+     * @return 匹配的 BlockState，未找到时返回 null
+     */
+    private static BlockState resolveBlockStateFromPartType(String partType) {
+        Block bestBlock = null;
+        int bestTier = Integer.MAX_VALUE;
+
+        for (var entry : BuiltInRegistries.BLOCK.entrySet()) {
+            Block block = entry.getValue();
+            if (block instanceof IMultiBlockPart part) {
+                if (part.getPartType().equals(partType)) {
+                    int tier = part.getPartTier().getLevel();
+                    if (bestBlock == null || tier < bestTier) {
+                        bestBlock = block;
+                        bestTier = tier;
+                    }
+                }
+            }
+        }
+
+        return bestBlock != null ? bestBlock.defaultBlockState() : null;
+    }
+
+    /**
+     * 将 pattern 局部坐标（相对控制器）根据 facing 旋转为世界绝对坐标。
+     * 复用 {@link IMultiBlockMachine#rotateOffset(int, int, int, Direction)} 的数学逻辑。
+     *
+     * @param lx            局部 X（right 方向）
+     * @param ly            局部 Y（up 方向）
+     * @param lz            局部 Z（backward 方向）
+     * @param facing        结构正面朝向
+     * @param controllerPos 控制器世界坐标
+     * @return 世界绝对坐标
+     */
+    /**
+     * 放置后验证：检查结构每个位置是否匹配 pattern。
+     *
+     * @return true 表示所有位置均匹配
+     */
+    private static boolean performStructureValidation(
+            IMultiBlockMachine.ParsedPattern pattern, Direction facing,
+            BlockPos controllerPos, ServerLevel level) {
+        boolean allMatch = true;
+
+        for (int y = 0; y < pattern.height(); y++) {
+            for (int z = 0; z < pattern.depth(); z++) {
+                for (int x = 0; x < pattern.width(); x++) {
+                    char c = pattern.layerChars()[y][z][x];
+                    if (c == ' ') continue;
+                    if (y == pattern.controllerY()
+                            && x == pattern.controllerX()
+                            && z == pattern.controllerZ()) continue;
+
+                    IMultiBlockMachine.KeyDefinition kd = pattern.keyDefs().get(c);
+                    if (kd == null) continue;
+                    if ("self".equals(kd.type())) continue;
+
+                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
+                            x - pattern.controllerX(),
+                            y - pattern.controllerY(),
+                            z - pattern.controllerZ(),
+                            facing, controllerPos);
+
+                    // 构建允许的类型集合（复用 IMultiBlockMachine 静态方法）
+                    Set<String> allowed = IMultiBlockMachine.buildAllowedTypes(c, pattern);
+
+                    // 检查当前方块
+                    BlockState currentState = level.getBlockState(worldPos);
+                    boolean matched = false;
+                    for (String typeStr : allowed) {
+                        if (IMultiBlockMachine.isBlockOrTagType(typeStr)) {
+                            String regName = BuiltInRegistries.BLOCK
+                                    .getKey(currentState.getBlock()).toString();
+                            if (regName.equals(typeStr)) {
+                                matched = true;
+                                break;
+                            }
+                        } else if (IMultiBlockMachine.isTagType(typeStr)) {
+                            String tagStr = typeStr.substring(4);
+                            TagKey<Block> tagKey = TagKey.create(Registries.BLOCK,
+                                    ResourceLocation.parse(tagStr));
+                            if (currentState.is(tagKey)) {
+                                matched = true;
+                                break;
+                            }
+                        } else {
+                            // 零件类型：检查 BlockEntity 和 Block
+                            BlockEntity be = level.getBlockEntity(worldPos);
+                            if (be instanceof IMultiBlockPart part
+                                    && part.getPartType().equals(typeStr)) {
+                                matched = true;
+                                break;
+                            }
+                            if (currentState.getBlock() instanceof IMultiBlockPart part
+                                    && part.getPartType().equals(typeStr)) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!matched) {
+                        allMatch = false;
+                    }
+                }
+            }
+        }
+
+        return allMatch;
     }
 }

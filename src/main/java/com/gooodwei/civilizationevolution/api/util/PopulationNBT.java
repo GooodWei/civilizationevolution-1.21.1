@@ -28,7 +28,7 @@ public final class PopulationNBT {
      * @return 当前年龄，默认 0
      */
     public static int getAge(ItemStack stack) {
-        return getTag(stack).getInt(Population.TAG_AGE);
+        return getOrCopyTag(stack).getInt(Population.TAG_AGE);
     }
 
     /**
@@ -37,7 +37,7 @@ public final class PopulationNBT {
      * @return 寿命，默认 0
      */
     public static int getLifespan(ItemStack stack) {
-        return getTag(stack).getInt(Population.TAG_LIFESPAN);
+        return getOrCopyTag(stack).getInt(Population.TAG_LIFESPAN);
     }
 
     /**
@@ -46,7 +46,7 @@ public final class PopulationNBT {
      * @return true = 男性，false = 女性
      */
     public static boolean getGender(ItemStack stack) {
-        return getTag(stack).getBoolean(Population.TAG_GENDER);
+        return getOrCopyTag(stack).getBoolean(Population.TAG_GENDER);
     }
 
     /**
@@ -55,7 +55,7 @@ public final class PopulationNBT {
      * @return 职业名称，默认空字符串
      */
     public static String getCareer(ItemStack stack) {
-        return getTag(stack).getString(Population.TAG_CAREER);
+        return getOrCopyTag(stack).getString(Population.TAG_CAREER);
     }
 
     /**
@@ -64,7 +64,7 @@ public final class PopulationNBT {
      * @return 生命值，默认 0
      */
     public static int getHealth(ItemStack stack) {
-        return getTag(stack).getInt(Population.TAG_HEALTH);
+        return getOrCopyTag(stack).getInt(Population.TAG_HEALTH);
     }
 
     /**
@@ -73,7 +73,7 @@ public final class PopulationNBT {
      * @return 饱食度，默认 0
      */
     public static int getFood(ItemStack stack) {
-        return getTag(stack).getInt(Population.TAG_FOOD);
+        return getOrCopyTag(stack).getInt(Population.TAG_FOOD);
     }
 
     /**
@@ -82,7 +82,7 @@ public final class PopulationNBT {
      * @return 熟练度，默认 0
      */
     public static int getProficiency(ItemStack stack) {
-        return getTag(stack).getInt(Population.TAG_PROFICIENCY);
+        return getOrCopyTag(stack).getInt(Population.TAG_PROFICIENCY);
     }
 
     /**
@@ -91,7 +91,7 @@ public final class PopulationNBT {
      * @return 工作效率，默认 0.0
      */
     public static double getWorkEfficiency(ItemStack stack) {
-        return getTag(stack).getDouble(Population.TAG_WORK_EFFICIENCY);
+        return getOrCopyTag(stack).getDouble(Population.TAG_WORK_EFFICIENCY);
     }
 
     /**
@@ -100,7 +100,7 @@ public final class PopulationNBT {
      * @return 精神状态，默认 0.0
      */
     public static double getMentalState(ItemStack stack) {
-        return getTag(stack).getDouble(Population.TAG_MENTAL_STATE);
+        return getOrCopyTag(stack).getDouble(Population.TAG_MENTAL_STATE);
     }
 
     // ==================== Setter ====================
@@ -210,6 +210,18 @@ public final class PopulationNBT {
     }
 
     /**
+     * 获取人口所有职业的学徒经验映射。
+     * 返回的 CompoundTag 键为职业名称，值为经验值（int）。
+     * 若无学徒经验数据则返回空 CompoundTag。
+     *
+     * @param stack 人口物品
+     * @return 职业经验 CompoundTag，永不为 null
+     */
+    public static CompoundTag getAllCareerExps(ItemStack stack) {
+        return getOrCopyTag(stack).getCompound(Population.TAG_CAREER_EXPS);
+    }
+
+    /**
      * 获取人口在指定职业上的经验值。
      *
      * @param stack      人口物品
@@ -217,7 +229,7 @@ public final class PopulationNBT {
      * @return 该职业的经验值，默认 0
      */
     public static int getCareerExp(ItemStack stack, String careerName) {
-        CompoundTag exps = getTag(stack).getCompound(Population.TAG_CAREER_EXPS);
+        CompoundTag exps = getOrCopyTag(stack).getCompound(Population.TAG_CAREER_EXPS);
         return exps.getInt(careerName);
     }
 
@@ -269,6 +281,18 @@ public final class PopulationNBT {
         return getCareerExp(stack, careerName) >= threshold;
     }
 
+    /**
+     * 清除人口的所有职业学徒经验，减少 NBT 膨胀。
+     * 转职完成后调用此方法以清空不再需要的经验数据。
+     *
+     * @param stack 人口物品
+     */
+    public static void clearAllCareerExps(ItemStack stack) {
+        CompoundTag tag = getOrCopyTag(stack);
+        tag.remove(Population.TAG_CAREER_EXPS);
+        saveTag(stack, tag);
+    }
+
     // ==================== 判定 ====================
 
     /**
@@ -277,7 +301,7 @@ public final class PopulationNBT {
      * @return true 表示已标记为死亡
      */
     public static boolean isDead(ItemStack stack) {
-        return getTag(stack).getBoolean(Population.TAG_DEAD);
+        return getOrCopyTag(stack).getBoolean(Population.TAG_DEAD);
     }
 
     /**
@@ -293,12 +317,7 @@ public final class PopulationNBT {
 
     // ==================== 内部 ====================
 
-    /** 从物品获取 NBT 标签的只读副本（仅用于 Getter） */
-    private static CompoundTag getTag(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-    }
-
-    /** 从物品获取 NBT 标签的可修改副本（用于 Setter） */
+    /** 从物品获取 NBT 标签的可修改副本（用于 Getter 和 Setter） */
     private static CompoundTag getOrCopyTag(ItemStack stack) {
         return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
     }

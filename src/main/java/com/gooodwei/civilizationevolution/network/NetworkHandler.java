@@ -2,13 +2,14 @@ package com.gooodwei.civilizationevolution.network;
 
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.client.ClientPayloadHandler;
+import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveStoragePitMenu;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 
@@ -37,6 +38,12 @@ public class NetworkHandler {
                 UpdateMachineFieldPayload.STREAM_CODEC,
                 NetworkHandler::handleMachineUpdate
         );
+        // 储物坑滚动同步（C→S）
+        registrar.playToServer(
+                ScrollStoragePitPayload.TYPE,
+                ScrollStoragePitPayload.STREAM_CODEC,
+                NetworkHandler::handleScrollStoragePit
+        );
     }
 
     /**
@@ -54,6 +61,36 @@ public class NetworkHandler {
                 StructurePreviewPayload.TYPE,
                 StructurePreviewPayload.STREAM_CODEC,
                 ClientPayloadHandler::handleStructurePreview
+        );
+        // Oversized 容器同步（S→C）——安全处理槽位数可能不同步的竞态
+        registrar.playToClient(
+                SyncOversizedStacksPayload.TYPE,
+                SyncOversizedStacksPayload.STREAM_CODEC,
+                (payload, ctx) -> {
+                    if (ctx.player().containerMenu.containerId == payload.containerId()) {
+                        var menu = ctx.player().containerMenu;
+                        var stacks = payload.stacks();
+                        int slotCount = menu.slots.size();
+                        // 防御：如果服务端发送的 stacks 比客户端当前 slots 多
+                        // （滚动导致 slot 数量变更后的竞态），截断到客户端 slot 数量
+                        if (stacks.size() > slotCount) {
+                            stacks = stacks.subList(0, slotCount);
+                        }
+                        menu.initializeContents(payload.stateId(), stacks, payload.carriedStack());
+                    }
+                }
+        );
+        registrar.playToClient(
+                SyncOversizedSlotPayload.TYPE,
+                SyncOversizedSlotPayload.STREAM_CODEC,
+                (payload, ctx) -> {
+                    if (ctx.player().containerMenu.containerId == payload.containerId()) {
+                        var slot = ctx.player().containerMenu.getSlot(payload.slotIndex());
+                        if (slot != null) {
+                            slot.set(payload.stack());
+                        }
+                    }
+                }
         );
     }
 
@@ -88,6 +125,17 @@ public class NetworkHandler {
         BlockEntity be = player.serverLevel().getBlockEntity(payload.pos());
         if (be instanceof IClientUpdateReceiver receiver) {
             receiver.onClientUpdate(payload.fieldId(), payload.data());
+        }
+    }
+
+    /**
+     * 处理客户端发来的储物坑滚动偏移同步。
+     * 在服务端重建存储槽位以保证两端槽位索引一致。
+     */
+    private static void handleScrollStoragePit(final ScrollStoragePitPayload payload, final IPayloadContext context) {
+        ServerPlayer player = (ServerPlayer) context.player();
+        if (player.containerMenu instanceof PrimitiveStoragePitMenu menu) {
+            menu.rebuildStorageSlots(payload.scrollOffset());
         }
     }
 

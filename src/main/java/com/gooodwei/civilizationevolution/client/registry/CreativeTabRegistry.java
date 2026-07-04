@@ -37,6 +37,7 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.RECRUITER.get());
                         output.accept(ItemRegistry.CONNECTOR.get());
                         output.accept(ItemRegistry.DEBUG_STRUCTURE_GETTER.get());
+                        output.accept(ItemRegistry.PROJECTOR.get());
                         output.accept(ItemRegistry.PRIMITIVE_CAMP_BLOCK_ITEM.get());
                         output.accept(ItemRegistry.PRIMITIVE_HUNTING_GROUND.get());
                         output.accept(ItemRegistry.PRIMITIVE_CONTROLLER.get());
@@ -48,8 +49,27 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.PRIMITIVE_STRUCTURE_CASING.get());
                         output.accept(ItemRegistry.PRIMITIVE_POPULATION_INPUT_HATCH.get());
                         output.accept(ItemRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FOOD_INPUT_HATCH.get());
                         output.accept(ItemRegistry.PRIMITIVE_POPULATION_OUTPUT_HATCH.get());
                         output.accept(ItemRegistry.PRIMITIVE_DOCTOR_CABIN.get());
+                        output.accept(ItemRegistry.PRIMITIVE_ITEM_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_ITEM_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_ITEM_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_ITEM_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FLUID_INPUT_HATCH.get());
+                        output.accept(ItemRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get());
+                        output.accept(ItemRegistry.VILLAGE_STRUCTURE_CASING.get());
+                        output.accept(ItemRegistry.VILLAGE_QUARRY.get());
+                        output.accept(ItemRegistry.VILLAGE_CAMP_BLOCK_ITEM.get());
+                        output.accept(ItemRegistry.VILLAGE_HUNTING_GROUND.get());
+                        output.accept(ItemRegistry.VILLAGE_RANCH.get());
+                        output.accept(ItemRegistry.VILLAGE_FARM.get());
+                        output.accept(ItemRegistry.VILLAGE_DOCTOR_CABIN.get());
+                        output.accept(ItemRegistry.VILLAGE_HARVESTER.get());
+                        output.accept(ItemRegistry.PRIMITIVE_STORAGE_PIT.get());
+
                     }).build());
 
     /**
@@ -67,6 +87,7 @@ public class CreativeTabRegistry {
             event.accept(ItemRegistry.RECRUITER);
             event.accept(ItemRegistry.CONNECTOR);
             event.accept(ItemRegistry.DEBUG_STRUCTURE_GETTER);
+            event.accept(ItemRegistry.PROJECTOR);
         }
     }
 }

@@ -1,30 +1,22 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
-import com.gooodwei.civilizationevolution.api.career.Career;
-import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.api.util.SimpleWaterTank;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.tags.ModTags;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 import java.util.List;
 
@@ -73,95 +65,18 @@ import java.util.List;
  */
 public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockEntity {
 
-    // ==================== 储水字段 ====================
-
-    /** 当前储水量（mB），NBT 持久化 */
-    private long waterAmount = 0;
-
-    /** 失业人口转职为农民所需的职业经验阈值 */
-    private static final int CAREER_EXP_TO_BECOME_FARMER = 8;
-
-    /** 农民基职业名称 */
-    private static final String FARMER_CAREER = "farmer";
+    // ==================== 储水系统 ====================
 
     /**
-     * 自定义流体处理器 —— 实现 {@link IFluidHandler}，
-     * 仅接受水（通过 {@link FluidTags#WATER} 标签判断），
-     * 容量由 {@link #getTankCapacity()} 动态查询。
+     * 水罐 —— 实现 {@link IFluidHandler}，仅接受水。
      *
      * <p>所有物流模组的管道均通过 {@code Capabilities.FluidHandler.BLOCK} 与此接口交互。
+     * 容量由 {@link #getTankCapacity()} 动态查询。
      */
-    protected final IFluidHandler fluidHandler = new IFluidHandler() {
-        @Override
-        public int getTanks() {
-            return 1; // 单储罐
-        }
-
-        @Override
-        public FluidStack getFluidInTank(int tank) {
-            if (waterAmount <= 0) {
-                return FluidStack.EMPTY;
-            }
-            // 返回当前储罐中的水量和流体类型
-            return new FluidStack(net.minecraft.world.level.material.Fluids.WATER, (int) Math.min(waterAmount, Integer.MAX_VALUE));
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            long cap = AbstractFarmBlockEntity.this.getTankCapacity();
-            return cap > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) cap;
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, FluidStack stack) {
-            // 仅接受水（通过 FluidTags.WATER 标签判断，兼容其他模组的修改版水）
-            return stack.is(FluidTags.WATER);
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || !resource.is(FluidTags.WATER)) {
-                return 0;
-            }
-            long capacity = AbstractFarmBlockEntity.this.getTankCapacity();
-            if (waterAmount >= capacity) {
-                return 0; // 储罐已满
-            }
-            long canFill = capacity - waterAmount;
-            int toFill = (int) Math.min(canFill, (long) resource.getAmount());
-            if (action.execute()) {
-                waterAmount += toFill;
-                setChanged();
-            }
-            return toFill;
-        }
-
-        @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || !resource.is(FluidTags.WATER) || waterAmount <= 0) {
-                return FluidStack.EMPTY;
-            }
-            int toDrain = Math.min(resource.getAmount(), (int) Math.min(waterAmount, Integer.MAX_VALUE));
-            if (action.execute()) {
-                waterAmount -= toDrain;
-                setChanged();
-            }
-            return new FluidStack(net.minecraft.world.level.material.Fluids.WATER, toDrain);
-        }
-
-        @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            if (waterAmount <= 0 || maxDrain <= 0) {
-                return FluidStack.EMPTY;
-            }
-            int toDrain = Math.min(maxDrain, (int) Math.min(waterAmount, Integer.MAX_VALUE));
-            if (action.execute()) {
-                waterAmount -= toDrain;
-                setChanged();
-            }
-            return new FluidStack(net.minecraft.world.level.material.Fluids.WATER, toDrain);
-        }
-    };
+    protected final SimpleWaterTank waterTank = new SimpleWaterTank(
+            this::getTankCapacity,
+            this::setChanged
+    );
 
     // ==================== 构造器 ====================
 
@@ -188,16 +103,16 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     /** 配置文件中此机器的 section key（如 "primitive_farm"） */
     protected abstract String getMachineConfigKey();
 
-    /** 每个人口槽位每次工作消耗的食物量（Tier 0 = 8） */
-    protected abstract int getFoodPerPopulation();
+    /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
+    protected int getFoodPerPopulation() {
+        return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
+    }
 
     // ==================== 可覆写方法（有默认值） ====================
 
-    /** 健康度波动下限 */
-    protected int getHealthFluctuateMin() { return -5; }
-
-    /** 健康度波动上限 */
-    protected int getHealthFluctuateMax() { return -1; }
+    /** 农场工作要求的职业名称（每个具体农场类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
 
     // ==================== 公开存取器 ====================
 
@@ -208,7 +123,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
      * @return 此农场方块实体的 {@link IFluidHandler} 实例
      */
     public IFluidHandler getFluidHandler() {
-        return fluidHandler;
+        return waterTank;
     }
 
     /**
@@ -217,7 +132,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
      * @return 当前储水量（mB）
      */
     public long getWaterAmount() {
-        return waterAmount;
+        return waterTank.getWaterAmount();
     }
 
     // ==================== ContainerData ====================
@@ -238,7 +153,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
                 return switch (index) {
                     case 0 -> workProgress;
                     case 1 -> getWorkTotalTime();
-                    case 2 -> (int) Math.min(waterAmount, Integer.MAX_VALUE);
+                    case 2 -> (int) Math.min(waterTank.getWaterAmount(), Integer.MAX_VALUE);
                     default -> 0;
                 };
             }
@@ -263,23 +178,19 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(getMachineConfigKey());
+        return CivilizationMachineConfig.getWorkTotalTime(getMachineConfigKey());
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(getMachineConfigKey());
+        return CivilizationMachineConfig.getAgeIncrement(getMachineConfigKey());
     }
 
     @Override
-    public boolean isPopulationSlot(int slot) {
-        return slot >= 6 && slot <= 8;
-    }
+    public abstract boolean isPopulationSlot(int slot);
 
     @Override
-    public List<Integer> populationSlots() {
-        return List.of(6, 7, 8);
-    }
+    public abstract List<Integer> populationSlots();
 
     @Override
     public boolean isOutputSlot(int slot) {
@@ -287,57 +198,10 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     }
 
     @Override
-    public boolean isFoodSlot(int slot) {
-        return slot >= 0 && slot <= 5;
-    }
+    public abstract boolean isFoodSlot(int slot);
 
-    /**
-     * 获取可用于农场工作的人口列表。
-     *
-     * <p>在父类年龄/存活筛选基础上，追加职业限制：
-     * 仅 {@code "farmer"} 及其派生职业（未来通过
-     * {@link Career#setParentCareerName(String)} 声明）可参与工作。
-     *
-     * @return 符合农民职业要求的可用人口列表
-     */
-    @Override
-    protected List<ItemStack> getAvailableWorkers() {
-        return filterAvailable(super.getAvailableWorkers(), stack ->
-                Career.isKindOf(PopulationNBT.getCareer(stack), FARMER_CAREER));
-    }
-
-    @Override
-    public boolean canWork() {
-        return super.canWork() && hasEnoughFood(getFoodPerPopulation());
-    }
-
-    /**
-     * 失业人口职业经验处理。
-     *
-     * <p>当农场可以正常工作（已有农民职业人口）时，
-     * 对机械内所有失业（"unemployed"）人口累加<b>农民</b>职业经验
-     * （通过 {@link #addCareerExperience(ItemStack, String, int)}）。
-     *
-     * <p>各职业经验独立存储——失业人口可能已有 7 点农民经验和 3 点牧师经验，
-     * 在农场中只累加农民经验，互不干扰。
-     *
-     * <p>经验达到 {@link #CAREER_EXP_TO_BECOME_FARMER} 后自动转职为农民，
-     * 经验清零，并立即参与当前工作周期的效率计算。
-     */
-    private void processUnemployedCareerExp() {
-        for (int slot : populationSlots()) {
-            ItemStack stack = getItem(slot);
-            if (!canGainCareerExperience(stack)) continue;
-
-            // 累加农民职业经验（各职业独立存储）
-            int newExp = this.addCareerExperience(stack, FARMER_CAREER, 1);
-            if (newExp >= CAREER_EXP_TO_BECOME_FARMER) {
-                // 转职为农民，清零该职业经验
-                PopulationNBT.setCareer(stack, FARMER_CAREER);
-                this.setCareerExperience(stack, FARMER_CAREER, 0);
-            }
-        }
-    }
+    // canWork 继承 AbstractRangeMachineBlockEntity（bind + 有可用农民）
+    // 食物检查已移除 —— consumeFoodWithFallback 自动处理食物不足回退
 
     // ==================== IClientUpdateReceiver ====================
 
@@ -373,36 +237,20 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
      */
     @Override
     public void executeWorkCycle(Level level) {
-        // 人口老化
-        this.ageAllPopulations(this.getAgeIncrement());
-        this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
-
-        // 冲突检测
-        if (level instanceof ServerLevel serverLevel) {
-            this.scanAndMarkConflicts(serverLevel);
-        }
+        this.executeWorkCyclePrelude(level);
 
         BlockPos pos = this.getBlockPos();
 
         if (level instanceof ServerLevel serverLevel && this.canWork()) {
-            // 失业人口职业经验处理（放在效率计算前，让新转职农民立即参与）
-            processUnemployedCareerExp();
+            addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
-            // 计算农民总工作效率
-            double totalWorkEfficiency = 0;
-            for (ItemStack worker : this.getAvailableWorkers()) {
-                totalWorkEfficiency += PopulationNBT.getWorkEfficiency(worker);
-            }
-
-            // 消耗食物并获取食物因子
-            float foodFactor = consumeFoodForFarm();
-            float efficiency = foodFactor * (float) totalWorkEfficiency;
+            float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
 
             // 根据效率计算可催熟作物数（至少 1）
             int cropCount = Math.max(1, Math.round(efficiency));
 
             // 获取每次催熟的水消耗量
-            int waterPerCrop = PopulationMachineConfig.getWaterPerCrop(getMachineConfigKey());
+            int waterPerCrop = CivilizationMachineConfig.getWaterPerCrop(getMachineConfigKey());
 
             // 扫描范围内可催熟作物
             var range = getSelectionRange();
@@ -425,7 +273,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
                             }
 
                             // 检查是否有足够的水
-                            if (waterAmount < waterPerCrop) {
+                            if (waterTank.getWaterAmount() < waterPerCrop) {
                                 // 水量不足，结束催熟
                                 cropsFertilized = cropCount; // 跳出所有循环
                                 break;
@@ -433,7 +281,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
 
                             if (bonemealable.isValidBonemealTarget(serverLevel, cropPos, cropState)) {
                                 // 消耗水
-                                waterAmount -= waterPerCrop;
+                                waterTank.setWaterAmount(waterTank.getWaterAmount() - waterPerCrop);
                                 // 催熟作物（消耗骨粉效果）
                                 bonemealable.performBonemeal(serverLevel,
                                         serverLevel.getRandom(), cropPos, cropState);
@@ -450,69 +298,18 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
         setChanged(level, pos, level.getBlockState(pos));
     }
 
-    // ==================== 食物消耗 ====================
-
-    /**
-     * 农场专用的食物消耗逻辑。
-     *
-     * <p>规则与牧场相同：
-     * <ul>
-     *   <li>每个已放入人口物品的槽位消耗指定量的食物</li>
-     *   <li>只有符合工作要求的人口消耗的食物才计入食物因子</li>
-     * </ul>
-     *
-     * @return 食物因子（仅由符合要求的人口消耗的食物决定）
-     */
-    private float consumeFoodForFarm() {
-        int totalPopSlots = (int) populationSlots().stream()
-                .filter(slot -> !getItem(slot).isEmpty()).count();
-        int eligibleCount = getAvailableWorkers().size();
-
-        int totalNeeded = totalPopSlots * getFoodPerPopulation();
-        int eligibleNeeded = eligibleCount * getFoodPerPopulation();
-
-        int remaining = totalNeeded;
-        int eligibleRemaining = eligibleNeeded;
-        float totalNutrition = 0;
-        float totalSaturation = 0;
-
-        for (int i = 0; i < getContainerSize() && remaining > 0; i++) {
-            if (!isFoodSlot(i)) continue;
-            ItemStack stack = getItem(i);
-            if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
-
-            FoodProperties food = stack.getFoodProperties(null);
-            float nutrition = food != null ? food.nutrition() : 0;
-            float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
-
-            int toRemove = Math.min(stack.getCount(), remaining);
-            stack.shrink(toRemove);
-            remaining -= toRemove;
-
-            int eligiblePortion = Math.min(toRemove, eligibleRemaining);
-            if (eligiblePortion > 0) {
-                totalNutrition += nutrition * eligiblePortion;
-                totalSaturation += saturation * eligiblePortion;
-                eligibleRemaining -= eligiblePortion;
-            }
-        }
-
-        double factor = Math.sqrt(totalNutrition + totalSaturation);
-        return (float) (Math.round(factor * 1000.0) / 1000.0);
-    }
-
     // ==================== NBT 持久化 ====================
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putLong("WaterAmount", waterAmount);
+        tag.putLong("WaterAmount", waterTank.getWaterAmount());
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        waterAmount = tag.getLong("WaterAmount");
+        waterTank.setWaterAmount(tag.getLong("WaterAmount"));
     }
 
     // ==================== 冲突检测 ====================

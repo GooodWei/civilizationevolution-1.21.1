@@ -120,6 +120,8 @@ public final class MultiBlockConfig {
 
         // 定时验证间隔（秒），默认 30 秒
         doctorCabin.addProperty("validate_interval", 30);
+        // 结构零件是否允许多个控制器共用（默认 true）
+        doctorCabin.addProperty("shareable", true);
 
         // key
         JsonObject key = new JsonObject();
@@ -170,6 +172,7 @@ public final class MultiBlockConfig {
         primitiveController.add("pattern", ctrlPattern);
 
         primitiveController.addProperty("validate_interval", 30);
+        primitiveController.addProperty("shareable", true);
 
         // key
         JsonObject ctrlKey = new JsonObject();
@@ -210,6 +213,114 @@ public final class MultiBlockConfig {
         primitiveController.add("key", ctrlKey);
 
         structures.add("primitive_controller", primitiveController);
+
+        // ========== village_quarry ==========
+        JsonObject villageQuarry = new JsonObject();
+
+        // controller [y, x, z] — 顶层中心
+        JsonArray vqCtrl = new JsonArray();
+        vqCtrl.add(3); vqCtrl.add(3); vqCtrl.add(3);
+        villageQuarry.add("controller", vqCtrl);
+
+        // pattern — 7×4×7（所有非控制器位置统一用 A，仓室通过 alternatives 替换）
+        JsonObject vqPattern = new JsonObject();
+        vqPattern.addProperty("y0", "A     A,       ,       ,       ,       ,       ,A     A");
+        vqPattern.addProperty("y1", "       , A   A ,       ,       ,       , A   A ,       ");
+        vqPattern.addProperty("y2", "       ,       ,  AAA  ,  AAA  ,  AAA  ,       ,       ");
+        vqPattern.addProperty("y3", "       ,       ,       ,   E   ,       ,       ,       ");
+        villageQuarry.add("pattern", vqPattern);
+
+        villageQuarry.addProperty("validate_interval", 30);
+        villageQuarry.addProperty("shareable", true);
+
+        // key — A 为村庄外壳（min 8），c/f/i/o 为仓室替代（靠 min_count 保证最低数量）
+        JsonObject vqKey = new JsonObject();
+
+        JsonObject vqADef = new JsonObject();
+        vqADef.addProperty("type", "civilizationevolution:village_structure_casing");
+        vqADef.addProperty("min_count", 8);
+        JsonArray vqAAlts = new JsonArray();
+        vqAAlts.add("c"); vqAAlts.add("f"); vqAAlts.add("i"); vqAAlts.add("o");
+        vqADef.add("alternatives", vqAAlts);
+        vqKey.add("A", vqADef);
+
+        JsonObject vqCDef = new JsonObject();
+        vqCDef.addProperty("type", "fluid_input_hatch");
+        vqCDef.addProperty("min_count", 2);
+        vqKey.add("c", vqCDef);
+
+        JsonObject vqFDef = new JsonObject();
+        vqFDef.addProperty("type", "food_hatch");
+        vqFDef.addProperty("min_count", 1);
+        vqKey.add("f", vqFDef);
+
+        JsonObject vqIDef = new JsonObject();
+        vqIDef.addProperty("type", "input_hatch");
+        vqIDef.addProperty("min_count", 1);
+        vqKey.add("i", vqIDef);
+
+        JsonObject vqODef = new JsonObject();
+        vqODef.addProperty("type", "output_hatch");
+        vqODef.addProperty("min_count", 1);
+        vqKey.add("o", vqODef);
+
+        JsonObject vqEDef = new JsonObject();
+        vqEDef.addProperty("block", "self");
+        vqKey.add("E", vqEDef);
+
+        villageQuarry.add("key", vqKey);
+        structures.add("village_quarry", villageQuarry);
+
+        // ========== village_controller ==========
+        // 9×9×7 庙宇/议事厅结构，全部使用原版方块
+        JsonObject villageCtrl = new JsonObject();
+
+        JsonArray vcCtrl = new JsonArray();
+        vcCtrl.add(1); vcCtrl.add(4); vcCtrl.add(4);
+        villageCtrl.add("controller", vcCtrl);
+
+        JsonObject vcPattern = new JsonObject();
+        vcPattern.addProperty("y0", "  ABBBA  ,  ABBBA  ,AAABBBAAA,BBBADABBB,BBBDADBBB,BBBADABBB,AAABBBAAA,  ABBBA  ,  ABBBA  ");
+        vcPattern.addProperty("y1", "  A   A  ,         ,A       A,         ,    F    ,         ,A       A,         ,  A   A  ");
+        vcPattern.addProperty("y2", "  A   A  ,         ,A       A,         ,         ,         ,A       A,         ,  A   A  ");
+        vcPattern.addProperty("y3", "  A   A  ,         ,A       A,         ,         ,         ,A       A,         ,  A   A  ");
+        vcPattern.addProperty("y4", "   ACA   ,  A   A  , AA   AA ,A       A,C       C,A       A, AA   AA ,  A   A  ,   ACA   ");
+        vcPattern.addProperty("y5", "    A    ,   CCC   ,  AAAAA  , CA   AC ,ACA   ACA, CA   AC ,  AAAAA  ,   CCC   ,    A    ");
+        vcPattern.addProperty("y6", "         ,    A    ,    A    ,   CEC   , AAECEAA ,   CEC   ,    A    ,    A    ,         ");
+        villageCtrl.add("pattern", vcPattern);
+
+        villageCtrl.addProperty("validate_interval", 30);
+        villageCtrl.addProperty("shareable", true);
+
+        JsonObject vcKey = new JsonObject();
+
+        JsonObject vcADef = new JsonObject();
+        vcADef.addProperty("type", "minecraft:stone_bricks");
+        vcKey.add("A", vcADef);
+
+        JsonObject vcBDef = new JsonObject();
+        vcBDef.addProperty("type", "tag:minecraft:planks");
+        vcKey.add("B", vcBDef);
+
+        JsonObject vcCDef = new JsonObject();
+        vcCDef.addProperty("type", "tag:c:glass_blocks");
+        vcKey.add("C", vcCDef);
+
+        JsonObject vcDDef = new JsonObject();
+        vcDDef.addProperty("type", "minecraft:chiseled_stone_bricks");
+        vcKey.add("D", vcDDef);
+
+        JsonObject vcEDef = new JsonObject();
+        vcEDef.addProperty("type", "minecraft:emerald_block");
+        vcKey.add("E", vcEDef);
+
+        JsonObject vcFDef = new JsonObject();
+        vcFDef.addProperty("block", "self");
+        vcKey.add("F", vcFDef);
+
+        villageCtrl.add("key", vcKey);
+        structures.add("village_controller", villageCtrl);
+
         root.add("structures", structures);
 
         String json = GSON.toJson(root);

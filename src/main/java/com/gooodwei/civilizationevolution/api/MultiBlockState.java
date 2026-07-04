@@ -4,7 +4,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 多方块机器的运行时状态组合对象。
@@ -19,6 +22,9 @@ import java.util.*;
  * @see IMultiBlockMachine
  */
 public class MultiBlockState {
+
+    /** NBT key：结构是否完整成型 */
+    public static final String TAG_STRUCTURE_FORMED = "StructureFormed";
 
     /** 结构是否完整成型 */
     public boolean structureFormed;
@@ -41,6 +47,8 @@ public class MultiBlockState {
     public final List<BlockPos> inputHatches = new ArrayList<>();
     public final List<BlockPos> outputHatches = new ArrayList<>();
     public final List<BlockPos> foodHatches = new ArrayList<>();
+    public final List<BlockPos> fluidInputHatches = new ArrayList<>();
+    public final List<BlockPos> fluidOutputHatches = new ArrayList<>();
     public final List<BlockPos> casingPositions = new ArrayList<>();
 
     /** 所有已成型零件位置（不分类型），用于破坏时通知所有零件 */
@@ -57,7 +65,7 @@ public class MultiBlockState {
      * @param tag 目标 CompoundTag
      */
     public void saveToNBT(CompoundTag tag) {
-        tag.putBoolean("StructureFormed", structureFormed);
+        tag.putBoolean(TAG_STRUCTURE_FORMED, structureFormed);
     }
 
     /**
@@ -69,7 +77,7 @@ public class MultiBlockState {
      * @param tag 源 CompoundTag
      */
     public void loadFromNBT(CompoundTag tag) {
-        structureFormed = tag.getBoolean("StructureFormed");
+        structureFormed = tag.getBoolean(TAG_STRUCTURE_FORMED);
     }
 
     // ==================== 缓存清理 ====================
@@ -79,6 +87,8 @@ public class MultiBlockState {
         inputHatches.clear();
         outputHatches.clear();
         foodHatches.clear();
+        fluidInputHatches.clear();
+        fluidOutputHatches.clear();
         casingPositions.clear();
         allPartPositions.clear();
     }

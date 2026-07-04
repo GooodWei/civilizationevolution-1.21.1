@@ -1,10 +1,11 @@
 package com.gooodwei.civilizationevolution.server.block.machine;
 
-import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreExtractorItem;
 import com.gooodwei.civilizationevolution.server.item.ConnectorItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -71,6 +72,14 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
      * 默认空实现，子类可覆写以添加扫描、刷新粒子等前置逻辑。
      */
     protected void preOpenMenu(Level level, BlockPos pos) {
+    }
+
+    /**
+     * 在打开 GUI 之前调用（服务端），返回 false 以阻止打开。
+     * 默认返回 true。子类（如诊所）可覆写以在结构不完整时阻止交互。
+     */
+    protected boolean canOpenMenu(Level level, BlockPos pos, Player player) {
+        return true;
     }
 
     // ==================== 方向属性 ====================
@@ -170,6 +179,10 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
         if (stack.getItem() instanceof DebugStructureGetterItem) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
+        // 多方块结构投影仪 → 跳过方块 GUI，由事件处理器切换预览渲染
+        if (stack.getItem() instanceof ProjectorItem) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         // 文明核心提取器 Shift+右键 → 跳过方块 GUI，交给提取器处理
         if (stack.getItem() instanceof CivilizationCoreExtractorItem && player.isShiftKeyDown()) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -181,16 +194,25 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
 
+            // 子类钩子：在结构检查之前运行（多方块机器可在此处触发结构验证）
+            preOpenMenu(level, pos);
+
             // 检查多方块结构解析错误 → 红字警告但不阻止打开 GUI
             if (be instanceof IMultiBlockMachine mbe && mbe.hasParseError()) {
                 player.sendSystemMessage(Component.literal(mbe.getParseError()).withStyle(ChatFormatting.RED));
             }
-            // 检查多方块结构是否未成型 → 红字提醒（解析错误已单独提示，此处不重复）
-            if (be instanceof IMultiBlockMachine mbe && !mbe.isStructureFormed() && !mbe.hasParseError()) {
-                player.sendSystemMessage(Component.translatable("msg.civilizationevolution.structure_not_formed").withStyle(ChatFormatting.RED));
+
+            // 多方块结构未成型 → 在客户端动作栏显示提示
+            if (be instanceof IMultiBlockMachine mbe && !mbe.isStructureFormed()) {
+                player.displayClientMessage(
+                        Component.translatable("msg.civilizationevolution.structure_incomplete"), true);
             }
 
-            preOpenMenu(level, pos);
+            // 子类钩子：返回 false 阻止打开 GUI（诊所等机器在结构不完整时使用）
+            if (!canOpenMenu(level, pos, player)) {
+                return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            }
+
             if (be instanceof MenuProvider menuProvider) {
                 player.openMenu(menuProvider, pos);
             }

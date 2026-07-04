@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "civilizationevolution:block/village_quarry" },
+    "facing=south": { "model": "civilizationevolution:block/village_quarry", "y": 180 },
+    "facing=west":  { "model": "civilizationevolution:block/village_quarry", "y": 270 },
+    "facing=east":  { "model": "civilizationevolution:block/village_quarry", "y": 90 }
+  }
+}

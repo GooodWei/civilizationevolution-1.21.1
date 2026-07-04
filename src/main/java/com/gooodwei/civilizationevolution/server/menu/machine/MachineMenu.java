@@ -19,8 +19,22 @@ import net.minecraft.world.item.ItemStack;
  */
 public abstract class MachineMenu extends AbstractContainerMenu {
 
+    /** 标准玩家背包 Y 偏移（GUI 高度 166 时使用） */
+    protected static final int PLAYER_INVENTORY_Y = 84;
+
     protected MachineMenu(MenuType<?> type, int containerId) {
         super(type, containerId);
+    }
+
+    /**
+     * 从 ContainerData 计算工作进度比例（带除零保护）。
+     *
+     * @param data ContainerData，index 0 = 进度，index 1 = 总时长
+     * @return 工作进度比例（0.0 ~ 1.0）
+     */
+    public static float getWorkProgressRatio(net.minecraft.world.inventory.ContainerData data) {
+        int total = data.get(1);
+        return total == 0 ? 0f : (float) data.get(0) / total;
     }
 
     /**

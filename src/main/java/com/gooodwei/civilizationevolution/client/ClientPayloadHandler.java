@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution.client;
 
 import com.gooodwei.civilizationevolution.client.preview.PreviewState;
 import com.gooodwei.civilizationevolution.client.screen.machine.PrimitiveControllerScreen;
+import com.gooodwei.civilizationevolution.client.screen.machine.VillageControllerScreen;
 import com.gooodwei.civilizationevolution.network.StructurePreviewPayload;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
 import net.minecraft.client.Minecraft;
@@ -34,6 +35,8 @@ public class ClientPayloadHandler {
             cachedMachineList = payload.machines();
             Minecraft mc = Minecraft.getInstance();
             if (mc.screen instanceof PrimitiveControllerScreen screen) {
+                screen.updateMachineList(payload.machines());
+            } else if (mc.screen instanceof VillageControllerScreen screen) {
                 screen.updateMachineList(payload.machines());
             }
         });

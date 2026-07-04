@@ -2,10 +2,11 @@ package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
 import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -46,6 +47,8 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
     /** 默认健康阈值（0-100） */
     protected int healthThreshold = 40;
+    /** NBT key：健康阈值 */
+    private static final String TAG_HEALTH_THRESHOLD = "HealthThreshold";
     /** 治疗槽位数量 */
     public static final int SIZE = 2;
 
@@ -63,11 +66,16 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
     /**
      * 返回 {@code config/civilizationevolution/multi_blocks.json} 中对应的结构 key。
+     * 每个子类必须覆写以返回正确的结构标识。
      */
     @Override
-    public String getConfigKey() {
-        return "primitive_doctor_cabin";
-    }
+    public abstract String getConfigKey();
+
+    // ==================== 职业要求 ====================
+
+    /** 医院工作要求的职业名称（每个具体医院类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
 
     // ==================== serverTick ====================
 
@@ -91,8 +99,9 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             be.routeItemsToOutputHatches();
         }
 
-        // 4. 进度完成时执行工作周期
-        if (be.workProgress >= be.getWorkTotalTime() && be.canWork()) {
+        // 4. 绑定状态下由控制器统一调度工作周期，自身 ticker 仅推进 GUI 进度条。
+        //    !isBound() 守卫防止和控制器 nextTriggerProgress 双重触发。
+        if (!be.isBound() && be.workProgress >= be.getWorkTotalTime() && be.canWork()) {
             be.executeWorkCycle(level);
         }
     }
@@ -113,22 +122,8 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
         // ===== 1. 医生年龄+1（使用 ageAllPopulations 保持与系统一致的寿命→标记死亡逻辑） =====
         ageAllPopulations(getAgeIncrement());
 
-        // ===== 2. 医生职业经验 =====
-        for (int slot : populationSlots()) {
-            ItemStack stack = getItem(slot);
-            if (!stack.isEmpty() && !PopulationNBT.isDead(stack)) {
-                String career = PopulationNBT.getCareer(stack);
-                if ("unemployed".equals(career)) {
-                    int newExp = addCareerExperience(stack, "cleric", 1);
-                    if (newExp >= 8) {
-                        setCareerExperience(stack, "cleric", 0);
-                        PopulationNBT.setCareer(stack, "cleric");
-                    }
-                } else if ("cleric".equals(career)) {
-                    addCareerExperience(stack, "cleric", 1);
-                }
-            }
-        }
+        // ===== 2. 医生学徒经验（委托 IPopulationItem.addApprenticeExp） =====
+        addApprenticeExpToPopulationSlots(CareerNames.CLERIC, getApprenticeExpPerCycle());
 
         // ===== 3. 计算机器效率 =====
         List<ItemStack> doctors = getActiveDoctors();
@@ -151,7 +146,6 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationInputHatchBlockEntity hatch))
                 continue;
-
             ItemStack stack = hatch.getItem(0);
             if (stack.isEmpty() || PopulationNBT.isDead(stack)) continue;
 
@@ -208,7 +202,6 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationInputHatchBlockEntity hatch))
                 continue;
-
             ItemStack stack = hatch.getItem(0);
             if (!stack.isEmpty() && !PopulationNBT.isDead(stack)
                     && PopulationNBT.getHealth(stack) >= healthThreshold) {
@@ -227,9 +220,8 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
                                         com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationInputHatchBlockEntity sourceHatch) {
         for (BlockPos hatchPos : getOutputHatches()) {
             BlockEntity be = level.getBlockEntity(hatchPos);
-            if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationOutputHatchBlockEntity outHatch))
+            if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationOutputHatchBlockEntity outHatch))
                 continue;
-
             ItemStack outStack = outHatch.getItem(0);
             if (outStack.isEmpty()) {
                 outHatch.setItem(0, stack.copy());
@@ -257,7 +249,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             ItemStack stack = getItem(slot);
             if (stack.isEmpty() || PopulationNBT.isDead(stack)) continue;
             String career = PopulationNBT.getCareer(stack);
-            if ("cleric".equals(career) || "unemployed".equals(career)) {
+            if (CareerNames.CLERIC.equals(career) || CareerNames.UNEMPLOYED.equals(career)) {
                 doctors.add(stack);
             }
         }
@@ -285,11 +277,17 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
     // ==================== 食物系统 ====================
 
     /**
-     * 获取单位人口食物消耗量（从配置读取）。
-     * 子类（如 {@code PrimitiveDoctorCabinBlockEntity}）应覆写此方法。
+     * 获取单位人口食物消耗量，优先从配置读取。
      */
     protected int getFoodPerPopulation() {
-        return 1; // 默认值，子类覆写为读配置
+        return CivilizationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
+    }
+
+    /**
+     * 每次工作周期给学徒的经验量，优先从配置读取。
+     */
+    protected int getApprenticeExpPerCycle() {
+        return CivilizationMachineConfig.getApprenticeExpPerCycle(getConfigKey(), 1);
     }
 
     /**
@@ -302,7 +300,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
      * @param doctorCount 活跃医生数
      * @return 食物因子（0.0 ~ N），取小数点后三位
      */
-    private float consumeFoodAndGetFactor(int totalMouths, int doctorCount) {
+    protected float consumeFoodAndGetFactor(int totalMouths, int doctorCount) {
         int fp = getFoodPerPopulation();
         int totalNeeded = totalMouths * fp;
         int doctorNeeded = doctorCount * fp;
@@ -317,14 +315,13 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFoodInputHatchBlockEntity hatch))
                 continue;
-
             for (int i = 0; i < hatch.getContainerSize() && remaining > 0; i++) {
                 ItemStack stack = hatch.getItem(i);
                 if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
 
                 FoodProperties food = stack.getFoodProperties(null);
                 float nutrition = food != null ? food.nutrition() : 0;
-                float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
+                float saturation = food != null ? nutrition * food.saturation() : 0;
                 float unitNutrition = nutrition + saturation;
 
                 int toRemove = Math.min(stack.getCount(), remaining);
@@ -339,7 +336,7 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             }
         }
 
-        double factor = Math.sqrt(doctorNutrition / 176.0);
+        double factor = Math.sqrt(doctorNutrition / CivilizationMachineConfig.FOOD_FACTOR_NORMALIZER);
         return (float) (Math.round(factor * 1000.0) / 1000.0);
     }
 
@@ -407,30 +404,33 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
     // ==================== 菜单 ====================
 
+    /**
+     * 创建此医院对应的菜单。
+     * 每个子类必须覆写以返回正确的 Menu 实例。
+     */
     @Override
-    protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        if (!isStructureFormed()) return null;
-        return new PrimitiveDoctorCabinMenu(containerId, inventory, this, this.data);
-    }
+    protected abstract AbstractContainerMenu createMenu(int containerId, Inventory inventory);
 
+    /**
+     * 获取此医院方块的默认显示名称。
+     * 每个子类必须覆写以返回正确的翻译组件。
+     */
     @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.civilizationevolution.primitive_doctor_cabin");
-    }
+    protected abstract Component getDefaultName();
 
     // ==================== NBT 持久化 ====================
 
     @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("HealthThreshold", healthThreshold);
+        tag.putInt(TAG_HEALTH_THRESHOLD, healthThreshold);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        healthThreshold = tag.getInt("HealthThreshold");
-        if (healthThreshold == 0 && tag.contains("HealthThreshold")) {
+        healthThreshold = tag.getInt(TAG_HEALTH_THRESHOLD);
+        if (healthThreshold == 0 && tag.contains(TAG_HEALTH_THRESHOLD)) {
             // 已正确加载
         } else if (healthThreshold == 0) {
             healthThreshold = 40; // 默认值

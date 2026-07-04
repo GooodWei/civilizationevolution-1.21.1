@@ -1,16 +1,14 @@
 package com.gooodwei.civilizationevolution.server.registry;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveDoctorCabinBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveFarmBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveHuntingGroundBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveRanchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitiveFoodInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationOutputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveCampBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.PrimitiveControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.VillageControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.hatch.*;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.*;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveDoctorCabinBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveStoragePitBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageDoctorCabinBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageQuarryBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -80,6 +78,14 @@ public class BlockEntityRegistry {
                                     BlockEntityRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get(), pos, state),
                             BlockRegistry.PRIMITIVE_FOOD_INPUT_HATCH.get()).build(null));
 
+    /** 村庄食物输入接口 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageFoodInputHatchBlockEntity>> VILLAGE_FOOD_INPUT_HATCH =
+            BLOCK_ENTITIES.register("village_food_input_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new VillageFoodInputHatchBlockEntity(
+                                    BlockEntityRegistry.VILLAGE_FOOD_INPUT_HATCH.get(), pos, state),
+                            BlockRegistry.VILLAGE_FOOD_INPUT_HATCH.get()).build(null));
+
     /** 原始人口输出接口 BE 类型（Tier 0） */
     public static final Supplier<BlockEntityType<PrimitivePopulationOutputHatchBlockEntity>> PRIMITIVE_POPULATION_OUTPUT_HATCH =
             BLOCK_ENTITIES.register("primitive_population_output_hatch",
@@ -95,6 +101,118 @@ public class BlockEntityRegistry {
                             (pos, state) -> new PrimitiveDoctorCabinBlockEntity(
                                     BlockEntityRegistry.PRIMITIVE_DOCTOR_CABIN.get(), pos, state),
                             BlockRegistry.PRIMITIVE_DOCTOR_CABIN.get()).build(null));
+
+    /** 原始物品输入接口 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveItemInputHatchBlockEntity>> PRIMITIVE_ITEM_INPUT_HATCH =
+            BLOCK_ENTITIES.register("primitive_item_input_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitiveItemInputHatchBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_ITEM_INPUT_HATCH.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_ITEM_INPUT_HATCH.get()).build(null));
+
+    /** 村庄物品输入接口 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageItemInputHatchBlockEntity>> VILLAGE_ITEM_INPUT_HATCH =
+            BLOCK_ENTITIES.register("village_item_input_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new VillageItemInputHatchBlockEntity(
+                                    BlockEntityRegistry.VILLAGE_ITEM_INPUT_HATCH.get(), pos, state),
+                            BlockRegistry.VILLAGE_ITEM_INPUT_HATCH.get()).build(null));
+
+    /** 原始物品输出接口 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveItemOutputHatchBlockEntity>> PRIMITIVE_ITEM_OUTPUT_HATCH =
+            BLOCK_ENTITIES.register("primitive_item_output_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitiveItemOutputHatchBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_ITEM_OUTPUT_HATCH.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_ITEM_OUTPUT_HATCH.get()).build(null));
+
+    /** 村庄物品输出接口 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageItemOutputHatchBlockEntity>> VILLAGE_ITEM_OUTPUT_HATCH =
+            BLOCK_ENTITIES.register("village_item_output_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new VillageItemOutputHatchBlockEntity(
+                                    BlockEntityRegistry.VILLAGE_ITEM_OUTPUT_HATCH.get(), pos, state),
+                            BlockRegistry.VILLAGE_ITEM_OUTPUT_HATCH.get()).build(null));
+
+    /** 原始流体输入接口 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveFluidInputHatchBlockEntity>> PRIMITIVE_FLUID_INPUT_HATCH =
+            BLOCK_ENTITIES.register("primitive_fluid_input_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitiveFluidInputHatchBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get()).build(null));
+
+    /** 村庄流体输入接口 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageFluidInputHatchBlockEntity>> VILLAGE_FLUID_INPUT_HATCH =
+            BLOCK_ENTITIES.register("village_fluid_input_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new VillageFluidInputHatchBlockEntity(
+                                    BlockEntityRegistry.VILLAGE_FLUID_INPUT_HATCH.get(), pos, state),
+                            BlockRegistry.VILLAGE_FLUID_INPUT_HATCH.get()).build(null));
+
+    /** 原始流体输出接口 BE 类型（Tier 0） */
+    public static final Supplier<BlockEntityType<PrimitiveFluidOutputHatchBlockEntity>> PRIMITIVE_FLUID_OUTPUT_HATCH =
+            BLOCK_ENTITIES.register("primitive_fluid_output_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new PrimitiveFluidOutputHatchBlockEntity(
+                                    BlockEntityRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get(), pos, state),
+                            BlockRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get()).build(null));
+
+    /** 村庄流体输出接口 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageFluidOutputHatchBlockEntity>> VILLAGE_FLUID_OUTPUT_HATCH =
+            BLOCK_ENTITIES.register("village_fluid_output_hatch",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new VillageFluidOutputHatchBlockEntity(
+                                    BlockEntityRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get(), pos, state),
+                            BlockRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get()).build(null));
+
+    /** 村庄采石场 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageQuarryBlockEntity>> VILLAGE_QUARRY =
+            BLOCK_ENTITIES.register("village_quarry",
+                    () -> BlockEntityType.Builder.of(
+                            (pos, state) -> new VillageQuarryBlockEntity(
+                                    BlockEntityRegistry.VILLAGE_QUARRY.get(), pos, state),
+                            BlockRegistry.VILLAGE_QUARRY.get()).build(null));
+
+    /** 村庄营地 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageCampBlockEntity>> VILLAGE_CAMP =
+            BLOCK_ENTITIES.register("village_camp",
+                    () -> BlockEntityType.Builder.of(VillageCampBlockEntity::new,
+                            BlockRegistry.VILLAGE_CAMP_BLOCK.get()).build(null));
+
+    /** 村庄狩猎场 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageHuntingGroundBlockEntity>> VILLAGE_HUNTING_GROUND =
+            BLOCK_ENTITIES.register("village_hunting_ground",
+                    () -> BlockEntityType.Builder.of(VillageHuntingGroundBlockEntity::new,
+                            BlockRegistry.VILLAGE_HUNTING_GROUND.get()).build(null));
+
+    /** 村庄牧场 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageRanchBlockEntity>> VILLAGE_RANCH =
+            BLOCK_ENTITIES.register("village_ranch",
+                    () -> BlockEntityType.Builder.of(VillageRanchBlockEntity::new,
+                            BlockRegistry.VILLAGE_RANCH_BLOCK.get()).build(null));
+
+    /** 村庄农场 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageFarmBlockEntity>> VILLAGE_FARM =
+            BLOCK_ENTITIES.register("village_farm",
+                    () -> BlockEntityType.Builder.of(VillageFarmBlockEntity::new,
+                            BlockRegistry.VILLAGE_FARM_BLOCK.get()).build(null));
+
+    /** 村庄诊所 BE 类型（Tier 1） */
+    public static final Supplier<BlockEntityType<VillageDoctorCabinBlockEntity>> VILLAGE_DOCTOR_CABIN =
+            BLOCK_ENTITIES.register("village_doctor_cabin",
+                    () -> BlockEntityType.Builder.of(VillageDoctorCabinBlockEntity::new,
+                            BlockRegistry.VILLAGE_DOCTOR_CABIN.get()).build(null));
+
+    public static final Supplier<BlockEntityType<VillageHarvesterBlockEntity>> VILLAGE_HARVESTER =
+            BLOCK_ENTITIES.register("village_harvester",
+                    () -> BlockEntityType.Builder.of(VillageHarvesterBlockEntity::new,
+                            BlockRegistry.VILLAGE_HARVESTER.get()).build(null));
+
+    public static final Supplier<BlockEntityType<PrimitiveStoragePitBlockEntity>> PRIMITIVE_STORAGE_PIT =
+            BLOCK_ENTITIES.register("primitive_storage_pit",
+                    () -> BlockEntityType.Builder.of(PrimitiveStoragePitBlockEntity::new,
+                            BlockRegistry.PRIMITIVE_STORAGE_PIT_BLOCK.get()).build(null));
 
     /**
      * 向事件总线注册所有 BlockEntity 类型。

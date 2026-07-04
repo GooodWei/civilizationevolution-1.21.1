@@ -19,7 +19,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.util.*;
+import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class PrimitiveControllerScreen extends AbstractContainerScreen<PrimitiveControllerMenu> {

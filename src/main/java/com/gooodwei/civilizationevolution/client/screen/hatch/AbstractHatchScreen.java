@@ -17,6 +17,9 @@ import net.minecraft.world.entity.player.Inventory;
  */
 public abstract class AbstractHatchScreen<T extends AbstractHatchMenu> extends AbstractContainerScreen<T> {
 
+    /** GUI 标题颜色（原版默认暗灰色） */
+    public static final int TITLE_COLOR = 0x404040;
+
     protected AbstractHatchScreen(T menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;

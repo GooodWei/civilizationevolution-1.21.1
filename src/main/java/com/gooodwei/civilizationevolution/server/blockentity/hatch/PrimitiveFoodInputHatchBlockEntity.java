@@ -2,7 +2,8 @@ package com.gooodwei.civilizationevolution.server.blockentity.hatch;
 
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.menu.hatch.PrimitiveFoodInputHatchMenu;
+import com.gooodwei.civilizationevolution.server.menu.hatch.FoodInputHatchMenu;
+import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -29,6 +30,6 @@ public class PrimitiveFoodInputHatchBlockEntity extends AbstractFoodInputHatchBl
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        return new PrimitiveFoodInputHatchMenu(containerId, inventory, this);
+        return new FoodInputHatchMenu(MenuRegistry.PRIMITIVE_FOOD_INPUT_HATCH_MENU.get(), containerId, inventory, this);
     }
 }

@@ -28,6 +28,14 @@ public interface IPMController {
     /** 返回控制器自身的 Container（通常直接返回 this） */
     Container getContainer();
 
+    /**
+     * 此控制器所管理机器的职业类型。
+     * 每个具体控制器实现类必须覆写，显式声明管理的职业。
+     *
+     * @return 职业名称常量（如 {@code CareerNames.UNEMPLOYED}）
+     */
+    String getWorkerCareer();
+
     /** 最大可绑定机器数量 */
     int getMaxBindCount();
 

@@ -1,11 +1,13 @@
 package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.AbstractHospitalBlockEntity;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
-import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
+import com.gooodwei.civilizationevolution.server.menu.machine.DoctorCabinMenu;
+import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
@@ -42,25 +44,35 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
     }
 
     /** 配置文件中此机器的 key */
-    private static final String CONFIG_KEY = "primitive_doctor_cabin";
+    private static final String CONFIG_KEY = CivilizationMachineConfig.PRIMITIVE_DOCTOR_CABIN;
+
+    @Override
+    public String getConfigKey() {
+        return CONFIG_KEY;
+    }
 
     public String getMachineConfigKey() {
         return CONFIG_KEY;
     }
 
     @Override
+    public String getWorkerCareer() {
+        return CareerNames.CLERIC;
+    }
+
+    @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(CONFIG_KEY);
+        return CivilizationMachineConfig.getWorkTotalTime(CONFIG_KEY);
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(CONFIG_KEY);
+        return CivilizationMachineConfig.getAgeIncrement(CONFIG_KEY);
     }
 
     @Override
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(CONFIG_KEY);
+        return CivilizationMachineConfig.getFoodPerPopulation(CONFIG_KEY);
     }
 
     // ==================== Tick & Menu ====================
@@ -75,6 +87,11 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
 
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        return new PrimitiveDoctorCabinMenu(containerId, inventory, this, this.data);
+        return new DoctorCabinMenu(MenuRegistry.PRIMITIVE_DOCTOR_CABIN_MENU.get(), containerId, inventory, this, this.data);
+    }
+
+    @Override
+    protected Component getDefaultName() {
+        return Component.translatable("container.civilizationevolution.primitive_doctor_cabin");
     }
 }

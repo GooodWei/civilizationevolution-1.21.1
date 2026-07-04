@@ -1,8 +1,9 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
-import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
+import com.gooodwei.civilizationevolution.server.population.Population;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -51,8 +52,14 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     /** 配置文件中此机器的 section key（如 "camp"、"small_camp"） */
     protected abstract String getMachineConfigKey();
 
-    /** 每个人口槽位每次工作消耗的食物量（Tier 0 = 8） */
-    protected abstract int getFoodPerPopulation();
+    /** 营地工作要求的职业名称（每个具体营地类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
+
+    /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
+    protected int getFoodPerPopulation() {
+        return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
+    }
 
     // ==================== 可覆写方法（有默认值） ====================
 
@@ -62,33 +69,43 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     /** 父代槽位 B 的索引 */
     protected int getParentSlotB() { return 5; }
 
-    /** 食物因子计算公式 */
+    /** 食物因子计算公式，归一化分母引用 {@link CivilizationMachineConfig#FOOD_FACTOR_NORMALIZER} */
     protected double getFoodFactorFormula(double total) {
-        return Math.sqrt(total / 176.0);
+        return Math.sqrt(total / CivilizationMachineConfig.FOOD_FACTOR_NORMALIZER);
     }
 
-    /** 父代最低生育年龄 */
-    protected int getMinParentAge() { return 18; }
+    /** 父代最低生育年龄，优先从配置读取 */
+    protected int getMinParentAge() {
+        return CivilizationMachineConfig.getMinParentAge(getMachineConfigKey(), 18);
+    }
 
-    /** 父代最高生育年龄 */
-    protected int getMaxParentAge() { return 50; }
+    /** 父代最高生育年龄，优先从配置读取 */
+    protected int getMaxParentAge() {
+        return CivilizationMachineConfig.getMaxParentAge(getMachineConfigKey(), 50);
+    }
 
-    /** 健康度波动下限 */
-    protected int getHealthFluctuateMin() { return -10; }
+    /** 健康度波动下限，优先从配置读取（营地波动幅度较大） */
+    @Override
+    protected int getHealthFluctuateMin() {
+        return CivilizationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -10);
+    }
 
-    /** 健康度波动上限 */
-    protected int getHealthFluctuateMax() { return 5; }
+    /** 健康度波动上限，优先从配置读取（营地波动幅度较大） */
+    @Override
+    protected int getHealthFluctuateMax() {
+        return CivilizationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), 5);
+    }
 
     // ==================== IPopulationMachine 实现 ====================
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(getMachineConfigKey());
+        return CivilizationMachineConfig.getWorkTotalTime(getMachineConfigKey());
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(getMachineConfigKey());
+        return CivilizationMachineConfig.getAgeIncrement(getMachineConfigKey());
     }
 
     @Override
@@ -118,10 +135,6 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         if (isPopulationDead(getParentSlotA()) || isPopulationDead(getParentSlotB())) {
             return false;
         }
-        // 必须有足够食物
-        if (!hasEnoughFood(getFoodPerPopulation())) {
-            return false;
-        }
         // 营地特有：异性 + 年龄在生育范围内
         int ageA = getPopulationAge(getParentSlotA());
         int ageB = getPopulationAge(getParentSlotB());
@@ -138,8 +151,8 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
 
         if (this.canWork()) {
-            double foodFactor = this.consumeAndGetFoodFactor(getFoodPerPopulation(),
-                    this::getFoodFactorFormula);
+            float foodFactor = this.consumeFoodWithFallback(getFoodPerPopulation(),
+                    this::getFoodFactorFormula, -1);
             this.doReproduction(level, foodFactor);
         }
         BlockPos pos = this.getBlockPos();
@@ -152,7 +165,7 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     /**
      * 执行繁殖：读取父代人口物品，计算子嗣数量并产出。
      */
-    private void doReproduction(Level level, double foodFactor) {
+    private void doReproduction(Level level, float foodFactor) {
         ItemStack parentA = getItem(getParentSlotA());
         ItemStack parentB = getItem(getParentSlotB());
 
@@ -179,10 +192,9 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         RandomSource rand = level.getRandom();
 
         PopulationNBT.setAge(baby, 0);
-        PopulationNBT.setLifespan(baby, rand.nextIntBetweenInclusive(
-                PopulationConfig.LIFESPAN_MIN, PopulationConfig.LIFESPAN_MAX));
+        PopulationNBT.setLifespan(baby, Population.generateLifespan(rand));
         PopulationNBT.setGender(baby, rand.nextBoolean());
-        PopulationNBT.setCareer(baby, "unemployed");
+        PopulationNBT.setCareer(baby, CareerNames.UNEMPLOYED);
         PopulationNBT.setHealth(baby, (
                 PopulationNBT.getHealth(parentA) + PopulationNBT.getHealth(parentB)) / 2);
         PopulationNBT.setFood(baby, (
@@ -215,6 +227,7 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
      * 获取当前工作进度比例（0.0 ~ 1.0），供 GUI 进度条使用。
      */
     public float getWorkProgressRatio() {
-        return (float) workProgress / getWorkTotalTime();
+        int total = getWorkTotalTime();
+        return total == 0 ? 0f : (float) workProgress / total;
     }
 }

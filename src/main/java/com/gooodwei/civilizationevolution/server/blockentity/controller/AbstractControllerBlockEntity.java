@@ -1,17 +1,14 @@
 package com.gooodwei.civilizationevolution.server.blockentity.controller;
 
-import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
-import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
-import com.gooodwei.civilizationevolution.api.IPMController;
-import com.gooodwei.civilizationevolution.api.IPopulationMachine;
-import com.gooodwei.civilizationevolution.api.MultiBlockState;
+import com.gooodwei.civilizationevolution.CivilizationEvolution;
+import com.gooodwei.civilizationevolution.api.*;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
-import com.gooodwei.civilizationevolution.server.blockentity.controller.PrimitiveControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.controller.VillageControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.block.controller.AbstractControllerBlock;
+import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
@@ -157,6 +154,13 @@ public abstract class AbstractControllerBlockEntity
     /** 控制器类型标识，用于 CoreDataManager 和配置查找 */
     public abstract String getControllerType();
 
+    /**
+     * 创建此控制器对应的菜单。
+     * 由 {@link #createMenu(int, Inventory, Player)} 在玩家打开 GUI 时调用。
+     * 每个子类必须覆写以返回正确的 Menu 实例。
+     */
+    protected abstract AbstractContainerMenu createMenu(int containerId, Inventory inventory);
+
     /** 区块强加载半径（1 = 3×3 区块，2 = 5×5 区块） */
     protected abstract int getChunkLoadRadius();
 
@@ -245,6 +249,55 @@ public abstract class AbstractControllerBlockEntity
     // ==================== 核心槽位管理 ====================
 
     /**
+     * 初始化或加载核心 UUID 对应的 CoreData。
+     *
+     * <p>处理三种情况：
+     * <ol>
+     *   <li>UUID 为 null → 自动生成、写入物品、创建 CoreData</li>
+     *   <li>UUID 与当前不同 → 移除旧索引、加载或创建新 CoreData</li>
+     *   <li>UUID 相同但 coreData 为 null（兜底）→ 重新加载或创建</li>
+     * </ol>
+     *
+     * @param coreStack 核心槽位中的物品
+     * @return true 表示 coreData 刚被初始化（需同步机器位置）
+     */
+    boolean initOrLoadCoreUuid(ItemStack coreStack) {
+        String uuid = CivilizationCoreItem.getUuid(coreStack);
+
+        if (uuid == null) {
+            uuid = CoreDataManager.generateUuid();
+            CivilizationCoreItem.setUuid(coreStack, uuid);
+            coreData = CoreDataManager.createNew(uuid, getControllerType());
+            currentUuid = uuid;
+            CORE_LOCATIONS.put(uuid, getBlockPos());
+            return true;
+        }
+
+        if (!uuid.equals(currentUuid)) {
+            if (currentUuid != null) CORE_LOCATIONS.remove(currentUuid);
+            coreData = CoreDataManager.getOrLoad(uuid);
+            if (coreData == null) {
+                coreData = CoreDataManager.createNew(uuid, getControllerType());
+            }
+            currentUuid = uuid;
+            CORE_LOCATIONS.put(uuid, getBlockPos());
+            return true;
+        }
+
+        // 兜底：确保 coreData 非空
+        if (coreData == null) {
+            coreData = CoreDataManager.getOrLoad(uuid);
+            if (coreData == null) {
+                coreData = CoreDataManager.createNew(uuid, getControllerType());
+            }
+            currentUuid = uuid;
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * 判断指定槽位是否为文明核心槽位。
      */
     public boolean isCoreSlot(int slot) {
@@ -290,25 +343,14 @@ public abstract class AbstractControllerBlockEntity
             return;
         }
 
-        String uuid = CivilizationCoreItem.getUuid(stack);
+        boolean isNewCore = initOrLoadCoreUuid(stack);
+        if (isNewCore) setChanged();
 
-        if (uuid == null) {
-            uuid = CoreDataManager.generateUuid();
-            CivilizationCoreItem.setUuid(stack, uuid);
-            coreData = CoreDataManager.createNew(uuid, getControllerType());
-            currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, getBlockPos());
-            setChanged();
-        } else if (!uuid.equals(currentUuid)) {
-            if (currentUuid != null) CORE_LOCATIONS.remove(currentUuid);
-            coreData = CoreDataManager.getOrLoad(uuid);
-            if (coreData == null) {
-                coreData = CoreDataManager.createNew(uuid, getControllerType());
-            }
-            currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, getBlockPos());
-            setChanged();
+        // 核心首次放入或更换时，向所有已绑定机器推送当前控制器的维度和坐标（更新 Jade 显示）
+        if (isNewCore && coreData != null) {
+            syncBoundMachinesLocation((ServerLevel) level);
         }
+
         notifyViewersSync();
     }
 
@@ -345,36 +387,18 @@ public abstract class AbstractControllerBlockEntity
         }
 
         String uuid = CivilizationCoreItem.getUuid(coreStack);
+        boolean wasNull = (uuid == null);
+        boolean coreDataJustSet = be.initOrLoadCoreUuid(coreStack);
 
-        // 核心尚未初始化 UUID → 自动生成并写入物品
-        if (uuid == null) {
-            uuid = CoreDataManager.generateUuid();
-            CivilizationCoreItem.setUuid(coreStack, uuid);
-            be.coreData = CoreDataManager.createNew(uuid, be.getControllerType());
-            be.currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, pos);
+        // 核心尚未初始化 UUID（刚自动生成）→ 保存后返回，下个 tick 再继续调度
+        if (wasNull && coreDataJustSet) {
             setChanged(level, pos, blockState);
             return;
         }
 
-        // UUID 变更（玩家更换了核心物品）→ 加载/创建新数据
-        if (!uuid.equals(be.currentUuid)) {
-            if (be.currentUuid != null) CORE_LOCATIONS.remove(be.currentUuid);
-            be.coreData = CoreDataManager.getOrLoad(uuid);
-            if (be.coreData == null) {
-                be.coreData = CoreDataManager.createNew(uuid, be.getControllerType());
-            }
-            be.currentUuid = uuid;
-            CORE_LOCATIONS.put(uuid, pos);
-        }
-
-        // 兜底：确保 coreData 非空
-        if (be.coreData == null) {
-            be.coreData = CoreDataManager.getOrLoad(uuid);
-            if (be.coreData == null) {
-                be.coreData = CoreDataManager.createNew(uuid, be.getControllerType());
-            }
-            be.currentUuid = uuid;
+        // 核心数据刚完成初始化 → 向所有已绑定机器推送当前控制器位置（更新 Jade 显示）
+        if (coreDataJustSet) {
+            be.syncBoundMachinesLocation((ServerLevel) level);
         }
 
         // 只有结构成型时才执行机器调度（绑定/解绑仍可通过连接器操作）
@@ -420,6 +444,10 @@ public abstract class AbstractControllerBlockEntity
     @Override
     public abstract Tier getTier();
 
+    /** 此控制器所管理机器的职业类型（每个具体控制器类必须覆写） */
+    @Override
+    public abstract String getWorkerCareer();
+
     @Override
     public Container getContainer() {
         return this;
@@ -427,7 +455,7 @@ public abstract class AbstractControllerBlockEntity
 
     @Override
     public int getMaxBindCount() {
-        return PopulationMachineConfig.getMaxBindCount(getControllerType());
+        return CivilizationMachineConfig.getMaxBindCount(getControllerType());
     }
 
     @Override
@@ -454,15 +482,33 @@ public abstract class AbstractControllerBlockEntity
 
     @Override
     public boolean bindMachine(BlockPos pos, IPopulationMachine machine) {
-        if (coreData == null) return false;
-        if (machine.isBound()) return false;
-        if (coreData.hasMachine(pos)) return false;
-        if (coreData.getBoundMachines().size() >= getMaxBindCount()) return false;
+        if (coreData == null) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：coreData 为 null，控制器位于 {}", getBlockPos());
+            return false;
+        }
+        if (machine.isBound()) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：机器已绑定，机位={}，已绑核心={}", pos, machine.getBoundCoreUuid());
+            return false;
+        }
+        if (coreData.hasMachine(pos)) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：核心数据中已存在该机位 {}", pos);
+            return false;
+        }
+        if (coreData.getBoundMachines().size() >= getMaxBindCount()) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：已达最大绑定数 {}/{}", coreData.getBoundMachines().size(), getMaxBindCount());
+            return false;
+        }
         // Tier 检查：控制器只能绑定 ≤ 自身 tier 的机器
-        if (machine.getTier().getLevel() > getTier().getLevel()) return false;
+        if (machine.getTier().getLevel() > getTier().getLevel()) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：Tier 不匹配，机器 tier={} > 控制器 tier={}",
+                    machine.getTier().getLevel(), getTier().getLevel());
+            return false;
+        }
         // 距离检查：机器必须在控制器的最大绑定范围内
-        int maxRange = PopulationMachineConfig.getMaxBindRange(getControllerType());
+        int maxRange = CivilizationMachineConfig.getMaxBindRange(getControllerType());
         if (maxRange > 0 && !pos.closerThan(getBlockPos(), maxRange + 1)) {
+            CivilizationEvolution.LOGGER.warn("bindMachine 失败：距离超出范围，机位={}，控制器={}，距离={}，最大={}",
+                    pos, getBlockPos(), Math.sqrt(pos.distSqr(getBlockPos())), maxRange);
             return false;
         }
 
@@ -513,7 +559,7 @@ public abstract class AbstractControllerBlockEntity
         this.workProgress++;
 
         // 缓存最大绑定距离，避免循环内重复查询配置
-        int maxRange = PopulationMachineConfig.getMaxBindRange(getControllerType());
+        int maxRange = CivilizationMachineConfig.getMaxBindRange(getControllerType());
 
         for (CivilizationCoreData.BoundMachineEntry bm : coreData.getBoundMachines()) {
             if (!bm.enabled || !level.isLoaded(bm.getBlockPos())) continue;
@@ -532,9 +578,12 @@ public abstract class AbstractControllerBlockEntity
                     continue;
                 }
                 if (level.getBlockEntity(pos) instanceof IPopulationMachine machine) {
-                    machine.executeWorkCycle(level);
-                    bm.nextTriggerProgress = (this.workProgress + machine.getWorkTotalTime()) % DAY_TICKS;
-                    CoreDataManager.markDirty(currentUuid);
+                    // 自调度机器（采石场、医院等）由自身 serverTick 驱动，控制器跳过
+                    if (!machine.isSelfScheduled()) {
+                        machine.executeWorkCycle(level);
+                        bm.nextTriggerProgress = (this.workProgress + machine.getWorkTotalTime()) % DAY_TICKS;
+                        CoreDataManager.markDirty(currentUuid);
+                    }
                 }
             }
         }
@@ -614,6 +663,32 @@ public abstract class AbstractControllerBlockEntity
     }
 
     /**
+     * 向所有已绑定到此核心的机器推送当前控制器的维度和坐标，
+     * 确保 Jade 工具提示显示正确的控制器位置。
+     *
+     * <p>核心被放入新控制器时自动调用，无论多方块结构是否成型。
+     * 仅更新已加载区块中的机器，未加载的机器在区块加载后由
+     * {@link #validateBoundMachines} 兜底。
+     */
+    void syncBoundMachinesLocation(ServerLevel serverLevel) {
+        if (coreData == null || currentUuid == null) return;
+        String dimension = serverLevel.dimension().location().toString();
+
+        for (CivilizationCoreData.BoundMachineEntry entry : coreData.getBoundMachines()) {
+            BlockPos machinePos = entry.getBlockPos();
+            if (!serverLevel.isLoaded(machinePos)) continue;
+            if (serverLevel.getBlockEntity(machinePos) instanceof IPopulationMachine machine) {
+                // 仅更新仍绑定到此核心的机器（双重校验，防止核心数据与机器状态不一致）
+                if (currentUuid.equals(machine.getBoundCoreUuid())) {
+                    machine.setBoundControllerDimension(dimension);
+                }
+            }
+        }
+        CivilizationEvolution.LOGGER.info("已向 {} 台机器推送控制器位置更新（维度={}，控制器={}）",
+                coreData.getBoundMachines().size(), dimension, getBlockPos());
+    }
+
+    /**
      * 核心数据就绪时，向所有正在查看此控制器 GUI 的玩家同步机器列表。
      */
     public void notifyViewersSync() {
@@ -685,7 +760,7 @@ public abstract class AbstractControllerBlockEntity
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("WorkProgress", workProgress);
+        tag.putInt(AbstractMachineBlockEntity.TAG_WORK_PROGRESS, workProgress);
         ContainerHelper.saveAllItems(tag, items, registries);
         saveMultiBlockNBT(tag);
     }
@@ -693,7 +768,7 @@ public abstract class AbstractControllerBlockEntity
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        workProgress = tag.getInt("WorkProgress");
+        workProgress = tag.getInt(AbstractMachineBlockEntity.TAG_WORK_PROGRESS);
         ContainerHelper.loadAllItems(tag, items, registries);
         loadMultiBlockNBT(tag);
     }

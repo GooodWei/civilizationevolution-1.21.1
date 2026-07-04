@@ -1,9 +1,9 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractHuntingGroundBlockEntity;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveHuntingGroundMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.gooodwei.civilizationevolution.tags.ModTags;
@@ -47,12 +47,12 @@ public class PrimitiveHuntingGroundBlockEntity extends AbstractHuntingGroundBloc
 
     @Override
     protected String getMachineConfigKey() {
-        return PopulationMachineConfig.PRIMITIVE_HUNTING_GROUND;
+        return CivilizationMachineConfig.PRIMITIVE_HUNTING_GROUND;
     }
 
     @Override
-    protected int getFoodPerPopulation() {
-        return 32;
+    public String getWorkerCareer() {
+        return CareerNames.BUTCHER;
     }
 
     @Override

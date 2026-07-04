@@ -1,43 +1,46 @@
 package com.gooodwei.civilizationevolution;
 
-import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
+import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.PartOwnershipTracker;
+import com.gooodwei.civilizationevolution.api.PreviewBlockInfo;
+import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.TierRegistry;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.PrimitiveFarmBlockEntity;
-import com.gooodwei.civilizationevolution.server.career.initial.*;
-import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
-import com.gooodwei.civilizationevolution.api.PreviewBlockInfo;
 import com.gooodwei.civilizationevolution.network.StructurePreviewPayload;
-import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
-import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.career.initial.*;
+import com.gooodwei.civilizationevolution.server.config.CareerConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
+import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
+import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
+import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.storage.LevelResource;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
-import org.slf4j.Logger;
-
+import com.gooodwei.civilizationevolution.server.validation.StructureValidationService;
 import com.mojang.logging.LogUtils;
-
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -50,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>初始化顺序：
  * <ol>
- *   <li>加载 {@link PopulationConfig} 和 {@link PopulationMachineConfig}</li>
+ *   <li>加载 {@link PopulationConfig} 和 {@link CivilizationMachineConfig}</li>
  *   <li>注册所有初始职业</li>
  *   <li>注册方块、物品、BE、菜单、创造标签页</li>
  *   <li>注册网络 Payload 处理器</li>
@@ -78,7 +81,7 @@ public class CivilizationEvolution {
     public CivilizationEvolution(IEventBus modEventBus, ModContainer modContainer) {
         // 初始化配置
         PopulationConfig.init();
-        PopulationMachineConfig.init();
+        CivilizationMachineConfig.init();
         MultiBlockConfig.init();
 
         // 初始化所有职业（构造函数会自动注册到内部注册表中）
@@ -101,6 +104,9 @@ public class CivilizationEvolution {
         // 冻结 Tier 注册表（附属模组应在此之前注册自己的 Tier）
         TierRegistry.freeze();
         LOGGER.info("TierRegistry 已冻结，共注册 {} 个 Tier", TierRegistry.size());
+
+        // 注入多方块结构验证服务，解耦 api/ 层对 server/ 层的硬依赖
+        IMultiBlockMachine.VALIDATION_SERVICE.set(StructureValidationService::submitPeriodicValidation);
     }
 
     /**
@@ -123,7 +129,15 @@ public class CivilizationEvolution {
         new ShepherdCareer();
         new ToolsmithCareer();
         new WeaponsmithCareer();
+        new MinerCareer();
         LOGGER.info("Registered {} careers", CivilizationAPI.getCareerRegistry().allCareers().size());
+
+        // 加载职业树配置并应用（必须在所有 Career 构造完成后调用）
+        CareerConfig.init();
+        CareerConfig.applyToCareers();
+
+        // 在所有 Career 构造和配置加载完成后，统一发送注册事件
+        Career.fireRegisterEvents();
     }
 
     /** 模组通用初始化（逻辑端通用的设置） */
@@ -134,9 +148,10 @@ public class CivilizationEvolution {
     /**
      * 注册方块实体的能力（Capability）。
      *
-     * <p>为原始农场方块注册 {@link Capabilities.FluidHandler#BLOCK} 流体能力，
+     * <p>为农场方块（原始农场、村庄农场）和流体仓室注册
+     * {@link Capabilities.FluidHandler#BLOCK} 流体能力，
      * 使所有物流模组（Pipez、Mekanism、AE2、Integrated Dynamics 等）的管道
-     * 均能通过 NeoForge 标准接口向农场储水罐输入水。
+     * 均能通过 NeoForge 标准接口向储水罐输入水。
      *
      * @param event 能力注册事件
      */
@@ -147,7 +162,40 @@ public class CivilizationEvolution {
                 BlockEntityRegistry.PRIMITIVE_FARM.get(),
                 (be, direction) -> be.getFluidHandler()
         );
-        LOGGER.info("已注册原始农场流体能力（Capabilities.FluidHandler.BLOCK）");
+        // 为村庄农场注册流体能力（所有方向均可输入水）
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_FARM.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        // 为四个流体仓室注册流体能力
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_FLUID_INPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        // 为村庄收割机注册流体能力（所有方向均可输入水）
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                BlockEntityRegistry.VILLAGE_HARVESTER.get(),
+                (be, direction) -> be.getFluidHandler()
+        );
+        LOGGER.info("已注册农场和流体仓室流体能力（Capabilities.FluidHandler.BLOCK）");
     }
 
     /** 服务器启动中事件：日志输出 */
@@ -165,10 +213,24 @@ public class CivilizationEvolution {
         CoreDataManager.init(worldPath);
     }
 
-    /** 服务器停止事件：保存所有核心数据到磁盘 */
+    /** 服务器停止事件：保存所有核心数据到磁盘，关闭验证线程池 */
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event) {
         CoreDataManager.saveAll();
+        com.gooodwei.civilizationevolution.server.validation.StructureValidationService.shutdown();
+    }
+
+    /**
+     * 世界卸载事件：清除该维度的零件认领记录。
+     *
+     * <p>防止 {@link PartOwnershipTracker} 中残留过期条目。
+     * 例如玩家离开末地时，末地维度中的所有外壳方块认领记录将被清除。
+     */
+    @SubscribeEvent
+    public void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof Level level) {
+            PartOwnershipTracker.clearDimension(level);
+        }
     }
 
     /**
@@ -220,16 +282,15 @@ public class CivilizationEvolution {
             return;
         }
 
-        // 手持控制器对应物品 + Shift+右键 → 切换多方块结构预览
-        if (event.getEntity().isShiftKeyDown()
-                && event.getItemStack().getItem() == event.getLevel().getBlockState(event.getPos()).getBlock().asItem()) {
+        // 手持多方块结构投影仪右键多方块机器核心 → 切换结构预览渲染
+        if (event.getItemStack().getItem() instanceof ProjectorItem) {
             handlePreviewToggle(event);
             return;
         }
     }
 
     /**
-     * 处理手持控制器物品 Shift+右键多方块控制器：切换结构预览。
+     * 处理手持木棍 Shift+右键多方块控制器：切换结构预览。
      *
      * <p>通用性检查（类型 + 结构成型状态）在双端都执行，
      * 确保客户端侧也能阻止 GUI 打开（各子类可能重写了 {@code useItemOn}）。

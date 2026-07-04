@@ -1,9 +1,10 @@
 package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity;
-
 
 import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
 import com.gooodwei.civilizationevolution.api.MultiBlockState;
+import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity;
+import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;

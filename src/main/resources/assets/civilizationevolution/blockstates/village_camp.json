@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "civilizationevolution:block/village_camp" },
+    "facing=south": { "model": "civilizationevolution:block/village_camp", "y": 180 },
+    "facing=west":  { "model": "civilizationevolution:block/village_camp", "y": 270 },
+    "facing=east":  { "model": "civilizationevolution:block/village_camp", "y": 90 }
+  }
+}

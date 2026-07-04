@@ -1,32 +1,36 @@
 package com.gooodwei.civilizationevolution.server.menu.machine;
 
+import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.server.blockentity.multiblock.AbstractHospitalBlockEntity;
 import com.gooodwei.civilizationevolution.server.menu.slot.PopulationItemSlot;
-import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 原始诊所的菜单。
+ * 诊所的菜单（Primitive + Village 共用）。
  *
  * <p>2 个治疗槽位（仅接受人口物品）+ 玩家背包 + 快捷栏。
  * 3 个 ContainerData 字段：workProgress、workTotalTime、healthThreshold。
+ * 通过 {@link MenuType} 参数区分 Primitive/Village 的 GUI 纹理。
  */
-public class PrimitiveDoctorCabinMenu extends MachineMenu {
+public class DoctorCabinMenu extends MachineMenu {
 
     private final ContainerData data;
     private final AbstractHospitalBlockEntity be;
 
     // ==================== 服务端构造器 ====================
 
-    public PrimitiveDoctorCabinMenu(int containerId, Inventory playerInventory,
-                                     AbstractHospitalBlockEntity be, ContainerData data) {
-        super(MenuRegistry.PRIMITIVE_DOCTOR_CABIN_MENU.get(), containerId);
+    public DoctorCabinMenu(MenuType<?> type, int containerId, Inventory playerInventory,
+                           AbstractHospitalBlockEntity be, ContainerData data) {
+        super(type, containerId);
         this.be = be;
         this.data = data;
         addDataSlots(data);
@@ -42,16 +46,37 @@ public class PrimitiveDoctorCabinMenu extends MachineMenu {
 
     // ==================== 客户端构造器（fromNetwork） ====================
 
-    public static PrimitiveDoctorCabinMenu fromNetwork(int containerId, Inventory playerInventory,
-                                                         RegistryFriendlyByteBuf buf) {
+    /** 原始诊所的 fromNetwork 入口，通过运行时注册表查找 MenuType 避免自引用 */
+    public static DoctorCabinMenu fromNetworkPrimitive(int containerId,
+                                                        Inventory playerInventory,
+                                                        RegistryFriendlyByteBuf buf) {
+        return fromNetwork(getMenuType("primitive_doctor_cabin"), containerId, playerInventory, buf);
+    }
+
+    /** 村庄诊所的 fromNetwork 入口，通过运行时注册表查找 MenuType 避免自引用 */
+    public static DoctorCabinMenu fromNetworkVillage(int containerId,
+                                                      Inventory playerInventory,
+                                                      RegistryFriendlyByteBuf buf) {
+        return fromNetwork(getMenuType("village_doctor_cabin"), containerId, playerInventory, buf);
+    }
+
+    private static MenuType<?> getMenuType(String name) {
+        return BuiltInRegistries.MENU.get(
+                ResourceLocation.fromNamespaceAndPath(CivilizationEvolution.MODID, name));
+    }
+
+    private static DoctorCabinMenu fromNetwork(MenuType<?> type, int containerId,
+                                                Inventory playerInventory,
+                                                RegistryFriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = playerInventory.player.level().getBlockEntity(pos);
         if (be instanceof AbstractHospitalBlockEntity hospital) {
-            return new PrimitiveDoctorCabinMenu(containerId, playerInventory,
+            return new DoctorCabinMenu(type, containerId, playerInventory,
                     hospital, new SimpleContainerData(3));
         }
         // fallback: 创建一个无 BE 的菜单（不应发生）
-        return new PrimitiveDoctorCabinMenu(containerId, playerInventory, null, new SimpleContainerData(3));
+        return new DoctorCabinMenu(type, containerId, playerInventory,
+                null, new SimpleContainerData(3));
     }
 
     // ==================== 访问器 ====================
@@ -84,6 +109,6 @@ public class PrimitiveDoctorCabinMenu extends MachineMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        return be == null || be.stillValid(player);
     }
 }

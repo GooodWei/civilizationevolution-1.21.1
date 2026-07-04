@@ -1,10 +1,9 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractFarmBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractRangeMachineBlockEntity;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveFarmMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
@@ -13,6 +12,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.List;
 
 /**
  * 原始农场方块实体（Tier 0）。
@@ -59,12 +60,30 @@ public class PrimitiveFarmBlockEntity extends AbstractFarmBlockEntity {
 
     @Override
     protected String getMachineConfigKey() {
-        return PopulationMachineConfig.PRIMITIVE_FARM;
+        return CivilizationMachineConfig.PRIMITIVE_FARM;
+    }
+
+    /**
+     * 农场工作要求的职业名称
+     */
+    @Override
+    public String getWorkerCareer() {
+        return CareerNames.FARMER;
     }
 
     @Override
-    protected int getFoodPerPopulation() {
-        return 8;
+    public boolean isPopulationSlot(int slot) {
+        return slot >= 6 && slot <= 8;
+    }
+
+    @Override
+    public List<Integer> populationSlots() {
+        return List.of(6, 7, 8);
+    }
+
+    @Override
+    public boolean isFoodSlot(int slot) {
+        return slot >= 0 && slot <= 5;
     }
 
     @Override

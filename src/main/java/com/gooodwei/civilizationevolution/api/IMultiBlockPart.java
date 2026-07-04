@@ -1,6 +1,9 @@
 package com.gooodwei.civilizationevolution.api;
 
 import com.gooodwei.civilizationevolution.api.tier.Tier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 多方块结构零件接口。
@@ -13,7 +16,12 @@ import com.gooodwei.civilizationevolution.api.tier.Tier;
  * <ul>
  *   <li>{@link #getPartTier()} 返回此零件的 Tier 等级</li>
  *   <li>{@link #getPartType()} 返回此零件的类型（用于多方块结构 JSON 的 alternatives 匹配）</li>
+ *   <li>{@link #getOwningController(Level, BlockPos)} / {@link #claimPart(Level, BlockPos, BlockPos)} /
+ *       {@link #releasePart(Level, BlockPos, BlockPos)} 管理零件所有权，
+ *       默认委托给 {@link PartOwnershipTracker}。有 BlockEntity 的零件（hatch）应覆写以使用自身 NBT 持久化字段</li>
  * </ul>
+ *
+ * @see PartOwnershipTracker
  */
 public interface IMultiBlockPart {
 
@@ -27,6 +35,12 @@ public interface IMultiBlockPart {
     String TYPE_OUTPUT_HATCH = "output_hatch";
     /** 食物输入接口 */
     String TYPE_FOOD_HATCH = "food_hatch";
+    /** 通用流体接口（向后兼容） */
+    String TYPE_FLUID_HATCH = "fluid_hatch";
+    /** 流体输入接口 */
+    String TYPE_FLUID_INPUT_HATCH = "fluid_input_hatch";
+    /** 流体输出接口 */
+    String TYPE_FLUID_OUTPUT_HATCH = "fluid_output_hatch";
 
     // ==================== 抽象/默认方法 ====================
 
@@ -51,5 +65,52 @@ public interface IMultiBlockPart {
      */
     default String getPartType() {
         return TYPE_MULTI_BLOCK_PART;
+    }
+
+    // ==================== 所有权管理方法 ====================
+
+    /**
+     * 获取当前认领此零件的控制器坐标。
+     *
+     * <p>默认实现委托给 {@link PartOwnershipTracker#getOwner(Level, BlockPos)}
+     * （服务于无 BlockEntity 的外壳方块）。
+     * 有 BlockEntity 的零件（hatch）应覆写此方法以返回自身 NBT 持久化的认领信息，
+     * 以获得更好的性能和数据持久性。
+     *
+     * @param level   所在世界
+     * @param partPos 此零件世界坐标（用于非 BE 零件的 key 生成）
+     * @return 控制器坐标，未认领时返回 null
+     */
+    @Nullable
+    default BlockPos getOwningController(Level level, BlockPos partPos) {
+        return PartOwnershipTracker.getOwner(level, partPos);
+    }
+
+    /**
+     * 由控制器认领此零件。
+     *
+     * <p>默认实现委托给 {@link PartOwnershipTracker#setOwner(Level, BlockPos, BlockPos)}。
+     * 有 BlockEntity 的零件应覆写此方法以将认领信息持久化到自身 NBT 中。
+     *
+     * @param level         所在世界
+     * @param partPos       此零件世界坐标
+     * @param controllerPos 认领此零件的控制器坐标
+     */
+    default void claimPart(Level level, BlockPos partPos, BlockPos controllerPos) {
+        PartOwnershipTracker.setOwner(level, partPos, controllerPos);
+    }
+
+    /**
+     * 释放此零件（仅当调用者是当前拥有者时才释放）。
+     *
+     * <p>默认实现委托给 {@link PartOwnershipTracker#releaseOwner(Level, BlockPos, BlockPos)}。
+     * 有 BlockEntity 的零件应覆写此方法以清除自身 NBT 中的认领信息。
+     *
+     * @param level         所在世界
+     * @param partPos       此零件世界坐标
+     * @param controllerPos 要释放的控制器坐标
+     */
+    default void releasePart(Level level, BlockPos partPos, BlockPos controllerPos) {
+        PartOwnershipTracker.releaseOwner(level, partPos, controllerPos);
     }
 }

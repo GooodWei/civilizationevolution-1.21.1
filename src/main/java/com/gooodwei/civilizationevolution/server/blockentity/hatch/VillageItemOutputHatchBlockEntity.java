@@ -1,0 +1,40 @@
+package com.gooodwei.civilizationevolution.server.blockentity.hatch;
+
+import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
+import com.gooodwei.civilizationevolution.api.tier.Tier;
+import com.gooodwei.civilizationevolution.server.menu.hatch.VillageItemOutputHatchMenu;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+
+/**
+ * 村庄物品输出接口 —— Tier 1。
+ *
+ * <p>27 个槽位（3×9 潜影盒布局），拒绝外部放入（仅代码产出），堆叠上限 64。
+ */
+public class VillageItemOutputHatchBlockEntity extends AbstractItemOutputHatchBlockEntity {
+
+    public static final int SIZE = 27;
+
+    public VillageItemOutputHatchBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state, SIZE);
+    }
+
+    @Override
+    public Tier getPartTier() {
+        return CivilizationTiers.VILLAGE;
+    }
+
+    @Override
+    protected String getContainerName() {
+        return "container.civilizationevolution.village_item_output_hatch";
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
+        return new VillageItemOutputHatchMenu(containerId, inventory, this);
+    }
+}

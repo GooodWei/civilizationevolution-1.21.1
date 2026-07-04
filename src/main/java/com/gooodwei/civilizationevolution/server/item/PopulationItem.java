@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.server.item;
 
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
+import com.gooodwei.civilizationevolution.api.IPopulationItem;
 import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.population.Population;
@@ -24,7 +25,7 @@ import java.util.List;
  *
  * <p>物品显示名称动态读取职业 NBT，tooltip 展示完整的人口属性面板。
  */
-public class PopulationItem extends Item {
+public class PopulationItem extends Item implements IPopulationItem {
 
     public PopulationItem(Properties properties) {
         super(properties);
@@ -76,6 +77,13 @@ public class PopulationItem extends Item {
         if (lifespan <= 0) return;
         int age = tag.getInt(Population.TAG_AGE);
 
+        // 退休标记 —— 年龄超过 65 岁但未死亡的人口
+        if (!PopulationNBT.isDead(stack) && age > 65) {
+            tooltipComponents.add(Component.translatable(
+                    "tooltip.civilizationevolution.population.retired")
+                    .withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
+        }
+
         String careerName = tag.getString(Population.TAG_CAREER);
         Career career = CivilizationAPI.getCareerRegistry().byName(careerName);
         tooltipComponents.add(line("career", career != null
@@ -93,6 +101,25 @@ public class PopulationItem extends Item {
         tooltipComponents.add(line("gender", tag.getBoolean(Population.TAG_GENDER)
                 ? Component.translatable("tooltip.civilizationevolution.population.gender.male")
                 : Component.translatable("tooltip.civilizationevolution.population.gender.female")));
+
+        // 学徒经验 —— 遍历所有已累积经验的职业
+        CompoundTag careerExps = tag.getCompound(Population.TAG_CAREER_EXPS);
+        if (!careerExps.isEmpty()) {
+            for (String expCareerName : careerExps.getAllKeys()) {
+                int exp = careerExps.getInt(expCareerName);
+                if (exp <= 0) continue;
+                Career targetCareer = Career.byName(expCareerName);
+                if (targetCareer == null) continue;
+                int threshold = targetCareer.getApprenticeExpThreshold();
+                if (threshold <= 0) continue; // 不可晋升的职业不显示
+                tooltipComponents.add(Component.translatable(
+                        "tooltip.civilizationevolution.population.apprentice_exp",
+                        Component.translatable(targetCareer.getTranslationKey()),
+                        exp,
+                        threshold)
+                        .withStyle(ChatFormatting.GREEN));
+            }
+        }
     }
 
     /**

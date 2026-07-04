@@ -45,6 +45,14 @@ repositories {
         // Jade (CurseMaven)
         url "https://cursemaven.com"
     }
+    maven {
+        // AE2 — Modrinth Maven（ModMaven 上只有旧版本 19.0.4-alpha）
+        name "Modrinth"
+        url "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
 }
 
 base {
@@ -145,6 +153,13 @@ dependencies {
     // Jade — compileOnly for integration code, localRuntime for testing
     compileOnly "curse.maven:jade-324717:6155158"
     localRuntime "curse.maven:jade-324717:6155158"
+    // AE2 — compileOnly for integration code（不打包进发布产物），localRuntime for testing
+    // 玩家未安装 AE2 时本模组正常运行，仅失去人口磁盘等联动功能
+    // 版本号对应 AE2 for NeoForge 1.21.1：https://modrinth.com/mod/ae2/versions
+    compileOnly "maven.modrinth:ae2:${ae2_version}"
+    localRuntime "maven.modrinth:ae2:${ae2_version}"
+    // guideme — AE2 的必需前置模组，仅运行时需要（本模组代码不直接引用）
+    localRuntime "maven.modrinth:guideme:${guideme_version}"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar

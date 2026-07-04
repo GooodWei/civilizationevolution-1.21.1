@@ -1,8 +1,10 @@
 package com.gooodwei.civilizationevolution.server.blockentity.controller;
 
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
+import com.gooodwei.civilizationevolution.server.menu.machine.VillageControllerMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -43,7 +45,12 @@ public class VillageControllerBlockEntity extends AbstractControllerBlockEntity 
 
     @Override
     public String getConfigKey() {
-        return "village_controller";
+        return CivilizationMachineConfig.VILLAGE_CONTROLLER;
+    }
+
+    @Override
+    public String getWorkerCareer() {
+        return CareerNames.UNEMPLOYED;
     }
 
     @Override
@@ -58,14 +65,13 @@ public class VillageControllerBlockEntity extends AbstractControllerBlockEntity 
 
     @Override
     protected boolean isViewingController(ServerPlayer sp) {
-        // TODO: 等 VillageControllerMenu 创建后改为对应的 menu instanceof 检查
-        return false;
+        return sp.containerMenu instanceof VillageControllerMenu menu
+                && menu.getBlockPos().equals(getBlockPos());
     }
 
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        // TODO: 等 VillageControllerMenu 创建
-        return null;
+        return new VillageControllerMenu(containerId, inventory, this, this.data);
     }
 
     @Override

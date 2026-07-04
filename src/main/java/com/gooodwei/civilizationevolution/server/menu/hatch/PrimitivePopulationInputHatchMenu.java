@@ -5,9 +5,8 @@ import com.gooodwei.civilizationevolution.server.registry.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
@@ -45,7 +44,8 @@ public class PrimitivePopulationInputHatchMenu extends AbstractHatchMenu {
         if (be instanceof Container container) {
             return new PrimitivePopulationInputHatchMenu(containerId, playerInventory, container);
         }
-        return null;
+        // BE 不在场时返回带空容器的占位菜单（防止客户端 NPE）
+        return new PrimitivePopulationInputHatchMenu(containerId, playerInventory, new SimpleContainer(1));
     }
 
     // ==================== 快速移动 ====================

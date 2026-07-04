@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
+import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -31,6 +32,26 @@ import net.minecraft.world.level.block.state.BlockState;
 public abstract class AbstractMachineBlockEntity
         extends BaseContainerBlockEntity
         implements IPopulationMachine, MenuProvider {
+
+    // ==================== ContainerData 索引常量 ====================
+
+    /** ContainerData 索引：当前工作进度 */
+    public static final int DATA_IDX_PROGRESS = 0;
+    /** ContainerData 索引：工作总时长 */
+    public static final int DATA_IDX_TOTAL_TIME = 1;
+    /** ContainerData 索引：水量/辅助字段 */
+    public static final int DATA_IDX_AUX = 2;
+
+    // ==================== NBT key 常量 ====================
+
+    /** NBT key：当前工作进度 */
+    public static final String TAG_WORK_PROGRESS = "WorkProgress";
+    /** NBT key：是否已绑定控制器 */
+    public static final String TAG_IS_BOUND = "IsBound";
+    /** NBT key：绑定的核心 UUID */
+    public static final String TAG_BOUND_CORE_UUID = "BoundCoreUuid";
+    /** NBT key：绑定的控制器所在维度 */
+    public static final String TAG_BOUND_CONTROLLER_DIMENSION = "BoundControllerDimension";
 
     // ==================== 共享字段 ====================
 
@@ -87,6 +108,15 @@ public abstract class AbstractMachineBlockEntity
     @Override
     public abstract Tier getTier();
 
+    /**
+     * 本机器要求的工作职业名称。
+     * 每个具体机器<b>必须</b>覆写，显式声明所需职业。
+     *
+     * @return 职业名称常量（如 {@code CareerNames.FARMER}）
+     */
+    @Override
+    public abstract String getWorkerCareer();
+
     @Override
     public Container getContainer() {
         return this;
@@ -131,6 +161,18 @@ public abstract class AbstractMachineBlockEntity
         return isBound();
     }
 
+    // ==================== 健康度波动（子类可覆写） ====================
+
+    /** 每次工作周期后人口健康度随机波动下限（默认 -5） */
+    protected int getHealthFluctuateMin() {
+        return -5;
+    }
+
+    /** 每次工作周期后人口健康度随机波动上限（默认 -1） */
+    protected int getHealthFluctuateMax() {
+        return -1;
+    }
+
     // ==================== Container boilerplate ====================
 
     @Override
@@ -172,13 +214,13 @@ public abstract class AbstractMachineBlockEntity
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("WorkProgress", workProgress);
-        tag.putBoolean("IsBound", isBound);
+        tag.putInt(TAG_WORK_PROGRESS, workProgress);
+        tag.putBoolean(TAG_IS_BOUND, isBound);
         if (boundCoreUuid != null) {
-            tag.putString("BoundCoreUuid", boundCoreUuid);
+            tag.putString(TAG_BOUND_CORE_UUID, boundCoreUuid);
         }
         if (boundControllerDimension != null) {
-            tag.putString("BoundControllerDimension", boundControllerDimension);
+            tag.putString(TAG_BOUND_CONTROLLER_DIMENSION, boundControllerDimension);
         }
         ContainerHelper.saveAllItems(tag, items, registries);
     }
@@ -189,11 +231,11 @@ public abstract class AbstractMachineBlockEntity
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        workProgress = tag.getInt("WorkProgress");
-        isBound = tag.getBoolean("IsBound");
-        String uuid = tag.getString("BoundCoreUuid");
+        workProgress = tag.getInt(TAG_WORK_PROGRESS);
+        isBound = tag.getBoolean(TAG_IS_BOUND);
+        String uuid = tag.getString(TAG_BOUND_CORE_UUID);
         boundCoreUuid = uuid.isEmpty() ? null : uuid;
-        String dimension = tag.getString("BoundControllerDimension");
+        String dimension = tag.getString(TAG_BOUND_CONTROLLER_DIMENSION);
         boundControllerDimension = dimension.isEmpty() ? null : dimension;
         ContainerHelper.loadAllItems(tag, items, registries);
     }
