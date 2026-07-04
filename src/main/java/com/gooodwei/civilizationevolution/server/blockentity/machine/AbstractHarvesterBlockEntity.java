@@ -2,7 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.tags.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -142,7 +142,7 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
                     getAvailableWorkers().size());
             float efficiency = foodFactor * (float) totalWorkEfficiency;
             int cropCount = Math.max(1, Math.round(efficiency));
-            int waterPerCrop = PopulationMachineConfig.getWaterPerCrop(getMachineConfigKey());
+            int waterPerCrop = CivilizationMachineConfig.getWaterPerCrop(getMachineConfigKey());
             AABB range = getSelectionRange();
             int cropNum = 0;
             for (int x = (int) range.minX; x < (int) range.maxX && cropNum < cropCount; x++) {
@@ -263,7 +263,7 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
+        return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
     }
 
     /**
@@ -298,12 +298,12 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(getMachineConfigKey());
+        return CivilizationMachineConfig.getWorkTotalTime(getMachineConfigKey());
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(getMachineConfigKey());
+        return CivilizationMachineConfig.getAgeIncrement(getMachineConfigKey());
     }
 
     @Override

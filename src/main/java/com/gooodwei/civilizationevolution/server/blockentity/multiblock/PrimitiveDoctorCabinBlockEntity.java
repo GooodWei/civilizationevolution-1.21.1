@@ -3,7 +3,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
@@ -42,7 +42,7 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
     }
 
     /** 配置文件中此机器的 key */
-    private static final String CONFIG_KEY = PopulationMachineConfig.PRIMITIVE_DOCTOR_CABIN;
+    private static final String CONFIG_KEY = CivilizationMachineConfig.PRIMITIVE_DOCTOR_CABIN;
 
     public String getMachineConfigKey() {
         return CONFIG_KEY;
@@ -55,17 +55,17 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(CONFIG_KEY);
+        return CivilizationMachineConfig.getWorkTotalTime(CONFIG_KEY);
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(CONFIG_KEY);
+        return CivilizationMachineConfig.getAgeIncrement(CONFIG_KEY);
     }
 
     @Override
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(CONFIG_KEY);
+        return CivilizationMachineConfig.getFoodPerPopulation(CONFIG_KEY);
     }
 
     // ==================== Tick & Menu ====================

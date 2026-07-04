@@ -6,10 +6,10 @@ import com.gooodwei.civilizationevolution.server.blockentity.controller.VillageC
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.*;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.*;
 import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveDoctorCabinBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveStoragePitBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageDoctorCabinBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageQuarryBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -201,15 +201,19 @@ public class BlockEntityRegistry {
     /** 村庄诊所 BE 类型（Tier 1） */
     public static final Supplier<BlockEntityType<VillageDoctorCabinBlockEntity>> VILLAGE_DOCTOR_CABIN =
             BLOCK_ENTITIES.register("village_doctor_cabin",
-                    () -> BlockEntityType.Builder.of(
-                            (pos, state) -> new VillageDoctorCabinBlockEntity(
-                                    BlockEntityRegistry.VILLAGE_DOCTOR_CABIN.get(), pos, state),
+                    () -> BlockEntityType.Builder.of(VillageDoctorCabinBlockEntity::new,
                             BlockRegistry.VILLAGE_DOCTOR_CABIN.get()).build(null));
 
     public static final Supplier<BlockEntityType<VillageHarvesterBlockEntity>> VILLAGE_HARVESTER =
             BLOCK_ENTITIES.register("village_harvester",
                     () -> BlockEntityType.Builder.of(VillageHarvesterBlockEntity::new,
                             BlockRegistry.VILLAGE_HARVESTER.get()).build(null));
+
+    public static final Supplier<BlockEntityType<PrimitiveStoragePitBlockEntity>> PRIMITIVE_STORAGE_PIT =
+            BLOCK_ENTITIES.register("primitive_storage_pit",
+                    () -> BlockEntityType.Builder.of(PrimitiveStoragePitBlockEntity::new,
+                            BlockRegistry.PRIMITIVE_STORAGE_PIT_BLOCK.get()).build(null));
+
     /**
      * 向事件总线注册所有 BlockEntity 类型。
      * @param bus 模组事件总线

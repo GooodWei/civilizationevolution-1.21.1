@@ -1,6 +1,6 @@
 package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.tags.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -176,7 +176,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
+        return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
     }
 
     // ==================== 可覆写方法（有默认值） ====================
@@ -188,19 +188,19 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
     /** 每次工作周期给学徒的经验量，优先从配置读取 */
     @Override
     protected int getApprenticeExpPerCycle() {
-        return PopulationMachineConfig.getApprenticeExpPerCycle(getMachineConfigKey(), 1);
+        return CivilizationMachineConfig.getApprenticeExpPerCycle(getMachineConfigKey(), 1);
     }
 
     /** 健康度波动下限，优先从配置读取 */
     @Override
     protected int getHealthFluctuateMin() {
-        return PopulationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -5);
+        return CivilizationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -5);
     }
 
     /** 健康度波动上限，优先从配置读取 */
     @Override
     protected int getHealthFluctuateMax() {
-        return PopulationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), -1);
+        return CivilizationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), -1);
     }
 
     // ==================== 公开存取器 ====================
@@ -267,12 +267,12 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(getMachineConfigKey());
+        return CivilizationMachineConfig.getWorkTotalTime(getMachineConfigKey());
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(getMachineConfigKey());
+        return CivilizationMachineConfig.getAgeIncrement(getMachineConfigKey());
     }
 
     @Override
@@ -355,7 +355,7 @@ public abstract class AbstractFarmBlockEntity extends AbstractRangeMachineBlockE
             int cropCount = Math.max(1, Math.round(efficiency));
 
             // 获取每次催熟的水消耗量
-            int waterPerCrop = PopulationMachineConfig.getWaterPerCrop(getMachineConfigKey());
+            int waterPerCrop = CivilizationMachineConfig.getWaterPerCrop(getMachineConfigKey());
 
             // 扫描范围内可催熟作物
             var range = getSelectionRange();

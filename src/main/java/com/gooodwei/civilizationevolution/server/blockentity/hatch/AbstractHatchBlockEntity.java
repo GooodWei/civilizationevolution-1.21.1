@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -40,6 +41,10 @@ public abstract class AbstractHatchBlockEntity extends BlockEntity
     private ContainerListener listener;
     /** 槽位数量（缓存，等于 items.size()） */
     private final int slotCount;
+
+    /** 认领此仓室的控制器坐标（NBT 持久化）。null = 未认领 */
+    @Nullable
+    private BlockPos owningController;
 
     // ==================== 构造器 ====================
 
@@ -121,12 +126,25 @@ public abstract class AbstractHatchBlockEntity extends BlockEntity
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, items, registries);
+        if (owningController != null) {
+            tag.putInt("OwningControllerX", owningController.getX());
+            tag.putInt("OwningControllerY", owningController.getY());
+            tag.putInt("OwningControllerZ", owningController.getZ());
+        }
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, items, registries);
+        if (tag.contains("OwningControllerX")) {
+            owningController = new BlockPos(
+                    tag.getInt("OwningControllerX"),
+                    tag.getInt("OwningControllerY"),
+                    tag.getInt("OwningControllerZ"));
+        } else {
+            owningController = null;
+        }
     }
 
     // ==================== MenuProvider ====================
@@ -138,6 +156,28 @@ public abstract class AbstractHatchBlockEntity extends BlockEntity
 
     @Override
     public abstract AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player);
+
+    // ==================== IMultiBlockPart 所有权覆写 ====================
+
+    @Override
+    @Nullable
+    public BlockPos getOwningController(Level level, BlockPos partPos) {
+        return owningController;
+    }
+
+    @Override
+    public void claimPart(Level level, BlockPos partPos, BlockPos controllerPos) {
+        this.owningController = controllerPos;
+        setChanged();
+    }
+
+    @Override
+    public void releasePart(Level level, BlockPos partPos, BlockPos controllerPos) {
+        if (controllerPos.equals(this.owningController)) {
+            this.owningController = null;
+            setChanged();
+        }
+    }
 
     // ==================== 抽象方法 ====================
 

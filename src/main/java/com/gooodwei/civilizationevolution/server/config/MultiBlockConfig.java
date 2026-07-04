@@ -120,6 +120,8 @@ public final class MultiBlockConfig {
 
         // 定时验证间隔（秒），默认 30 秒
         doctorCabin.addProperty("validate_interval", 30);
+        // 结构零件是否允许多个控制器共用（默认 true）
+        doctorCabin.addProperty("shareable", true);
 
         // key
         JsonObject key = new JsonObject();
@@ -170,6 +172,7 @@ public final class MultiBlockConfig {
         primitiveController.add("pattern", ctrlPattern);
 
         primitiveController.addProperty("validate_interval", 30);
+        primitiveController.addProperty("shareable", true);
 
         // key
         JsonObject ctrlKey = new JsonObject();
@@ -228,6 +231,7 @@ public final class MultiBlockConfig {
         villageQuarry.add("pattern", vqPattern);
 
         villageQuarry.addProperty("validate_interval", 30);
+        villageQuarry.addProperty("shareable", true);
 
         // key — A 为村庄外壳（min 8），c/f/i/o 为仓室替代（靠 min_count 保证最低数量）
         JsonObject vqKey = new JsonObject();
@@ -286,6 +290,7 @@ public final class MultiBlockConfig {
         villageCtrl.add("pattern", vcPattern);
 
         villageCtrl.addProperty("validate_interval", 30);
+        villageCtrl.addProperty("shareable", true);
 
         JsonObject vcKey = new JsonObject();
 
@@ -294,11 +299,11 @@ public final class MultiBlockConfig {
         vcKey.add("A", vcADef);
 
         JsonObject vcBDef = new JsonObject();
-        vcBDef.addProperty("type", "minecraft:oak_planks");
+        vcBDef.addProperty("type", "tag:minecraft:planks");
         vcKey.add("B", vcBDef);
 
         JsonObject vcCDef = new JsonObject();
-        vcCDef.addProperty("type", "minecraft:glass");
+        vcCDef.addProperty("type", "tag:c:glass_blocks");
         vcKey.add("C", vcCDef);
 
         JsonObject vcDDef = new JsonObject();

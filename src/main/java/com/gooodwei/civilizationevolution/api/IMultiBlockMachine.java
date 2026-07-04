@@ -90,6 +90,7 @@ public interface IMultiBlockMachine {
      * @param key                  字符 → 原始 JSON，保留兼容旧逻辑
      * @param keyDefs              字符 → 解析后的 KeyDefinition（含 type、alternatives、min/max）
      * @param validateIntervalTicks 定时验证间隔（tick），由配置文件中的 validate_interval（秒）转换
+     * @param shareable             结构零件是否可被多个控制器共用（默认 true，未配置时最宽松策略）
      */
     record ParsedPattern(
             int width, int height, int depth,
@@ -97,7 +98,8 @@ public interface IMultiBlockMachine {
             char[][][] layerChars,
             Map<Character, JsonObject> key,
             Map<Character, KeyDefinition> keyDefs,
-            int validateIntervalTicks
+            int validateIntervalTicks,
+            boolean shareable
     ) {}
 
     // ==================== 抽象方法（由 BlockEntity 提供） ====================
@@ -485,8 +487,14 @@ public interface IMultiBlockMachine {
                 validateIntervalTicks = seconds * 20;
             }
 
+            // 11. 解析 shareable（结构零件是否可被多个控制器共用，默认 true）
+            boolean shareable = true;
+            if (root.has("shareable")) {
+                shareable = root.get("shareable").getAsBoolean();
+            }
+
             state.cachedPattern = new ParsedPattern(width, height, depth,
-                    controllerY, controllerX, controllerZ, layerChars, key, keyDefs, validateIntervalTicks);
+                    controllerY, controllerX, controllerZ, layerChars, key, keyDefs, validateIntervalTicks, shareable);
             state.parseError = null; // 解析成功，清除错误
             return state.cachedPattern;
 
@@ -797,8 +805,14 @@ public interface IMultiBlockMachine {
             validateIntervalTicks = seconds * 20;
         }
 
+        // 11. 解析 shareable（结构零件是否可被多个控制器共用，默认 true）
+        boolean shareable = true;
+        if (root.has("shareable")) {
+            shareable = root.get("shareable").getAsBoolean();
+        }
+
         return new ParsedPattern(width, height, depth,
-                controllerY, controllerX, controllerZ, layerChars, key, keyDefs, validateIntervalTicks);
+                controllerY, controllerX, controllerZ, layerChars, key, keyDefs, validateIntervalTicks, shareable);
     }
 
     /** 清除缓存的解析结果（配置变更时调用） */
@@ -1076,6 +1090,22 @@ public interface IMultiBlockMachine {
                         }
                     }
 
+                    // 检查零件认领（非共享模式下的独占性）
+                    if (matched) {
+                        IMultiBlockPart matchedPart = resolveMultiBlockPart(worldPos);
+                        if (matchedPart != null) {
+                            BlockPos existingOwner = matchedPart.getOwningController(level, worldPos);
+                            if (existingOwner != null && !existingOwner.equals(getBlockPos())) {
+                                if (!pattern.shareable()) {
+                                    // 非共享模式：已被其他控制器认领 → 此位置匹配失败
+                                    matched = false;
+                                    matchedTypeStr = null;
+                                }
+                                // 共享模式：允许共用，matched 保持 true
+                            }
+                        }
+                    }
+
                     if (!matched) {
                         state.structureFormed = false;
                         notifyPartsUnformed();
@@ -1138,6 +1168,14 @@ public interface IMultiBlockMachine {
         state.casingPositions.addAll(newCasingPositions);
         state.allPartPositions.clear();
         state.allPartPositions.addAll(newAllParts);
+
+        // 认领所有匹配的零件（全部验证通过后才执行，避免部分认领后验证失败导致孤儿认领）
+        for (BlockPos partPos : newAllParts) {
+            IMultiBlockPart part = resolveMultiBlockPart(partPos);
+            if (part != null) {
+                part.claimPart(level, partPos, getBlockPos());
+            }
+        }
 
         state.structureFormed = true;
         markChanged();
@@ -1225,10 +1263,23 @@ public interface IMultiBlockMachine {
 
     /**
      * 通知所有已缓存零件解除成型状态。
-     * 默认空实现——零件不存储成型状态，由控制器全权追踪。
-     * 子类可覆写以添加额外通知逻辑（如粒子效果等）。
+     *
+     * <p>遍历 {@link MultiBlockState#allPartPositions} 中的所有零件位置，
+     * 调用 {@link IMultiBlockPart#releasePart} 释放认领。
+     * releasePart 内部做条件检查——仅释放由本控制器认领的零件，
+     * 不会误释放其他控制器认领的零件。
      */
     default void notifyPartsUnformed() {
+        MultiBlockState state = mbs();
+        Level level = getLevel();
+        if (level == null) return;
+        BlockPos myPos = getBlockPos();
+        for (BlockPos partPos : state.allPartPositions) {
+            IMultiBlockPart part = resolveMultiBlockPart(partPos);
+            if (part != null) {
+                part.releasePart(level, partPos, myPos);
+            }
+        }
     }
 
     // ==================== 状态查询 ====================

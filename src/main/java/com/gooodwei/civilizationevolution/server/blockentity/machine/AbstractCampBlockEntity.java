@@ -2,7 +2,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 
 import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.population.Population;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -58,7 +58,7 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
+        return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
     }
 
     // ==================== 可覆写方法（有默认值） ====================
@@ -76,36 +76,36 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
 
     /** 父代最低生育年龄，优先从配置读取 */
     protected int getMinParentAge() {
-        return PopulationMachineConfig.getMinParentAge(getMachineConfigKey(), 18);
+        return CivilizationMachineConfig.getMinParentAge(getMachineConfigKey(), 18);
     }
 
     /** 父代最高生育年龄，优先从配置读取 */
     protected int getMaxParentAge() {
-        return PopulationMachineConfig.getMaxParentAge(getMachineConfigKey(), 50);
+        return CivilizationMachineConfig.getMaxParentAge(getMachineConfigKey(), 50);
     }
 
     /** 健康度波动下限，优先从配置读取（营地波动幅度较大） */
     @Override
     protected int getHealthFluctuateMin() {
-        return PopulationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -10);
+        return CivilizationMachineConfig.getHealthFluctuateMin(getMachineConfigKey(), -10);
     }
 
     /** 健康度波动上限，优先从配置读取（营地波动幅度较大） */
     @Override
     protected int getHealthFluctuateMax() {
-        return PopulationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), 5);
+        return CivilizationMachineConfig.getHealthFluctuateMax(getMachineConfigKey(), 5);
     }
 
     // ==================== IPopulationMachine 实现 ====================
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(getMachineConfigKey());
+        return CivilizationMachineConfig.getWorkTotalTime(getMachineConfigKey());
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(getMachineConfigKey());
+        return CivilizationMachineConfig.getAgeIncrement(getMachineConfigKey());
     }
 
     @Override

@@ -5,7 +5,7 @@ import com.gooodwei.civilizationevolution.api.IPopulationMachine;
 import com.gooodwei.civilizationevolution.api.component.ConnectorTarget;
 import com.gooodwei.civilizationevolution.api.component.ModDataComponents;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import net.minecraft.ChatFormatting;
@@ -302,7 +302,7 @@ public class ConnectorItem extends Item {
                 return false;
             }
             // 距离预检查（在进 bindMachine 之前，给玩家具体的"超出范围"提示）
-            int maxRange = PopulationMachineConfig.getMaxBindRange(controller.getControllerType());
+            int maxRange = CivilizationMachineConfig.getMaxBindRange(controller.getControllerType());
             if (maxRange > 0 && !machinePos.closerThan(controller.getBlockPos(), maxRange + 1)) {
                 player.sendSystemMessage(Component.translatable(
                         "msg.civilizationevolution.connector.out_of_range", maxRange)
@@ -326,7 +326,7 @@ public class ConnectorItem extends Item {
             // 无活跃控制器 → 直接写入核心数据文件
             String controllerType = coreData.getControllerType();
             if (controllerType == null) controllerType = "primitive_controller";
-            if (coreData.getBoundMachines().size() >= PopulationMachineConfig.getMaxBindCount(controllerType)) {
+            if (coreData.getBoundMachines().size() >= CivilizationMachineConfig.getMaxBindCount(controllerType)) {
                 player.sendSystemMessage(Component.translatable(
                         "msg.civilizationevolution.connector.controller_full")
                         .withStyle(ChatFormatting.RED));
@@ -335,7 +335,7 @@ public class ConnectorItem extends Item {
 
             // 距离检查：通过核心最后一次记录的控制器位置判断
             BlockPos lastKnownPos = AbstractControllerBlockEntity.getCoreLocation(coreUuid);
-            int maxRange = PopulationMachineConfig.getMaxBindRange(controllerType);
+            int maxRange = CivilizationMachineConfig.getMaxBindRange(controllerType);
             if (lastKnownPos != null && maxRange > 0 && !machinePos.closerThan(lastKnownPos, maxRange + 1)) {
                 player.sendSystemMessage(Component.translatable(
                         "msg.civilizationevolution.connector.out_of_range", maxRange)

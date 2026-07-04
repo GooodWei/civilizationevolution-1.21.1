@@ -5,7 +5,7 @@ import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveDoctorCabinMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -145,7 +145,6 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationInputHatchBlockEntity hatch))
                 continue;
-
             ItemStack stack = hatch.getItem(0);
             if (stack.isEmpty() || PopulationNBT.isDead(stack)) continue;
 
@@ -202,7 +201,6 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationInputHatchBlockEntity hatch))
                 continue;
-
             ItemStack stack = hatch.getItem(0);
             if (!stack.isEmpty() && !PopulationNBT.isDead(stack)
                     && PopulationNBT.getHealth(stack) >= healthThreshold) {
@@ -223,7 +221,6 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.PrimitivePopulationOutputHatchBlockEntity outHatch))
                 continue;
-
             ItemStack outStack = outHatch.getItem(0);
             if (outStack.isEmpty()) {
                 outHatch.setItem(0, stack.copy());
@@ -282,14 +279,14 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
      * 获取单位人口食物消耗量，优先从配置读取。
      */
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
+        return CivilizationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
     }
 
     /**
      * 每次工作周期给学徒的经验量，优先从配置读取。
      */
     protected int getApprenticeExpPerCycle() {
-        return PopulationMachineConfig.getApprenticeExpPerCycle(getConfigKey(), 1);
+        return CivilizationMachineConfig.getApprenticeExpPerCycle(getConfigKey(), 1);
     }
 
     /**
@@ -317,7 +314,6 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFoodInputHatchBlockEntity hatch))
                 continue;
-
             for (int i = 0; i < hatch.getContainerSize() && remaining > 0; i++) {
                 ItemStack stack = hatch.getItem(i);
                 if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;

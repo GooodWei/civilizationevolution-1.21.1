@@ -116,6 +116,11 @@ public class MenuRegistry {
     public static final  Supplier<MenuType<VillageHarvesterMenu>> VILLAGE_HARVESTER_MENU =
             MENUS.register("village_harvester",() -> IMenuTypeExtension.create(VillageHarvesterMenu::fromNetwork));
 
+    /** 储物坑菜单类型（Tier 0，AE2 合成终端布局） */
+    public static final Supplier<MenuType<PrimitiveStoragePitMenu>> PRIMITIVE_STORAGE_PIT_MENU =
+            MENUS.register("primitive_storage_pit", () ->
+                    IMenuTypeExtension.create(PrimitiveStoragePitMenu::fromNetwork));
+
     /**
      * 向事件总线注册所有 Menu 类型。
      * @param bus 模组事件总线

@@ -3,7 +3,7 @@ package com.gooodwei.civilizationevolution.server.blockentity.machine;
 import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.PrimitiveRanchMenu;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
 import com.gooodwei.civilizationevolution.tags.ModTags;
@@ -46,7 +46,7 @@ public class PrimitiveRanchBlockEntity extends AbstractRanchBlockEntity {
 
     @Override
     protected String getMachineConfigKey() {
-        return PopulationMachineConfig.PRIMITIVE_RANCH;
+        return CivilizationMachineConfig.PRIMITIVE_RANCH;
     }
 
     @Override

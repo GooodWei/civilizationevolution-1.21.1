@@ -76,6 +76,12 @@
   "block.civilizationevolution.village_doctor_cabin": "Village Clinic",
   "container.civilizationevolution.village_doctor_cabin": "Village Clinic",
 
+  "block.civilizationevolution.primitive_storage_pit": "Storage Pit",
+  "container.civilizationevolution.primitive_storage_pit": "Storage Pit",
+  "gui.civilizationevolution.search": "",
+  "gui.civilizationevolution.search_hint": "Search...",
+  "gui.civilizationevolution.used_slots": "Used Slots",
+
   "container.civilizationevolution.primitive_hunting_ground": "Hunting Ground",
   "container.civilizationevolution.primitive_ranch": "Primitive Ranch",
   "container.civilizationevolution.primitive_farm": "Primitive Farm",
@@ -142,7 +148,7 @@
   "msg.civilizationevolution.extractor.success": "§aCore extracted, UUID: %s",
   "msg.civilizationevolution.extractor.not_bound": "§cThis machine is not bound to any civilization core",
 
-  "msg.civilizationevolution.structure_incomplete": "§cMulti-block structure incomplete, please build a 2×2×2 structure",
+  "msg.civilizationevolution.structure_incomplete": "§cMulti-block structure incomplete",
   "msg.civilizationevolution.structure_not_formed": "§cMulti-block structure not formed, machine scheduling paused. Please build the structure as configured",
 
   "config.jade.plugin_civilizationevolution.machine": "Civilization Evolution: Machine Info",

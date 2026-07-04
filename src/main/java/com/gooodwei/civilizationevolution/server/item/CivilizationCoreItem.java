@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution.server.item;
 
 import com.gooodwei.civilizationevolution.api.component.ModDataComponents;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
+import com.gooodwei.civilizationevolution.server.registry.ItemRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -46,6 +47,15 @@ public class CivilizationCoreItem extends Item {
      */
     public static boolean hasUuid(ItemStack stack) {
         return getUuid(stack) != null;
+    }
+
+    /**
+     * 文明核心作为合成材料时，不消耗自身（保留在合成格中）。
+     * 使用运行时引用避免 ItemRegistry 类加载自引用 NPE。
+     */
+    @Override
+    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
+        return new ItemStack(ItemRegistry.CIVILIZATION_CORE.get());
     }
 
     @Override

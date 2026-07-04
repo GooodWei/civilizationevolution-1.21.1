@@ -5,16 +5,18 @@ import net.neoforged.fml.loading.FMLPaths;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * 从 populationMachine.yml 加载人口机器的配置。
+ * 从 civilizationMachine.yml 加载文明机器的配置。
  * 首次启动时自动在 config/civilizationevolution/ 下生成默认文件。
  *
  * <p>使用 Map 驱动架构，新增机器只需：
  * <ol>
- *   <li>在  中添加 key 常量</li>
+ *   <li>添加 key 常量</li>
  *   <li>在 {@link #writeDefaults()} 中添加 yml 段落</li>
  *   <li>添加对应的便捷静态字段（可选）</li>
  * </ol>
@@ -26,10 +28,10 @@ import java.util.Map;
  *   age_increment: 1
  * }</pre>
  */
-public final class PopulationMachineConfig {
+public final class CivilizationMachineConfig {
 
     private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("civilizationevolution");
-    private static final Path CONFIG_FILE = CONFIG_DIR.resolve("populationMachine.yml");
+    private static final Path CONFIG_FILE = CONFIG_DIR.resolve("civilizationMachine.yml");
 
     // ==================== 机器 Key 常量 ====================
 
@@ -47,6 +49,7 @@ public final class PopulationMachineConfig {
     public static final String VILLAGE_FARM = "village_farm";
     public static final String VILLAGE_DOCTOR_CABIN = "village_doctor_cabin";
     public static final String VILLAGE_HARVESTER = "village_harvester";
+    public static final String PRIMITIVE_STORAGE_PIT = "primitive_storage_pit";
 
     // ==================== 内部记录 ====================
 
@@ -62,12 +65,18 @@ public final class PopulationMachineConfig {
                                  int miningHorizontalSize,
                                  int apprenticeExpPerCycle) {}
 
-    /** 文明控制器机器的配置项*/
+    /** 文明控制器机器的配置项 */
     public record ControllerSection(int maxBindCount, int maxBindRange, boolean allowCrossDimension) {}
+
+    /** 储物容器的配置项 */
+    private record StorageSection(List<String> pitWallTags, int maxWidth, int maxHeight) {}
+
+    // ==================== 配置 Map ====================
 
     /** 机器配置表（按配置文件顺序保持 LinkedHashMap） */
     private static final Map<String, MachineSection> SECTIONS = new LinkedHashMap<>();
     private static final Map<String, ControllerSection> CONTROLLERS = new LinkedHashMap<>();
+    private static final Map<String, StorageSection> STORAGE_SECTIONS = new LinkedHashMap<>();
 
     // ==================== 便捷访问器 ====================
 
@@ -197,6 +206,26 @@ public final class PopulationMachineConfig {
         return s != null && s.apprenticeExpPerCycle() > 0 ? s.apprenticeExpPerCycle() : defaultVal;
     }
 
+    // ==================== 储物容器访问器 ====================
+
+    /** 按机器 key 获取墙壁方块标签白名单，未配置时返回空列表（空 = 无白名单） */
+    public static List<String> getWallBlockTags(String machine) {
+        StorageSection s = STORAGE_SECTIONS.get(machine);
+        return s != null ? s.pitWallTags() : List.of();
+    }
+
+    /** 按机器 key 获取最大内部宽度，未配置时默认 7 */
+    public static int getStoragePitMaxWidth(String machine) {
+        StorageSection s = STORAGE_SECTIONS.get(machine);
+        return s != null ? s.maxWidth() : 7;
+    }
+
+    /** 按机器 key 获取最大内部高度，未配置时默认 7 */
+    public static int getStoragePitMaxHeight(String machine) {
+        StorageSection s = STORAGE_SECTIONS.get(machine);
+        return s != null ? s.maxHeight() : 7;
+    }
+
     // ==================== 向后兼容字段（新代码建议直接用上面的方法） ====================
 
     public static int CAMP_WORK_TOTAL_TIME;
@@ -209,7 +238,7 @@ public final class PopulationMachineConfig {
 
     // ==================== 初始化 ====================
 
-    private PopulationMachineConfig() {}
+    private CivilizationMachineConfig() {}
 
     public static void init() {
         try {
@@ -221,7 +250,7 @@ public final class PopulationMachineConfig {
             // 将 Map 值同步到向后兼容的静态字段
             syncLegacyFields();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to initialize populationMachine config", e);
+            throw new RuntimeException("Failed to initialize CivilizationMachine config", e);
         }
     }
 
@@ -239,7 +268,7 @@ public final class PopulationMachineConfig {
 
     private static void writeDefaults() throws IOException {
         String defaults = """
-                # CivilizationEvolution 人口机器配置
+                # CivilizationEvolution 文明机器配置
                 # 工作周期单位为 tick（20 tick = 1 秒）
 
                 camp:
@@ -323,6 +352,14 @@ public final class PopulationMachineConfig {
                   career_exp_threshold: 8
                   # 每次工作周期给学徒的经验量
                   apprentice_exp_per_cycle: 1
+
+                primitive_storage_pit:
+                  # 墙壁方块标签白名单，JSON 数组格式，空 = 任意实心完整方块
+                  pit_wall_block_tags: []
+                  # 最大内部宽度（奇数：3/5/7）
+                  max_interior_width: 7
+                  # 最大内部高度
+                  max_interior_height: 7
 
                 # 控制器配置
                 primitive_controller:
@@ -437,7 +474,7 @@ public final class PopulationMachineConfig {
                   career_exp_threshold: 8
                   # 每次工作周期给学徒的经验量（原始 1 的两倍）
                   apprentice_exp_per_cycle: 2
-                
+
                 village_harvester:
                   #收割间隔tick数
                   work_total_time: 6000
@@ -454,7 +491,7 @@ public final class PopulationMachineConfig {
                   apprentice_exp_per_cycle: 2
                   # 每作物消耗的水量（mB），每桶 = 1000 mB
                   water_per_crop: 10
-                
+
                 village_controller:
                   # 最大可绑定机器数量
                   max_bind_count: 20
@@ -493,6 +530,11 @@ public final class PopulationMachineConfig {
         int maxBindCount = 0;
         int maxBindRange = 0;
         boolean allowCrossDimension = false;
+        // 储物容器字段
+        String pitWallBlockTags = "";
+        int maxInteriorWidth = 7;
+        int maxInteriorHeight = 7;
+        boolean isStorage = false;
 
         for (String line : lines) {
             String trimmed = line.trim();
@@ -501,15 +543,20 @@ public final class PopulationMachineConfig {
             if (trimmed.endsWith(":")) {
                 // 遇到新 section 时先保存上一个
                 if (!currentSection.isEmpty()) {
-                    saveSection(currentSection, isController,
-                            workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
-                            foodPerPopulation,
-                            fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
-                            careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
-                            efficiencyNoWeapon, fedPerTypeMultiplier,
-                            minParentAge, maxParentAge, miningHorizontalSize,
-                            apprenticeExpPerCycle,
-                            maxBindCount, maxBindRange, allowCrossDimension);
+                    if (isStorage) {
+                        STORAGE_SECTIONS.put(currentSection,
+                                new StorageSection(parseJsonArray(pitWallBlockTags), maxInteriorWidth, maxInteriorHeight));
+                    } else {
+                        saveSection(currentSection, isController,
+                                workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
+                                foodPerPopulation,
+                                fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
+                                careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
+                                efficiencyNoWeapon, fedPerTypeMultiplier,
+                                minParentAge, maxParentAge, miningHorizontalSize,
+                                apprenticeExpPerCycle,
+                                maxBindCount, maxBindRange, allowCrossDimension);
+                    }
                 }
                 currentSection = trimmed.substring(0, trimmed.length() - 1).trim();
                 isController = false;
@@ -533,6 +580,10 @@ public final class PopulationMachineConfig {
                 maxBindCount = 10;
                 maxBindRange = 64;
                 allowCrossDimension = false;
+                pitWallBlockTags = "";
+                maxInteriorWidth = 7;
+                maxInteriorHeight = 7;
+                isStorage = false;
                 continue;
             }
 
@@ -559,24 +610,66 @@ public final class PopulationMachineConfig {
                 case "max_parent_age" -> maxParentAge = Integer.parseInt(value);
                 case "mining_horizontal_size" -> miningHorizontalSize = Integer.parseInt(value);
                 case "apprentice_exp_per_cycle" -> apprenticeExpPerCycle = Integer.parseInt(value);
-                case "max_bind_count" -> { maxBindCount = Integer.parseInt(value); isController = true; }
-                case "max_bind_range" -> { maxBindRange = Integer.parseInt(value); isController = true; }
-                case "allow_cross_dimension" -> { allowCrossDimension = Boolean.parseBoolean(value); isController = true; }
+                case "max_bind_count" -> {
+                    maxBindCount = Integer.parseInt(value);
+                    isController = true;
+                }
+                case "max_bind_range" -> {
+                    maxBindRange = Integer.parseInt(value);
+                    isController = true;
+                }
+                case "allow_cross_dimension" -> {
+                    allowCrossDimension = Boolean.parseBoolean(value);
+                    isController = true;
+                }
+                case "pit_wall_block_tags" -> {
+                    pitWallBlockTags = value;
+                    isStorage = true;
+                }
+                case "max_interior_width" -> {
+                    maxInteriorWidth = Integer.parseInt(value);
+                    isStorage = true;
+                }
+                case "max_interior_height" -> {
+                    maxInteriorHeight = Integer.parseInt(value);
+                    isStorage = true;
+                }
             }
         }
 
         // 保存最后一个 section
         if (!currentSection.isEmpty()) {
-            saveSection(currentSection, isController,
-                    workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
-                    foodPerPopulation,
-                    fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
-                    careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
-                    efficiencyNoWeapon, fedPerTypeMultiplier,
-                    minParentAge, maxParentAge, miningHorizontalSize,
-                    apprenticeExpPerCycle,
-                    maxBindCount, maxBindRange, allowCrossDimension);
+            if (isStorage) {
+                STORAGE_SECTIONS.put(currentSection,
+                        new StorageSection(parseJsonArray(pitWallBlockTags), maxInteriorWidth, maxInteriorHeight));
+            } else {
+                saveSection(currentSection, isController,
+                        workTotalTime, ageIncrement, maxAnimalCount, waterPerCrop,
+                        foodPerPopulation,
+                        fluidLavaPerCycle, fluidWaterPerCycle, blocksPerCycleMultiplier,
+                        careerExpThreshold, healthFluctuateMin, healthFluctuateMax,
+                        efficiencyNoWeapon, fedPerTypeMultiplier,
+                        minParentAge, maxParentAge, miningHorizontalSize,
+                        apprenticeExpPerCycle,
+                        maxBindCount, maxBindRange, allowCrossDimension);
+            }
         }
+    }
+
+    /**
+     * 解析 JSON 风格的字符串数组，如 '["a", "b"]'
+     */
+    private static List<String> parseJsonArray(String raw) {
+        if (raw == null || raw.isBlank() || raw.equals("[]")) return List.of();
+        String inner = raw.trim();
+        if (inner.startsWith("[")) inner = inner.substring(1);
+        if (inner.endsWith("]")) inner = inner.substring(0, inner.length() - 1);
+        if (inner.isBlank()) return List.of();
+        return Arrays.stream(inner.split(","))
+                .map(String::trim)
+                .map(s -> s.replaceAll("^\"|\"$", "")) // 去掉首尾双引号
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 
     /** 根据 section 类型保存到对应的 Map */

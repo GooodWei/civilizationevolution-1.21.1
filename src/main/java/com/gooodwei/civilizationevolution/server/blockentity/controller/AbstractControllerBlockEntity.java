@@ -7,7 +7,7 @@ import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.network.SyncMachineListPayload;
 import com.gooodwei.civilizationevolution.server.block.controller.AbstractControllerBlock;
 import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CivilizationCoreData;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
@@ -443,7 +443,7 @@ public abstract class AbstractControllerBlockEntity
 
     @Override
     public int getMaxBindCount() {
-        return PopulationMachineConfig.getMaxBindCount(getControllerType());
+        return CivilizationMachineConfig.getMaxBindCount(getControllerType());
     }
 
     @Override
@@ -493,7 +493,7 @@ public abstract class AbstractControllerBlockEntity
             return false;
         }
         // 距离检查：机器必须在控制器的最大绑定范围内
-        int maxRange = PopulationMachineConfig.getMaxBindRange(getControllerType());
+        int maxRange = CivilizationMachineConfig.getMaxBindRange(getControllerType());
         if (maxRange > 0 && !pos.closerThan(getBlockPos(), maxRange + 1)) {
             CivilizationEvolution.LOGGER.warn("bindMachine 失败：距离超出范围，机位={}，控制器={}，距离={}，最大={}",
                     pos, getBlockPos(), Math.sqrt(pos.distSqr(getBlockPos())), maxRange);
@@ -547,7 +547,7 @@ public abstract class AbstractControllerBlockEntity
         this.workProgress++;
 
         // 缓存最大绑定距离，避免循环内重复查询配置
-        int maxRange = PopulationMachineConfig.getMaxBindRange(getControllerType());
+        int maxRange = CivilizationMachineConfig.getMaxBindRange(getControllerType());
 
         for (CivilizationCoreData.BoundMachineEntry bm : coreData.getBoundMachines()) {
             if (!bm.enabled || !level.isLoaded(bm.getBlockPos())) continue;

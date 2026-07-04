@@ -5,6 +5,7 @@ import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
 import com.gooodwei.civilizationevolution.api.IPopulationMachine;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.blockentity.controller.AbstractControllerBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveStoragePitBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -53,6 +54,20 @@ public class MachineDataProvider implements IServerDataProvider<BlockAccessor> {
         // 再尝试从 IPopulationMachine（范围机器）获取
         if (tier == null && be instanceof IPopulationMachine machine) {
             tier = machine.getTier();
+        }
+
+        // ---- 储物坑（非 IPopulationMachine，单独处理） ----
+        if (be instanceof PrimitiveStoragePitBlockEntity pit) {
+            if (accessor.getBlock() instanceof com.gooodwei.civilizationevolution.server.block.machine.PrimitiveStoragePit block) {
+                tier = block.getTier();
+            }
+            if (pit.isStructureFormed()) {
+                data.putBoolean("IsStoragePit", true);
+                data.putInt("StorageUsed", pit.getUsedSlotCount());
+                data.putInt("StorageTotal", pit.getContainerSize());
+                data.putInt("StorageWidth", pit.getInteriorWidth());
+                data.putInt("StorageHeight", pit.getInteriorHeight());
+            }
         }
 
         // 未取到 Tier → 不是本模组的方块，跳过

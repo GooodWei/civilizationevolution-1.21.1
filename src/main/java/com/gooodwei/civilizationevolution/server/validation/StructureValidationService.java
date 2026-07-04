@@ -150,7 +150,7 @@ public final class StructureValidationService {
                     }
                 });
             } catch (Exception e) {
-                CivilizationEvolution.LOGGER.error("后台结构验证异常", e);
+                // CivilizationEvolution.LOGGER.error("后台结构验证异常", e);
                 level.getServer().execute(() -> PENDING.remove(machine));
             }
         });
@@ -220,8 +220,9 @@ public final class StructureValidationService {
 
                     IMultiBlockPart part = resolvePartFromChunk(chunk, worldPos);
                     if (part != null) {
+                        BlockPos owner = part.getOwningController(level, worldPos);
                         outSnapshots.put(worldPos, new PartSnapshot(
-                                part.getPartType(), part.getPartTier().getLevel()));
+                                part.getPartType(), part.getPartTier().getLevel(), owner));
                     }
                 }
             }
@@ -312,6 +313,12 @@ public final class StructureValidationService {
                             if (snapshot != null
                                     && snapshot.tierLevel <= controllerTier.getLevel()
                                     && snapshot.partType.equals(typeStr)) {
+                                // 检查零件认领（非共享模式下，已被其他控制器认领时跳过此类型）
+                                if (snapshot.owningController != null
+                                        && !snapshot.owningController.equals(controllerPos)
+                                        && !pattern.shareable()) {
+                                    continue;
+                                }
                                 matched = true;
                                 matchedTypeStr = typeStr;
                                 break;
@@ -457,7 +464,8 @@ public final class StructureValidationService {
     // ==================== 内部类型 ====================
 
     /** IMultiBlockPart 位置的主线程快照（不可变） */
-    private record PartSnapshot(String partType, int tierLevel) {}
+    private record PartSnapshot(String partType, int tierLevel,
+                                 @org.jetbrains.annotations.Nullable BlockPos owningController) {}
 
     /** 后台验证结果 */
     private static class ValidationResult {

@@ -4,7 +4,7 @@ import com.gooodwei.civilizationevolution.api.IClientUpdateReceiver;
 import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.menu.machine.VillageQuarryMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -57,7 +57,7 @@ public class VillageQuarryBlockEntity extends AbstractQuarryBlockEntity
 
     @Override
     public String getConfigKey() {
-        return PopulationMachineConfig.VILLAGE_QUARRY;
+        return CivilizationMachineConfig.VILLAGE_QUARRY;
     }
 
     @Override
@@ -75,12 +75,12 @@ public class VillageQuarryBlockEntity extends AbstractQuarryBlockEntity
 
     @Override
     public int getWorkTotalTime() {
-        return PopulationMachineConfig.getWorkTotalTime(getConfigKey());
+        return CivilizationMachineConfig.getWorkTotalTime(getConfigKey());
     }
 
     @Override
     public int getAgeIncrement() {
-        return PopulationMachineConfig.getAgeIncrement(getConfigKey());
+        return CivilizationMachineConfig.getAgeIncrement(getConfigKey());
     }
 
     // ==================== serverTick ====================

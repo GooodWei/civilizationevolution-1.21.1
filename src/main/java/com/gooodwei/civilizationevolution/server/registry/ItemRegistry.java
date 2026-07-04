@@ -3,6 +3,8 @@ package com.gooodwei.civilizationevolution.server.registry;
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.server.item.*;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -38,9 +40,9 @@ public class ItemRegistry {
             ITEMS.registerItem("primitive_controller", properties ->
                     new TieredBlockItem(BlockRegistry.PRIMITIVE_CONTROLLER.get(), properties));
 
-    /** 文明核心 —— 控制器的数据存储介质，携带 UUID，最大堆叠 1 */
+    /** 文明核心 —— 控制器的数据存储介质，携带 UUID，最大堆叠 1。craftRemainder 在 CivilizationCoreItem 中覆写以避免静态初始化自引用 */
     public static final DeferredItem<CivilizationCoreItem> CIVILIZATION_CORE =
-            ITEMS.registerItem("civilization_core", CivilizationCoreItem::new);
+            ITEMS.registerItem("civilization_core", CivilizationCoreItem::new, new Item.Properties().rarity(Rarity.EPIC));
 
     /** 文明核心提取器 —— 从已绑定核心的机器中提取核心 UUID，最大堆叠 1 */
     public static final DeferredItem<CivilizationCoreExtractorItem> CIVILIZATION_CORE_EXTRACTOR =
@@ -179,6 +181,14 @@ public class ItemRegistry {
     public static final DeferredItem<BlockItem> VILLAGE_DOCTOR_CABIN =
             ITEMS.registerItem("village_doctor_cabin", properties ->
                     new TieredBlockItem(BlockRegistry.VILLAGE_DOCTOR_CABIN.get(), properties));
+
+    public static final DeferredItem<BlockItem> VILLAGE_HARVESTER =
+            ITEMS.registerItem("village_harvester", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_HARVESTER.get(), properties));
+
+    public static final DeferredItem<BlockItem> PRIMITIVE_STORAGE_PIT =
+            ITEMS.registerItem("primitive_storage_pit", properties ->
+                    new TieredBlockItem(BlockRegistry.PRIMITIVE_STORAGE_PIT_BLOCK.get(), properties));
 
     /**
      * 向事件总线注册所有物品。

@@ -190,9 +190,11 @@ public abstract class AbstractMachineBlock extends BaseEntityBlock {
             if (be instanceof IMultiBlockMachine mbe && mbe.hasParseError()) {
                 player.sendSystemMessage(Component.literal(mbe.getParseError()).withStyle(ChatFormatting.RED));
             }
-            // 检查多方块结构是否未成型 → 红字提醒（解析错误已单独提示，此处不重复）
-            if (be instanceof IMultiBlockMachine mbe && !mbe.isStructureFormed() && !mbe.hasParseError()) {
-                player.sendSystemMessage(Component.translatable("msg.civilizationevolution.structure_not_formed").withStyle(ChatFormatting.RED));
+
+            // 多方块结构未成型 → 在客户端动作栏显示提示
+            if (be instanceof IMultiBlockMachine mbe && !mbe.isStructureFormed()) {
+                player.displayClientMessage(
+                        Component.translatable("msg.civilizationevolution.structure_incomplete"), true);
             }
 
             preOpenMenu(level, pos);

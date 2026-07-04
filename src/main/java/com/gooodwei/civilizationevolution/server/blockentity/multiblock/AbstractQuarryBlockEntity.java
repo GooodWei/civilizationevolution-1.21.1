@@ -6,7 +6,7 @@ import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.block.part.MiningShaftPipe;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFluidHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFoodInputHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import com.gooodwei.civilizationevolution.server.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
@@ -92,22 +92,22 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
     /** 每次工作周期给学徒的经验量，优先从配置读取 */
     protected int getApprenticeExpPerCycle() {
-        return PopulationMachineConfig.getApprenticeExpPerCycle(getConfigKey(), 1);
+        return CivilizationMachineConfig.getApprenticeExpPerCycle(getConfigKey(), 1);
     }
 
     /** 每次工作消耗的岩浆量（mB），优先从配置读取 */
     protected int getFluidLavaPerCycle() {
-        return PopulationMachineConfig.getFluidLavaPerCycle(getConfigKey(), 100);
+        return CivilizationMachineConfig.getFluidLavaPerCycle(getConfigKey(), 100);
     }
 
     /** 每次工作消耗的水量（mB），优先从配置读取 */
     protected int getFluidWaterPerCycle() {
-        return PopulationMachineConfig.getFluidWaterPerCycle(getConfigKey(), 100);
+        return CivilizationMachineConfig.getFluidWaterPerCycle(getConfigKey(), 100);
     }
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
     protected int getFoodPerPopulation() {
-        return PopulationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
+        return CivilizationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
     }
 
     /**
@@ -115,7 +115,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
      * 优先从配置读取。
      */
     protected int getBlocksPerCycleMultiplier() {
-        return PopulationMachineConfig.getBlocksPerCycleMultiplier(getConfigKey(), 2);
+        return CivilizationMachineConfig.getBlocksPerCycleMultiplier(getConfigKey(), 2);
     }
 
     /**
@@ -123,17 +123,17 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
      * 优先从配置读取，子类可覆写。
      */
     protected int getMiningHorizontalSize() {
-        return PopulationMachineConfig.getMiningHorizontalSize(getConfigKey(), 16);
+        return CivilizationMachineConfig.getMiningHorizontalSize(getConfigKey(), 16);
     }
 
     /** 健康度波动下限，优先从配置读取 */
     protected int getHealthFluctuateMin() {
-        return PopulationMachineConfig.getHealthFluctuateMin(getConfigKey(), -1);
+        return CivilizationMachineConfig.getHealthFluctuateMin(getConfigKey(), -1);
     }
 
     /** 健康度波动上限，优先从配置读取 */
     protected int getHealthFluctuateMax() {
-        return PopulationMachineConfig.getHealthFluctuateMax(getConfigKey(), 0);
+        return CivilizationMachineConfig.getHealthFluctuateMax(getConfigKey(), 0);
     }
 
     // ==================== 管道位置 ====================
@@ -179,7 +179,6 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
             BlockEntity be = level.getBlockEntity(hatchPos);
             if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractPopulationInputHatchBlockEntity hatch))
                 continue;
-
             ItemStack stack = hatch.getItem(0);
             if (stack.isEmpty() || !(stack.getItem() instanceof PopulationItem)) continue;
 
@@ -266,7 +265,6 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
         for (BlockPos hatchPos : getFoodHatches()) {
             if (collected >= totalNeeded) break;
             if (!(level.getBlockEntity(hatchPos) instanceof AbstractFoodInputHatchBlockEntity hatch)) continue;
-
             ItemStack stack = hatch.getItem(0);
             if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
 
@@ -283,7 +281,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
         if (collected == 0) return 0.5f; // 无食物 → 50% 效率
 
-        // 第二遍：实际消耗
+        // 第二遍：实际消耗（需要重新锁定）
         for (FoodEntry entry : consumed) {
             if (level.getBlockEntity(entry.pos()) instanceof AbstractFoodInputHatchBlockEntity hatch) {
                 hatch.getItem(0).shrink(entry.count());
@@ -328,7 +326,7 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
 
         if (available.isEmpty()) return;
 
-        // 每人消耗 1 份食物，累加饱食度
+        // 每人消耗 1 份食物，累加饱食度（需要重新锁定）
         for (int i = 0; i < workers.size() && i < available.size(); i++) {
             ItemStack workerStack = workers.get(i);
             FoodItem foodItem = available.get(i);

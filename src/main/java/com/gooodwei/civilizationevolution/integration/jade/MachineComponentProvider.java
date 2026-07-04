@@ -92,6 +92,18 @@ public class MachineComponentProvider implements IBlockComponentProvider {
             }
         }
         // 仓室、结构外壳等纯 IMultiBlockPart → 仅显示 Tier 行，不显示绑定信息
+
+        // ---- 储物坑：显示已使用槽位 / 总槽位 ----
+        if (data.getBoolean("IsStoragePit")) {
+            int used = data.getInt("StorageUsed");
+            int total = data.getInt("StorageTotal");
+            int width = data.getInt("StorageWidth");
+            int height = data.getInt("StorageHeight");
+            String info = width + "×" + width + "×" + height + "  "
+                    + Component.translatable("gui.civilizationevolution.used_slots").getString()
+                    + " " + used + "/" + total;
+            tooltip.add(Component.literal(info));
+        }
     }
 
     @Override

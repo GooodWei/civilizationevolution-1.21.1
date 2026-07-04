@@ -42,8 +42,7 @@ public class VillageDoctorCabin extends AbstractMachineBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new VillageDoctorCabinBlockEntity(
-                BlockEntityRegistry.VILLAGE_DOCTOR_CABIN.get(), pos, state);
+        return new VillageDoctorCabinBlockEntity(pos, state);
     }
 
     @Override

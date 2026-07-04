@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution;
 
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
 import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.PartOwnershipTracker;
 import com.gooodwei.civilizationevolution.api.PreviewBlockInfo;
 import com.gooodwei.civilizationevolution.api.career.Career;
 import com.gooodwei.civilizationevolution.api.tier.CivilizationTiers;
@@ -10,9 +11,9 @@ import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.network.StructurePreviewPayload;
 import com.gooodwei.civilizationevolution.server.career.initial.*;
 import com.gooodwei.civilizationevolution.server.config.CareerConfig;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
 import com.gooodwei.civilizationevolution.server.config.PopulationConfig;
-import com.gooodwei.civilizationevolution.server.config.PopulationMachineConfig;
 import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
@@ -22,6 +23,7 @@ import com.gooodwei.civilizationevolution.server.registry.Registry;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -33,6 +35,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -49,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>初始化顺序：
  * <ol>
- *   <li>加载 {@link PopulationConfig} 和 {@link PopulationMachineConfig}</li>
+ *   <li>加载 {@link PopulationConfig} 和 {@link CivilizationMachineConfig}</li>
  *   <li>注册所有初始职业</li>
  *   <li>注册方块、物品、BE、菜单、创造标签页</li>
  *   <li>注册网络 Payload 处理器</li>
@@ -77,7 +80,7 @@ public class CivilizationEvolution {
     public CivilizationEvolution(IEventBus modEventBus, ModContainer modContainer) {
         // 初始化配置
         PopulationConfig.init();
-        PopulationMachineConfig.init();
+        CivilizationMachineConfig.init();
         MultiBlockConfig.init();
 
         // 初始化所有职业（构造函数会自动注册到内部注册表中）
@@ -201,6 +204,19 @@ public class CivilizationEvolution {
     public void onServerStopping(ServerStoppingEvent event) {
         CoreDataManager.saveAll();
         com.gooodwei.civilizationevolution.server.validation.StructureValidationService.shutdown();
+    }
+
+    /**
+     * 世界卸载事件：清除该维度的零件认领记录。
+     *
+     * <p>防止 {@link PartOwnershipTracker} 中残留过期条目。
+     * 例如玩家离开末地时，末地维度中的所有外壳方块认领记录将被清除。
+     */
+    @SubscribeEvent
+    public void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof Level level) {
+            PartOwnershipTracker.clearDimension(level);
+        }
     }
 
     /**

@@ -67,6 +67,8 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.VILLAGE_RANCH.get());
                         output.accept(ItemRegistry.VILLAGE_FARM.get());
                         output.accept(ItemRegistry.VILLAGE_DOCTOR_CABIN.get());
+                        output.accept(ItemRegistry.VILLAGE_HARVESTER.get());
+                        output.accept(ItemRegistry.PRIMITIVE_STORAGE_PIT.get());
 
                     }).build());
 

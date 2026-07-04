@@ -7,6 +7,7 @@ import com.gooodwei.civilizationevolution.server.blockentity.controller.Abstract
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.multiblock.AbstractMultiBlockMachineBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveStoragePitBlockEntity;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
 import snownee.jade.api.IWailaPlugin;
@@ -39,6 +40,9 @@ public class CivEvoJadePlugin implements IWailaPlugin {
         // 多方块机器 BE（VillageQuarry、DoctorCabin 等）
         registration.registerBlockDataProvider(
                 MachineDataProvider.INSTANCE, AbstractMultiBlockMachineBlockEntity.class);
+        // 储物坑 BE（非 IPopulationMachine，需单独注册）
+        registration.registerBlockDataProvider(
+                MachineDataProvider.INSTANCE, PrimitiveStoragePitBlockEntity.class);
     }
 
     @Override
@@ -52,5 +56,6 @@ public class CivEvoJadePlugin implements IWailaPlugin {
         // 多方块结构零件（控制器方块、结构外壳等，部分无 BE）
         registration.registerBlockComponent(
                 MachineComponentProvider.INSTANCE, AbstractMultiBlockPart.class);
+        // PrimitiveStoragePit 已继承 AbstractMachineBlock（已注册），无需重复注册
     }
 }
