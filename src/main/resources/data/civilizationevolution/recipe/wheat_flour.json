@@ -1,0 +1,24 @@
+{
+  "type": "civilizationevolution:grinding",
+  "input": {
+    "item": "minecraft:wheat"
+  },
+  "min_handle_tier": 1,
+  "work_time": 400,
+  "output": [
+    {
+      "item": {
+        "id": "civilizationevolution:wheat_flour",
+        "count": 2
+      },
+      "allow_extra_output_tier": 1
+    },
+    {
+      "item": {
+        "id": "minecraft:wheat_seeds",
+        "count": 1
+      },
+      "allow_extra_output_tier": 1
+    }
+  ]
+}
