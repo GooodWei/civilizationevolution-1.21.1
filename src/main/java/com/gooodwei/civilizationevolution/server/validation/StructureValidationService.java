@@ -191,7 +191,9 @@ public final class StructureValidationService {
                     if (kd == null) continue;
 
                     // 检查 primary key 或其 alternatives 是否需要收集零件快照
+                    // 方块类型、Block Tag 类型、self 类型均不需要快照（直接读 BlockState）
                     boolean needsPartSnapshot = !IMultiBlockMachine.isBlockOrTagType(kd.type())
+                            && !IMultiBlockMachine.isTagType(kd.type())
                             && !"self".equals(kd.type());
                     if (!needsPartSnapshot) {
                         // primary 是方块/Tag/self 类型，但 alternatives 可能引用零件类型
@@ -199,6 +201,7 @@ public final class StructureValidationService {
                             IMultiBlockMachine.KeyDefinition altDef = pattern.keyDefs().get(alt);
                             if (altDef != null
                                     && !IMultiBlockMachine.isBlockOrTagType(altDef.type())
+                                    && !IMultiBlockMachine.isTagType(altDef.type())
                                     && !"self".equals(altDef.type())) {
                                 needsPartSnapshot = true;
                                 break;
@@ -288,25 +291,26 @@ public final class StructureValidationService {
                     String matchedTypeStr = null;
 
                     for (String typeStr : allowedTypes) {
-                        if (IMultiBlockMachine.isBlockOrTagType(typeStr)) {
+                        if (IMultiBlockMachine.isTagType(typeStr)) {
+                            // Block Tag 匹配（必须放在 isBlockOrTagType 之前，后者对 "tag:" 类型返回 false）
                             BlockState blockState = chunk.getBlockState(worldPos);
-                            if (IMultiBlockMachine.isTagType(typeStr)) {
-                                String tagStr = typeStr.substring(4);
-                                TagKey<Block> tagKey = TagKey.create(Registries.BLOCK,
-                                        ResourceLocation.parse(tagStr));
-                                if (blockState.is(tagKey)) {
-                                    matched = true;
-                                    matchedTypeStr = typeStr;
-                                    break;
-                                }
-                            } else {
-                                String blockName = BuiltInRegistries.BLOCK
-                                        .getKey(blockState.getBlock()).toString();
-                                if (blockName.equals(typeStr)) {
-                                    matched = true;
-                                    matchedTypeStr = typeStr;
-                                    break;
-                                }
+                            String tagStr = typeStr.substring(4);
+                            TagKey<Block> tagKey = TagKey.create(Registries.BLOCK,
+                                    ResourceLocation.parse(tagStr));
+                            if (blockState.is(tagKey)) {
+                                matched = true;
+                                matchedTypeStr = typeStr;
+                                break;
+                            }
+                        } else if (IMultiBlockMachine.isBlockOrTagType(typeStr)) {
+                            // 方块注册名匹配（含 ":" 且非 "tag:" 开头）
+                            BlockState blockState = chunk.getBlockState(worldPos);
+                            String blockName = BuiltInRegistries.BLOCK
+                                    .getKey(blockState.getBlock()).toString();
+                            if (blockName.equals(typeStr)) {
+                                matched = true;
+                                matchedTypeStr = typeStr;
+                                break;
                             }
                         } else {
                             // 零件类型 → 从主线程快照查找
@@ -333,7 +337,8 @@ public final class StructureValidationService {
 
                     allParts.add(worldPos);
                     if (matchedTypeStr != null) {
-                        if (IMultiBlockMachine.isBlockOrTagType(matchedTypeStr)) {
+                        if (IMultiBlockMachine.isBlockOrTagType(matchedTypeStr)
+                                || IMultiBlockMachine.isTagType(matchedTypeStr)) {
                             casingPositions.add(worldPos);
                         } else {
                             switch (matchedTypeStr) {
