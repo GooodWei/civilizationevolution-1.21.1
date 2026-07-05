@@ -3,6 +3,7 @@
 
   "item.civilizationevolution.population": "Population",
   "item.civilizationevolution.recruiter": "Recruiter",
+  "item.civilizationevolution.wheat_flour": "Wheat Flour",
   "item.civilizationevolution.connector": "Connector",
   "tooltip.civilizationevolution.connector.bound_uuid": "Bound Core UUID: %s",
   "item.civilizationevolution.projector": "Multi-Block Structure Projector",

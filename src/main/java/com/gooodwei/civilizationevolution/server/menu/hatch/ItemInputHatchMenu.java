@@ -10,18 +10,27 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 物品输入接口的菜单（Primitive + Village 共用）。
+ * 物品输入接口的菜单（Primitive 用）。
  *
- * <p>1 个普通槽位（接受任意物品）+ 玩家背包 + 快捷栏。
+ * <p>4 个槽位（2×2 网格）+ 玩家背包 + 快捷栏。
  */
 public class ItemInputHatchMenu extends AbstractHatchMenu {
 
-    private static final int SLOT_X = 80;
-    private static final int SLOT_Y = 35;
+    private static final int COLS = 2;
+    private static final int ROWS = 2;
+    static final int CONTAINER_SIZE = 4;
+    private static final int START_X = 62;
+    private static final int SLOT_Y = 26;
 
     public ItemInputHatchMenu(int containerId, Inventory playerInventory, Container container) {
         super(MenuRegistry.ITEM_INPUT_HATCH_MENU.get(), containerId, container);
-        this.addSlot(new Slot(container, 0, SLOT_X, SLOT_Y));
+
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                this.addSlot(new Slot(container, col + row * COLS, START_X + col * 18, SLOT_Y + row * 18));
+            }
+        }
+
         addPlayerSlots(playerInventory, 84);
     }
 
@@ -33,11 +42,11 @@ public class ItemInputHatchMenu extends AbstractHatchMenu {
             return new ItemInputHatchMenu(containerId, playerInventory, container);
         }
         // BE 不在场时返回带空容器的占位菜单（防止客户端 NPE）
-        return new ItemInputHatchMenu(containerId, playerInventory, new SimpleContainer(1));
+        return new ItemInputHatchMenu(containerId, playerInventory, new SimpleContainer(CONTAINER_SIZE));
     }
 
     @Override
     protected int machineSlotCount() {
-        return 1;
+        return CONTAINER_SIZE;
     }
 }

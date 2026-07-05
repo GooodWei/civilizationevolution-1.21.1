@@ -13,12 +13,12 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 原始物品输出接口 —— Tier 0。
  *
- * <p>1 个槽位，不接受外部放入（仅代码产出）。
+ * <p>4 个槽位，不接受外部放入（仅代码产出）。
  */
 public class PrimitiveItemOutputHatchBlockEntity extends AbstractItemOutputHatchBlockEntity {
 
     public PrimitiveItemOutputHatchBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(type, pos, state, 1);
+        super(type, pos, state, 4);
     }
 
     @Override

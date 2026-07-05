@@ -25,6 +25,10 @@ public class ItemRegistry {
     public static final DeferredItem<Recruiter> RECRUITER =
             ITEMS.registerItem("recruiter", properties -> new Recruiter(properties.stacksTo(1)));
 
+    /** 小麦粉 —— 研磨小麦的产物，最大堆叠 64 */
+    public static final DeferredItem<Item> WHEAT_FLOUR =
+            ITEMS.registerItem("wheat_flour", Item::new);
+
     /** 原始营地方块物品（Tier 0：原始时代） */
     public static final DeferredItem<BlockItem> PRIMITIVE_CAMP_BLOCK_ITEM =
             ITEMS.registerItem("primitive_camp", properties ->

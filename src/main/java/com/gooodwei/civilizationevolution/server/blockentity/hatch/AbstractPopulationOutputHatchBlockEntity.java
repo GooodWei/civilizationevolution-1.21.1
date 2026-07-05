@@ -30,7 +30,7 @@ public abstract class AbstractPopulationOutputHatchBlockEntity extends AbstractH
 
     @Override
     public String getPartType() {
-        return TYPE_OUTPUT_HATCH;
+        return TYPE_POPULATION_OUTPUT_HATCH;
     }
 
     @Override

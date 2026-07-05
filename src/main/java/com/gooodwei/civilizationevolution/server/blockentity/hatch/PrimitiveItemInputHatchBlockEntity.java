@@ -13,12 +13,12 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 原始物品输入接口 —— Tier 0。
  *
- * <p>1 个槽位，接受任意物品。
+ * <p>4 个槽位，接受任意物品。
  */
 public class PrimitiveItemInputHatchBlockEntity extends AbstractItemInputHatchBlockEntity {
 
     public PrimitiveItemInputHatchBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(type, pos, state, 1);
+        super(type, pos, state, 4);
     }
 
     @Override

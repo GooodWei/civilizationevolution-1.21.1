@@ -44,8 +44,10 @@ public class MultiBlockState {
     public String parseError;
 
     /** 结构零件位置缓存（世界坐标），按角色分类。每次 validateStructure() 成功后重建 */
-    public final List<BlockPos> inputHatches = new ArrayList<>();
-    public final List<BlockPos> outputHatches = new ArrayList<>();
+    public final List<BlockPos> populationInputHatches = new ArrayList<>();
+    public final List<BlockPos> populationOutputHatches = new ArrayList<>();
+    public final List<BlockPos> itemInputHatches = new ArrayList<>();
+    public final List<BlockPos> itemOutputHatches = new ArrayList<>();
     public final List<BlockPos> foodHatches = new ArrayList<>();
     public final List<BlockPos> fluidInputHatches = new ArrayList<>();
     public final List<BlockPos> fluidOutputHatches = new ArrayList<>();
@@ -84,12 +86,14 @@ public class MultiBlockState {
 
     /** 清除所有零件位置缓存和解析缓存 */
     public void clearPartCaches() {
-        inputHatches.clear();
-        outputHatches.clear();
+        populationInputHatches.clear();
+        populationOutputHatches.clear();
         foodHatches.clear();
         fluidInputHatches.clear();
         fluidOutputHatches.clear();
         casingPositions.clear();
         allPartPositions.clear();
+        itemInputHatches.clear();
+        itemOutputHatches.clear();
     }
 }

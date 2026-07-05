@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * 物品输入接口的抽象 BE。
  *
  * <p>接受任意物品，堆叠上限 64。
- * 槽位数由子类通过构造器参数决定（Primitive 为 1，Village 为 27）。
+ * 槽位数由子类通过构造器参数决定（Primitive 为 4，Village 为 9）。
  */
 public abstract class AbstractItemInputHatchBlockEntity extends AbstractHatchBlockEntity {
 
@@ -30,7 +30,7 @@ public abstract class AbstractItemInputHatchBlockEntity extends AbstractHatchBlo
 
     @Override
     public String getPartType() {
-        return TYPE_INPUT_HATCH;
+        return TYPE_ITEM_INPUT_HATCH;
     }
 
     @Override

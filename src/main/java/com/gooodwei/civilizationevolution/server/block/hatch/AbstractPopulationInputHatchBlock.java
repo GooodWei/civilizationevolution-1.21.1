@@ -29,6 +29,6 @@ public abstract class AbstractPopulationInputHatchBlock extends AbstractHatchBlo
 
     @Override
     public String getPartType() {
-        return TYPE_INPUT_HATCH;
+        return TYPE_POPULATION_INPUT_HATCH;
     }
 }

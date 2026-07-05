@@ -18,7 +18,7 @@ import com.gooodwei.civilizationevolution.server.coredata.CoreDataManager;
 import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
 import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
-import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
+import com.gooodwei.civilizationevolution.server.registry.CapabilityRegistry;
 import com.gooodwei.civilizationevolution.server.registry.ModRecipeTypes;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
 import com.gooodwei.civilizationevolution.server.validation.StructureValidationService;
@@ -32,8 +32,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -94,7 +92,7 @@ public class CivilizationEvolution {
         // 注册 commonSetup 方法和网络处理器
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(NetworkHandler::register);
-        modEventBus.addListener(this::registerCapabilities);
+        modEventBus.addListener(CapabilityRegistry::registerCapabilities);
         ModRecipeTypes.register(modEventBus);
 
         // 注册自身以监听服务器事件（onServerStarting / onServerStarted / onServerStopping）
@@ -145,59 +143,6 @@ public class CivilizationEvolution {
     /** 模组通用初始化（逻辑端通用的设置） */
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("HELLO FROM COMMON SETUP");
-    }
-
-    /**
-     * 注册方块实体的能力（Capability）。
-     *
-     * <p>为农场方块（原始农场、村庄农场）和流体仓室注册
-     * {@link Capabilities.FluidHandler#BLOCK} 流体能力，
-     * 使所有物流模组（Pipez、Mekanism、AE2、Integrated Dynamics 等）的管道
-     * 均能通过 NeoForge 标准接口向储水罐输入水。
-     *
-     * @param event 能力注册事件
-     */
-    private void registerCapabilities(RegisterCapabilitiesEvent event) {
-        // 为原始农场注册流体能力（所有方向均可输入水）
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                BlockEntityRegistry.PRIMITIVE_FARM.get(),
-                (be, direction) -> be.getFluidHandler()
-        );
-        // 为村庄农场注册流体能力（所有方向均可输入水）
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                BlockEntityRegistry.VILLAGE_FARM.get(),
-                (be, direction) -> be.getFluidHandler()
-        );
-        // 为四个流体仓室注册流体能力
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                BlockEntityRegistry.PRIMITIVE_FLUID_INPUT_HATCH.get(),
-                (be, direction) -> be.getFluidHandler()
-        );
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                BlockEntityRegistry.VILLAGE_FLUID_INPUT_HATCH.get(),
-                (be, direction) -> be.getFluidHandler()
-        );
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                BlockEntityRegistry.PRIMITIVE_FLUID_OUTPUT_HATCH.get(),
-                (be, direction) -> be.getFluidHandler()
-        );
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                BlockEntityRegistry.VILLAGE_FLUID_OUTPUT_HATCH.get(),
-                (be, direction) -> be.getFluidHandler()
-        );
-        // 为村庄收割机注册流体能力（所有方向均可输入水）
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                BlockEntityRegistry.VILLAGE_HARVESTER.get(),
-                (be, direction) -> be.getFluidHandler()
-        );
-        LOGGER.info("已注册农场和流体仓室流体能力（Capabilities.FluidHandler.BLOCK）");
     }
 
     /** 服务器启动中事件：日志输出 */

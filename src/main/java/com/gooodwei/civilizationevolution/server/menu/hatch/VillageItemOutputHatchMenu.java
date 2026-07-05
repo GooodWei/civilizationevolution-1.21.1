@@ -10,17 +10,18 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 村庄物品输出接口菜单（27 槽潜影盒布局）。
+ * 村庄物品输出接口菜单（9 槽 3×3 布局）。
  *
- * <p>3 行 × 9 列物品槽位 + 玩家背包 + 快捷栏。
+ * <p>3 行 × 3 列物品槽位 + 玩家背包 + 快捷栏。
  * 槽位拒绝外部放入（由 {@code canPlaceItem} 限制），仅代码产出可写入。
  * 布局与 {@link VillageItemInputHatchMenu} 完全一致。
  */
 public class VillageItemOutputHatchMenu extends AbstractHatchMenu {
 
-    private static final int COLS = 9;
+    private static final int COLS = 3;
     private static final int ROWS = 3;
-    static final int CONTAINER_SIZE = 27;
+    static final int CONTAINER_SIZE = 9;
+    private static final int START_X = 62;
     private static final int SLOT_Y = 18;
     private static final int INVENTORY_Y = 85;
 
@@ -29,7 +30,7 @@ public class VillageItemOutputHatchMenu extends AbstractHatchMenu {
 
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
-                this.addSlot(new Slot(container, col + row * COLS, 8 + col * 18, SLOT_Y + row * 18) {
+                this.addSlot(new Slot(container, col + row * COLS, START_X + col * 18, SLOT_Y + row * 18) {
                     @Override
                     public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                         return false;

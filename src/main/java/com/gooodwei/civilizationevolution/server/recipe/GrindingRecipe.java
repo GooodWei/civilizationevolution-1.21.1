@@ -25,6 +25,7 @@ import java.util.Optional;
  *   "type": "civilizationevolution:grinding",
  *   "input": { "item": "minecraft:wheat" },
  *   "min_handle_tier": 1,
+ *   "work_time": 300,
  *   "output": [
  *     {
  *       "item": { "id": "minecraft:sugar", "count": 2 },
@@ -48,9 +49,10 @@ import java.util.Optional;
  * @param input         输入原料
  * @param output        研磨产物列表
  * @param minHandleTier 处理此配方所需的最低机器 Tier
+ * @param workTime      完成此配方所需的工作时间（tick）
  */
 public record GrindingRecipe(Ingredient input, List<GrindingOutput> output,
-                             int minHandleTier) implements Recipe<GrindingRecipeInput> {
+                             int minHandleTier, int workTime) implements Recipe<GrindingRecipeInput> {
 
     // ==================== Codec（JSON 序列化） ====================
 
@@ -59,7 +61,8 @@ public record GrindingRecipe(Ingredient input, List<GrindingOutput> output,
                     instance.group(
                             Ingredient.CODEC.fieldOf("input").forGetter(GrindingRecipe::input),
                             GrindingOutput.CODEC.codec().listOf().fieldOf("output").forGetter(GrindingRecipe::output),
-                            Codec.INT.optionalFieldOf("min_handle_tier", 0).forGetter(GrindingRecipe::minHandleTier))
+                            Codec.INT.optionalFieldOf("min_handle_tier", 0).forGetter(GrindingRecipe::minHandleTier),
+                            Codec.INT.optionalFieldOf("work_time", 400).forGetter(GrindingRecipe::workTime))
                             .apply(instance, GrindingRecipe::new));
 
     // ==================== StreamCodec（网络同步） ====================
@@ -70,13 +73,15 @@ public record GrindingRecipe(Ingredient input, List<GrindingOutput> output,
                 Ingredient.CONTENTS_STREAM_CODEC.encode(buf, recipe.input());
                 GrindingOutput.STREAM_CODEC.apply(ByteBufCodecs.list()).encode(buf, recipe.output());
                 buf.writeInt(recipe.minHandleTier());
+                buf.writeInt(recipe.workTime());
             },
             // 解码：网络包 → 配方
             (RegistryFriendlyByteBuf buf) -> {
                 Ingredient input = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
                 List<GrindingOutput> output = GrindingOutput.STREAM_CODEC.apply(ByteBufCodecs.list()).decode(buf);
                 int minHandleTier = buf.readInt();
-                return new GrindingRecipe(input, output, minHandleTier);
+                int workTime = buf.readInt();
+                return new GrindingRecipe(input, output, minHandleTier, workTime);
             });
 
     @Override

@@ -30,9 +30,9 @@ public interface IMultiBlockPart {
     /** 普通结构外壳方块 */
     String TYPE_MULTI_BLOCK_PART = "multi_block_part";
     /** 人口输入接口 */
-    String TYPE_INPUT_HATCH = "input_hatch";
+    String TYPE_POPULATION_INPUT_HATCH = "population_input_hatch";
     /** 人口输出接口 */
-    String TYPE_OUTPUT_HATCH = "output_hatch";
+    String TYPE_POPULATION_OUTPUT_HATCH = "population_output_hatch";
     /** 食物输入接口 */
     String TYPE_FOOD_HATCH = "food_hatch";
     /** 通用流体接口（向后兼容） */
@@ -41,6 +41,10 @@ public interface IMultiBlockPart {
     String TYPE_FLUID_INPUT_HATCH = "fluid_input_hatch";
     /** 流体输出接口 */
     String TYPE_FLUID_OUTPUT_HATCH = "fluid_output_hatch";
+    /** 物品输入接口 */
+    String TYPE_ITEM_INPUT_HATCH = "item_input_hatch";
+    /** 物品输出接口 */
+    String TYPE_ITEM_OUTPUT_HATCH = "item_output_hatch";
 
     // ==================== 抽象/默认方法 ====================
 

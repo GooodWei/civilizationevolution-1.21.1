@@ -13,11 +13,11 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 村庄物品输入接口 —— Tier 1。
  *
- * <p>27 个槽位（3×9 潜影盒布局），接受任意物品，堆叠上限 64。
+ * <p>9 个槽位，接受任意物品，堆叠上限 64。
  */
 public class VillageItemInputHatchBlockEntity extends AbstractItemInputHatchBlockEntity {
 
-    public static final int SIZE = 27;
+    public static final int SIZE = 9;
 
     public VillageItemInputHatchBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state, SIZE);

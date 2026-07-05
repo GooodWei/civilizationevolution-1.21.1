@@ -51,6 +51,7 @@ public final class CivilizationMachineConfig {
     public static final String VILLAGE_DOCTOR_CABIN = "village_doctor_cabin";
     public static final String VILLAGE_HARVESTER = "village_harvester";
     public static final String PRIMITIVE_STORAGE_PIT = "primitive_storage_pit";
+    public static final String VILLAGE_MILL = "village_mill";
 
     // ==================== 内部记录 ====================
 
@@ -596,6 +597,17 @@ public final class CivilizationMachineConfig {
                   max_bind_range: 128
                   # 是否允许跨维度绑定（true/false）
                   allow_cross_dimension: false
+                  
+                village_mill:
+                    # 每次工作后人口年龄增长量
+                    age_increment: 1
+                    # 每个人口每次工作消耗的食物份数
+                    food_per_population: 6
+                    # 每次工作后人口健康度的随机波动范围
+                    health_fluctuate_min: -3
+                    health_fluctuate_max: -1
+                    # 每次工作周期给学徒的经验量
+                    apprentice_exp_per_cycle: 1
                 """;
         Files.writeString(CONFIG_FILE, defaults);
     }

@@ -771,8 +771,10 @@ public interface IMultiBlockMachine {
         Direction facing = getFacingDirection();
 
         // 临时列表，验证全部通过后替换正式缓存
-        List<BlockPos> newInputHatches = new ArrayList<>();
-        List<BlockPos> newOutputHatches = new ArrayList<>();
+        List<BlockPos> newPopulationInputHatches = new ArrayList<>();
+        List<BlockPos> newPopulationOutputHatches = new ArrayList<>();
+        List<BlockPos> newItemInputHatches = new ArrayList<>();
+        List<BlockPos> newItemOutputHatches = new ArrayList<>();
         List<BlockPos> newFoodHatches = new ArrayList<>();
         List<BlockPos> newFluidInputHatches = new ArrayList<>();
         List<BlockPos> newFluidOutputHatches = new ArrayList<>();
@@ -879,11 +881,13 @@ public interface IMultiBlockMachine {
                         newCasingPositions.add(worldPos);
                     } else {
                         switch (matchedTypeStr) {
-                            case IMultiBlockPart.TYPE_INPUT_HATCH -> newInputHatches.add(worldPos);
-                            case IMultiBlockPart.TYPE_OUTPUT_HATCH -> newOutputHatches.add(worldPos);
+                            case IMultiBlockPart.TYPE_POPULATION_INPUT_HATCH -> newPopulationInputHatches.add(worldPos);
+                            case IMultiBlockPart.TYPE_POPULATION_OUTPUT_HATCH -> newPopulationOutputHatches.add(worldPos);
                             case IMultiBlockPart.TYPE_FOOD_HATCH -> newFoodHatches.add(worldPos);
                             case IMultiBlockPart.TYPE_FLUID_INPUT_HATCH -> newFluidInputHatches.add(worldPos);
                             case IMultiBlockPart.TYPE_FLUID_OUTPUT_HATCH -> newFluidOutputHatches.add(worldPos);
+                            case IMultiBlockPart.TYPE_ITEM_INPUT_HATCH -> newItemInputHatches.add(worldPos);
+                            case IMultiBlockPart.TYPE_ITEM_OUTPUT_HATCH -> newItemOutputHatches.add(worldPos);
                             default -> newCasingPositions.add(worldPos);
                         }
                     }
@@ -914,10 +918,10 @@ public interface IMultiBlockMachine {
         }
 
         // 全部通过 → 更新缓存
-        state.inputHatches.clear();
-        state.inputHatches.addAll(newInputHatches);
-        state.outputHatches.clear();
-        state.outputHatches.addAll(newOutputHatches);
+        state.populationInputHatches.clear();
+        state.populationInputHatches.addAll(newPopulationInputHatches);
+        state.populationOutputHatches.clear();
+        state.populationOutputHatches.addAll(newPopulationOutputHatches);
         state.foodHatches.clear();
         state.foodHatches.addAll(newFoodHatches);
         state.fluidInputHatches.clear();
@@ -928,6 +932,10 @@ public interface IMultiBlockMachine {
         state.casingPositions.addAll(newCasingPositions);
         state.allPartPositions.clear();
         state.allPartPositions.addAll(newAllParts);
+        state.itemInputHatches.clear();
+        state.itemInputHatches.addAll(newItemInputHatches);
+        state.itemOutputHatches.clear();
+        state.itemOutputHatches.addAll(newItemOutputHatches);
 
         // 认领所有匹配的零件（全部验证通过后才执行，避免部分认领后验证失败导致孤儿认领）
         for (BlockPos partPos : newAllParts) {
@@ -1066,12 +1074,12 @@ public interface IMultiBlockMachine {
 
     /** 获取所有输入接口的世界坐标列表 */
     default List<BlockPos> getInputHatches() {
-        return Collections.unmodifiableList(mbs().inputHatches);
+        return Collections.unmodifiableList(mbs().populationInputHatches);
     }
 
     /** 获取所有输出接口的世界坐标列表 */
     default List<BlockPos> getOutputHatches() {
-        return Collections.unmodifiableList(mbs().outputHatches);
+        return Collections.unmodifiableList(mbs().populationOutputHatches);
     }
 
     /** 获取所有食物接口的世界坐标列表 */
@@ -1087,6 +1095,16 @@ public interface IMultiBlockMachine {
     /** 获取所有流体输出接口的世界坐标列表 */
     default List<BlockPos> getFluidOutputHatches() {
         return Collections.unmodifiableList(mbs().fluidOutputHatches);
+    }
+
+    /** 获取所有物品输入接口的世界坐标列表 */
+    default List<BlockPos> getItemInputHatches() {
+        return Collections.unmodifiableList(mbs().itemInputHatches);
+    }
+
+    /** 获取所有物品输出接口的世界坐标列表 */
+    default List<BlockPos> getItemOutputHatches() {
+        return Collections.unmodifiableList(mbs().itemOutputHatches);
     }
 
     /** 获取所有外壳方块的世界坐标列表 */

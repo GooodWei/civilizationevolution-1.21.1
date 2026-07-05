@@ -3,6 +3,7 @@
 
   "item.civilizationevolution.population": "人口",
   "item.civilizationevolution.recruiter": "招募者",
+  "item.civilizationevolution.wheat_flour": "小麦粉",
   "item.civilizationevolution.connector": "连接器",
   "tooltip.civilizationevolution.connector.bound_uuid": "已绑定核心 UUID: %s",
   "item.civilizationevolution.projector": "多方块结构投影仪",

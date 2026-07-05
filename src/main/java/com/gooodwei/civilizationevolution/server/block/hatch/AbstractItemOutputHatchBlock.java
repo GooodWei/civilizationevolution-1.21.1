@@ -15,6 +15,6 @@ public abstract class AbstractItemOutputHatchBlock extends AbstractHatchBlock {
 
     @Override
     public String getPartType() {
-        return TYPE_OUTPUT_HATCH;
+        return TYPE_ITEM_OUTPUT_HATCH;
     }
 }

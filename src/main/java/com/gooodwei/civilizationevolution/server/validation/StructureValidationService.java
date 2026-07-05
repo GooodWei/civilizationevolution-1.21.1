@@ -1,6 +1,5 @@
 package com.gooodwei.civilizationevolution.server.validation;
 
-import com.gooodwei.civilizationevolution.CivilizationEvolution;
 import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
 import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
 import net.minecraft.core.BlockPos;
@@ -250,8 +249,10 @@ public final class StructureValidationService {
             Map<BlockPos, PartSnapshot> partSnapshots,
             com.gooodwei.civilizationevolution.api.tier.Tier controllerTier) {
 
-        List<BlockPos> inputHatches = new ArrayList<>();
-        List<BlockPos> outputHatches = new ArrayList<>();
+        List<BlockPos> populationInputHatches = new ArrayList<>();
+        List<BlockPos> populationOutputHatches = new ArrayList<>();
+        List<BlockPos> itemInputHatches = new ArrayList<>();
+        List<BlockPos> itemOutputHatches = new ArrayList<>();
         List<BlockPos> foodHatches = new ArrayList<>();
         List<BlockPos> fluidInputHatches = new ArrayList<>();
         List<BlockPos> fluidOutputHatches = new ArrayList<>();
@@ -342,11 +343,13 @@ public final class StructureValidationService {
                             casingPositions.add(worldPos);
                         } else {
                             switch (matchedTypeStr) {
-                                case IMultiBlockPart.TYPE_INPUT_HATCH -> inputHatches.add(worldPos);
-                                case IMultiBlockPart.TYPE_OUTPUT_HATCH -> outputHatches.add(worldPos);
+                                case IMultiBlockPart.TYPE_POPULATION_INPUT_HATCH -> populationInputHatches.add(worldPos);
+                                case IMultiBlockPart.TYPE_POPULATION_OUTPUT_HATCH -> populationOutputHatches.add(worldPos);
                                 case IMultiBlockPart.TYPE_FOOD_HATCH -> foodHatches.add(worldPos);
                                 case IMultiBlockPart.TYPE_FLUID_INPUT_HATCH -> fluidInputHatches.add(worldPos);
                                 case IMultiBlockPart.TYPE_FLUID_OUTPUT_HATCH -> fluidOutputHatches.add(worldPos);
+                                case IMultiBlockPart.TYPE_ITEM_INPUT_HATCH -> itemInputHatches.add(worldPos);
+                                case IMultiBlockPart.TYPE_ITEM_OUTPUT_HATCH -> itemOutputHatches.add(worldPos);
                                 default -> casingPositions.add(worldPos);
                             }
                         }
@@ -368,8 +371,8 @@ public final class StructureValidationService {
         }
 
         return ValidationResult.formed(
-                inputHatches, outputHatches, foodHatches,
-                fluidInputHatches, fluidOutputHatches,
+                populationInputHatches, populationOutputHatches, foodHatches,
+                fluidInputHatches, fluidOutputHatches,itemInputHatches, itemOutputHatches,
                 casingPositions, allParts);
     }
 
@@ -381,16 +384,20 @@ public final class StructureValidationService {
         Level level = machine.getLevel();
 
         if (result.structureFormed) {
-            mbs.inputHatches.clear();
-            mbs.inputHatches.addAll(result.inputHatches);
-            mbs.outputHatches.clear();
-            mbs.outputHatches.addAll(result.outputHatches);
+            mbs.populationInputHatches.clear();
+            mbs.populationInputHatches.addAll(result.populationInputHatches);
+            mbs.populationOutputHatches.clear();
+            mbs.populationOutputHatches.addAll(result.populationOutputHatches);
             mbs.foodHatches.clear();
             mbs.foodHatches.addAll(result.foodHatches);
             mbs.fluidInputHatches.clear();
             mbs.fluidInputHatches.addAll(result.fluidInputHatches);
             mbs.fluidOutputHatches.clear();
             mbs.fluidOutputHatches.addAll(result.fluidOutputHatches);
+            mbs.itemInputHatches.clear();
+            mbs.itemInputHatches.addAll(result.itemInputHatches);
+            mbs.itemOutputHatches.clear();
+            mbs.itemOutputHatches.addAll(result.itemOutputHatches);
             mbs.casingPositions.clear();
             mbs.casingPositions.addAll(result.casingPositions);
             mbs.allPartPositions.clear();
@@ -451,25 +458,30 @@ public final class StructureValidationService {
     /** 后台验证结果 */
     private static class ValidationResult {
         final boolean structureFormed;
-        final List<BlockPos> inputHatches;
-        final List<BlockPos> outputHatches;
+        final List<BlockPos> populationInputHatches;
+        final List<BlockPos> populationOutputHatches;
         final List<BlockPos> foodHatches;
         final List<BlockPos> fluidInputHatches;
         final List<BlockPos> fluidOutputHatches;
         final List<BlockPos> casingPositions;
         final Set<BlockPos> allPartPositions;
+        final List<BlockPos> itemInputHatches;
+        final List<BlockPos> itemOutputHatches;
 
         private ValidationResult(boolean structureFormed,
-                                 List<BlockPos> inputHatches, List<BlockPos> outputHatches,
+                                 List<BlockPos> populationInputHatches, List<BlockPos> populationOutputHatches,
                                  List<BlockPos> foodHatches, List<BlockPos> fluidInputHatches,
                                  List<BlockPos> fluidOutputHatches, List<BlockPos> casingPositions,
+                                 List<BlockPos> itemInputHatches, List<BlockPos> itemOutputHatches,
                                  Set<BlockPos> allPartPositions) {
             this.structureFormed = structureFormed;
-            this.inputHatches = inputHatches;
-            this.outputHatches = outputHatches;
+            this.populationInputHatches = populationInputHatches;
+            this.populationOutputHatches = populationOutputHatches;
             this.foodHatches = foodHatches;
             this.fluidInputHatches = fluidInputHatches;
             this.fluidOutputHatches = fluidOutputHatches;
+            this.itemInputHatches = itemInputHatches;
+            this.itemOutputHatches = itemOutputHatches;
             this.casingPositions = casingPositions;
             this.allPartPositions = allPartPositions;
         }
@@ -477,14 +489,16 @@ public final class StructureValidationService {
         static ValidationResult formed(List<BlockPos> input, List<BlockPos> output,
                                        List<BlockPos> food, List<BlockPos> fluidIn,
                                        List<BlockPos> fluidOut, List<BlockPos> casings,
+                                       List<BlockPos> itemIn, List<BlockPos> itemOut,
                                        Set<BlockPos> all) {
             return new ValidationResult(true, input, output, food,
-                    fluidIn, fluidOut, casings, all);
+                    fluidIn, fluidOut, casings, itemIn, itemOut, all);
         }
 
         static ValidationResult notFormed() {
             return new ValidationResult(false, List.of(), List.of(),
-                    List.of(), List.of(), List.of(), List.of(), Set.of());
+                    List.of(), List.of(), List.of(), List.of(),
+                    List.of(), List.of(), Set.of());
         }
     }
 }

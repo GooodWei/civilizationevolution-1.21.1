@@ -1,22 +1,37 @@
 package com.gooodwei.civilizationevolution.server.blockentity.multiblock;
 
+import com.gooodwei.civilizationevolution.api.IAdaptivePollingMachine;
+import com.gooodwei.civilizationevolution.api.career.CareerNames;
 import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
+import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
+import com.gooodwei.civilizationevolution.server.recipe.GrindingRecipe;
+import com.gooodwei.civilizationevolution.server.recipe.GrindingRecipeInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
+import java.util.Optional;
 
 
-public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntity {
+public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntity implements IAdaptivePollingMachine<GrindingRecipe, GrindingRecipeInput> {
+    private int idleTicks;
+    private int recipeWorkProgress;
+    private GrindingRecipe currentRecipe;
+
 
     protected AbstractMillBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int size) {
         super(type, pos, state, size);
+    }
+
+    public static void serverTick(Level level, BlockPos pos, BlockState state, AbstractMillBlockEntity be) {
+        be.tickAdaptivePolling();
     }
 
     /**
@@ -27,6 +42,11 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
     @Override
     public String getConfigKey() {
         return "";
+    }
+
+    @Override
+    public boolean isSelfScheduled() {
+        return true;
     }
 
     /**
@@ -42,7 +62,7 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
      */
     @Override
     public int getAgeIncrement() {
-        return 0;
+        return CivilizationMachineConfig.getAgeIncrement(getConfigKey());
     }
 
     /**
@@ -68,7 +88,7 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
      */
     @Override
     public boolean isPopulationSlot(int slot) {
-        return false;
+        return slot < 4;
     }
 
     /**
@@ -78,7 +98,7 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
      */
     @Override
     public List<Integer> populationSlots() {
-        return List.of();
+        return List.of(0, 1, 2, 3);
     }
 
     /**
@@ -99,7 +119,7 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
      */
     @Override
     public String getWorkerCareer() {
-        return "";
+        return CareerNames.MASON;
     }
 
     @Override
@@ -110,5 +130,46 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
     @Override
     protected AbstractContainerMenu createMenu(int i, Inventory inventory) {
         return null;
+    }
+
+    @Override
+    public Optional<GrindingRecipe> findAndValidateRecipe() {
+        return Optional.empty();
+    }
+
+    @Override
+    public void executeRecipe(GrindingRecipe recipe) {
+
+    }
+
+    @Override
+    public int getRecipeWorkProgress() {
+        return recipeWorkProgress;
+    }
+
+    @Override
+    public void resetWorkProgress() {
+        this.recipeWorkProgress = 0;
+        this.currentRecipe = null;
+    }
+
+    @Override
+    public int getMachineTier() {
+        return getTier().getLevel();
+    }
+
+    @Override
+    public int getIdleTicks() {
+        return idleTicks;
+    }
+
+    @Override
+    public void setIdleTicks(int ticks) {
+        this.idleTicks = ticks;
+    }
+
+    @Override
+    public boolean isMachineReady() {
+        return mbs().structureFormed && isBound();
     }
 }

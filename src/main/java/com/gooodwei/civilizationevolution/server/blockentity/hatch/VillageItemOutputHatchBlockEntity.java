@@ -13,11 +13,11 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 村庄物品输出接口 —— Tier 1。
  *
- * <p>27 个槽位（3×9 潜影盒布局），拒绝外部放入（仅代码产出），堆叠上限 64。
+ * <p>9 个槽位，拒绝外部放入（仅代码产出），堆叠上限 64。
  */
 public class VillageItemOutputHatchBlockEntity extends AbstractItemOutputHatchBlockEntity {
 
-    public static final int SIZE = 27;
+    public static final int SIZE = 9;
 
     public VillageItemOutputHatchBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state, SIZE);
