@@ -203,6 +203,11 @@ public class BlockRegistry {
             () -> new PrimitiveStoragePit(BlockBehaviour.Properties.of().strength(10.0f))
     );
 
+    public static final DeferredBlock<VillageMillBlock> VILLAGE_MILL = BLOCKS.register(
+            "village_mill",
+            () -> new VillageMillBlock(BlockBehaviour.Properties.of().strength(2.0f))
+    );
+
     /**
      * 向事件总线注册所有方块。
      * @param bus 模组事件总线

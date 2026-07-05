@@ -6,13 +6,18 @@ import com.gooodwei.civilizationevolution.api.tier.Tier;
 import com.gooodwei.civilizationevolution.server.block.machine.AbstractMachineBlock;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.config.MultiBlockConfig;
+import com.gooodwei.civilizationevolution.server.recipe.GrindingOutput;
 import com.gooodwei.civilizationevolution.server.recipe.GrindingRecipe;
 import com.gooodwei.civilizationevolution.server.recipe.GrindingRecipeInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -24,14 +29,43 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
     private int idleTicks;
     private int recipeWorkProgress;
     private GrindingRecipe currentRecipe;
+    /** 当前配方输入物品所在的仓位置（跨 tick 追踪消耗来源） */
+    private BlockPos inputHatchPos;
+    /** 当前配方输入物品所在的槽位索引 */
+    private int inputSlot = -1;
+    /** 客户端同步数据 */
+    protected final ContainerData data;
 
 
     protected AbstractMillBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int size) {
         super(type, pos, state, size);
+        this.data = createData();
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, AbstractMillBlockEntity be) {
         be.tickAdaptivePolling();
+    }
+
+    protected ContainerData createData() {
+        return new ContainerData() {
+            @Override
+            public int get(int index) {
+                return switch (index) {
+                    case 0 -> getRecipeWorkProgress();
+                    case 1 -> getCurrentWorkTime();
+                    default -> 0;
+                };
+            }
+            @Override
+            public void set(int index, int value) { /* 只读 */ }
+            @Override
+            public int getCount() { return 2; }
+        };
+    }
+
+    /** 获取当前配方的工作总时间（供 ContainerData 和 GUI 使用） */
+    protected int getCurrentWorkTime() {
+        return currentRecipe != null ? currentRecipe.workTime() : 1;
     }
 
     /**
@@ -77,6 +111,11 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
     @Override
     public Tier getTier() {
         return null;
+    }
+
+    @Override
+    public boolean canWork() {
+        return isBound() && !getAvailableWorkers().isEmpty();
     }
 
     /**
@@ -134,12 +173,143 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
 
     @Override
     public Optional<GrindingRecipe> findAndValidateRecipe() {
+        Level level = getLevel();
+        if (level == null || level.isClientSide) {
+            return Optional.empty();
+        }
+        // 已有进行中配方 → 验证输入是否仍存在
+        if (currentRecipe != null && inputHatchPos != null && inputSlot >= 0){
+            BlockEntity be = level.getBlockEntity(inputHatchPos);
+            if (be instanceof Container container && inputSlot < container.getContainerSize()){
+                ItemStack stack = container.getItem(inputSlot);
+                if (currentRecipe.matches(new GrindingRecipeInput(stack), level)) {
+                    return Optional.of(currentRecipe);
+                }
+            }
+            // 输入被移除 → 取消当前配方
+            resetWorkProgress();
+            return Optional.empty();
+        }
+        // 扫描所有物品输入仓，查找新配方
+        int machineTier = getMachineTier();
+        for (BlockPos hatchPos : getItemInputHatches()) {
+            BlockEntity be = level.getBlockEntity(hatchPos);
+            if (!(be instanceof Container container)) continue;
+
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty()) continue;
+
+                Optional<GrindingRecipe> match = GrindingRecipe.findMatch(level, stack);
+                if (match.isPresent()) {
+                    GrindingRecipe recipe = match.get();
+                    if (recipe.minHandleTier() <= machineTier) {
+                        this.currentRecipe = recipe;
+                        this.inputHatchPos = hatchPos;
+                        this.inputSlot = slot;
+                        return Optional.of(recipe);
+                    }
+                }
+            }
+        }
+
         return Optional.empty();
     }
 
+    /**
+     * 每 tick 推进配方工作进度。
+     *
+     * <p>首 tick 消耗 1 个输入物品；
+     * 进度达到 {@link GrindingRecipe#workTime()} 时产出物品并重置。
+     */
     @Override
     public void executeRecipe(GrindingRecipe recipe) {
+        // 首 tick：消耗输入物品
+        if (recipeWorkProgress == 0 && inputHatchPos != null) {
+            Level level = getLevel();
+            if (level != null) {
+                BlockEntity be = level.getBlockEntity(inputHatchPos);
+                if (be instanceof Container container) {
+                    ItemStack stack = container.getItem(inputSlot);
+                    if (!stack.isEmpty()) {
+                        stack.shrink(1);
+                        container.setItem(inputSlot, stack.isEmpty() ? ItemStack.EMPTY : stack);
+                    }
+                }
+            }
+        }
 
+        recipeWorkProgress++;
+
+        if (recipeWorkProgress >= recipe.workTime()) {
+            produceOutputs(recipe);
+            resetWorkProgress();
+        }
+
+        setChanged();
+    }
+
+    /**
+     * 将配方产物插入所有物品输出仓。
+     *
+     * <p>若机器 Tier 达到产物的 {@code allowExtraOutputTier} 门槛，
+     * 则按效率倍率增产；{@code allowExtraOutputTier == -1} 表示不受效率影响。
+     */
+    private void produceOutputs(GrindingRecipe recipe) {
+        Level level = getLevel();
+        if (level == null || level.isClientSide) return;
+
+        int machineTier = getMachineTier();
+        // 计算本周期工作效率（含食物消耗）
+        float efficiency = calculateEfficiency();
+        List<BlockPos> outputHatches = getItemOutputHatches();
+
+        for (GrindingOutput output : recipe.output()) {
+            int baseCount = output.item().getCount();
+            int actualCount = baseCount;
+
+            // 效率增产计算
+            int threshold = output.allowExtraOutputTier();
+            if (threshold >= 0 && machineTier >= threshold) {
+                // 效率增产：基础数量 × 效率，至少保底基础数量
+                actualCount = Math.max(baseCount, (int) Math.floor(baseCount * efficiency));
+            }
+
+            // 插入输出仓
+            int remaining = actualCount;
+            for (BlockPos hatchPos : outputHatches) {
+                if (remaining <= 0) break;
+                BlockEntity be = level.getBlockEntity(hatchPos);
+                if (!(be instanceof Container container)) continue;
+
+                for (int slot = 0; slot < container.getContainerSize() && remaining > 0; slot++) {
+                    ItemStack slotStack = container.getItem(slot);
+                    ItemStack outputStack = output.item().copy();
+                    outputStack.setCount(1);
+
+                    if (slotStack.isEmpty()) {
+                        // 空槽位 → 直接放入
+                        outputStack.setCount(Math.min(remaining, outputStack.getMaxStackSize()));
+                        container.setItem(slot, outputStack);
+                        remaining -= outputStack.getCount();
+                    } else if (ItemStack.isSameItemSameComponents(slotStack, outputStack)
+                            && slotStack.getCount() < slotStack.getMaxStackSize()) {
+                        // 同物品 → 堆叠
+                        int canAdd = Math.min(remaining, slotStack.getMaxStackSize() - slotStack.getCount());
+                        slotStack.grow(canAdd);
+                        remaining -= canAdd;
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public float consumeAndGetFoodFactor() {
+        List<ItemStack> workers = getAvailableWorkers();
+        return consumeFoodFromHatchesWithFallback(
+                workers.size() * getFoodPerPopulation(),
+                workers.size() * getFoodPerPopulation());
     }
 
     @Override
@@ -151,11 +321,14 @@ public class AbstractMillBlockEntity extends AbstractMultiBlockMachineBlockEntit
     public void resetWorkProgress() {
         this.recipeWorkProgress = 0;
         this.currentRecipe = null;
+        this.inputHatchPos = null;
+        this.inputSlot = -1;
     }
 
     @Override
     public int getMachineTier() {
-        return getTier().getLevel();
+        Tier tier = getTier();
+        return tier != null ? tier.getLevel() : 0;
     }
 
     @Override

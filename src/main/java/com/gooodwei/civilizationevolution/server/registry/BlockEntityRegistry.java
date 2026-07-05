@@ -5,10 +5,7 @@ import com.gooodwei.civilizationevolution.server.blockentity.controller.Primitiv
 import com.gooodwei.civilizationevolution.server.blockentity.controller.VillageControllerBlockEntity;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.*;
 import com.gooodwei.civilizationevolution.server.blockentity.machine.*;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveDoctorCabinBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.PrimitiveStoragePitBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageDoctorCabinBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.multiblock.VillageQuarryBlockEntity;
+import com.gooodwei.civilizationevolution.server.blockentity.multiblock.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -213,6 +210,11 @@ public class BlockEntityRegistry {
             BLOCK_ENTITIES.register("primitive_storage_pit",
                     () -> BlockEntityType.Builder.of(PrimitiveStoragePitBlockEntity::new,
                             BlockRegistry.PRIMITIVE_STORAGE_PIT_BLOCK.get()).build(null));
+
+    public static final Supplier<BlockEntityType<VillageMillBlockEntity>> VILLAGE_MILL =
+            BLOCK_ENTITIES.register("village_mill",
+                    () -> BlockEntityType.Builder.of(VillageMillBlockEntity::new,
+                            BlockRegistry.VILLAGE_MILL.get()).build(null));
 
     /**
      * 向事件总线注册所有 BlockEntity 类型。

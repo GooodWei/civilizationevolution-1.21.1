@@ -70,6 +70,7 @@ public class CreativeTabRegistry {
                         output.accept(ItemRegistry.VILLAGE_HARVESTER.get());
                         output.accept(ItemRegistry.PRIMITIVE_STORAGE_PIT.get());
                         output.accept(ItemRegistry.WHEAT_FLOUR.get());
+                        output.accept(ItemRegistry.VILLAGE_MILL.get());
 
                     }).build());
 

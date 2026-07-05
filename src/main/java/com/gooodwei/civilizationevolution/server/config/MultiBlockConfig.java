@@ -271,6 +271,58 @@ public final class MultiBlockConfig {
         villageQuarry.add("key", vqKey);
         structures.add("village_quarry", villageQuarry);
 
+        // ========== village_mill ==========
+        JsonObject villageMill = new JsonObject();
+
+        // controller [y, x, z] — 在背面中央偏右
+        JsonArray vmCtrl = new JsonArray();
+        vmCtrl.add(0); vmCtrl.add(2); vmCtrl.add(5);
+        villageMill.add("controller", vmCtrl);
+
+        // pattern — 5×4×6（宽×高×深），控制器在背面，结构向前延伸
+        JsonObject vmPattern = new JsonObject();
+        vmPattern.addProperty("y0", "  A  ,     , AAA , AAA , AAA , ABA ");
+        vmPattern.addProperty("y1", "     , AAA , A A , A A , A A , A A ");
+        vmPattern.addProperty("y2", " AAA ,AAAAA,AA AA,AAAAA, AAA ,     ");
+        vmPattern.addProperty("y3", "  A  ,     ,     ,     ,     ,     ");
+        villageMill.add("pattern", vmPattern);
+
+        villageMill.addProperty("validate_interval", 30);
+        villageMill.addProperty("shareable", true);
+
+        // key — A 为村庄结构外壳（min 20），f/i/o 为仓室替代
+        JsonObject vmKey = new JsonObject();
+
+        JsonObject vmADef = new JsonObject();
+        vmADef.addProperty("type", "civilizationevolution:village_structure_casing");
+        vmADef.addProperty("min_count", 20);
+        JsonArray vmAAlts = new JsonArray();
+        vmAAlts.add("f"); vmAAlts.add("i"); vmAAlts.add("o");
+        vmADef.add("alternatives", vmAAlts);
+        vmKey.add("A", vmADef);
+
+        JsonObject vmFDef = new JsonObject();
+        vmFDef.addProperty("type", "food_hatch");
+        vmFDef.addProperty("min_count", 1);
+        vmKey.add("f", vmFDef);
+
+        JsonObject vmIDef = new JsonObject();
+        vmIDef.addProperty("type", "item_input_hatch");
+        vmIDef.addProperty("min_count", 1);
+        vmKey.add("i", vmIDef);
+
+        JsonObject vmODef = new JsonObject();
+        vmODef.addProperty("type", "item_output_hatch");
+        vmODef.addProperty("min_count", 1);
+        vmKey.add("o", vmODef);
+
+        JsonObject vmBDef = new JsonObject();
+        vmBDef.addProperty("block", "self");
+        vmKey.add("B", vmBDef);
+
+        villageMill.add("key", vmKey);
+        structures.add("village_mill", villageMill);
+
         // ========== village_controller ==========
         // 9×9×7 庙宇/议事厅结构，全部使用原版方块
         JsonObject villageCtrl = new JsonObject();

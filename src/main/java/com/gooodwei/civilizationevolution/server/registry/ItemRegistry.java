@@ -194,6 +194,10 @@ public class ItemRegistry {
             ITEMS.registerItem("primitive_storage_pit", properties ->
                     new TieredBlockItem(BlockRegistry.PRIMITIVE_STORAGE_PIT_BLOCK.get(), properties));
 
+    public static final DeferredItem<BlockItem> VILLAGE_MILL =
+            ITEMS.registerItem("village_mill", properties ->
+                    new TieredBlockItem(BlockRegistry.VILLAGE_MILL.get(), properties));
+
     /**
      * 向事件总线注册所有物品。
      * @param bus 模组事件总线

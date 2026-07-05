@@ -439,10 +439,19 @@ public final class CivilizationCommand {
             }
         }
 
-        // 9. 同步导出（直接在主线程执行，确保 chunk 数据读取安全和文件写入可靠）
+        // 9. 获取结构正面朝向：优先机器方块的 FACING，否则回退到玩家朝向
+        Direction facing;
+        BlockState controllerState = level.getBlockState(controllerPos);
+        if (controllerState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+            facing = controllerState.getValue(BlockStateProperties.HORIZONTAL_FACING);
+        } else {
+            facing = player.getDirection();
+        }
+
+        // 10. 同步导出（直接在主线程执行，确保 chunk 数据读取安全和文件写入可靠）
         try {
-            // 收集方块类型
-            Map<String, List<int[]>> typeToLocalPos = new LinkedHashMap<>();
+            // 收集方块类型（先记录世界坐标）
+            Map<String, List<int[]>> typeToWorldPos = new LinkedHashMap<>();
 
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
@@ -454,10 +463,6 @@ public final class CivilizationCommand {
                         if (chunk == null) continue;
 
                         BlockState state = chunk.getBlockState(worldPos);
-                        // 局部坐标（包围盒最小角为原点，保证全部非负）
-                        int lx = x - minX;
-                        int ly = y - minY;
-                        int lz = z - minZ;
 
                         String typeId;
                         if (worldPos.equals(controllerPos)) {
@@ -475,10 +480,59 @@ public final class CivilizationCommand {
                             }
                         }
 
-                        typeToLocalPos.computeIfAbsent(typeId, k -> new ArrayList<>())
-                                .add(new int[]{lx, ly, lz});
+                        typeToWorldPos.computeIfAbsent(typeId, k -> new ArrayList<>())
+                                .add(new int[]{x, y, z});
                     }
                 }
+            }
+
+            // 将世界坐标旋转为 pattern 局部坐标（+x = facing 右侧，+z = facing 反方向/背面）
+            int cwx = controllerPos.getX();
+            int cwz = controllerPos.getZ();
+            Map<String, List<int[]>> typeToLocalPos = new LinkedHashMap<>();
+            int minLx = Integer.MAX_VALUE, maxLx = Integer.MIN_VALUE;
+            int minLz = Integer.MAX_VALUE, maxLz = Integer.MIN_VALUE;
+
+            for (var entry : typeToWorldPos.entrySet()) {
+                List<int[]> rotated = new ArrayList<>();
+                for (int[] wp : entry.getValue()) {
+                    int dx = wp[0] - cwx; // 世界 X 偏移
+                    int dz = wp[2] - cwz; // 世界 Z 偏移
+                    int rlx, rlz;
+                    switch (facing) {
+                        case NORTH -> { rlx = dx;        rlz = -dz;      }
+                        case SOUTH -> { rlx = -dx;       rlz = dz;       }
+                        case WEST  -> { rlx = dz;        rlz = -dx;      }
+                        case EAST  -> { rlx = -dz;       rlz = dx;       }
+                        default   -> { rlx = dx;         rlz = dz;       }
+                    }
+                    // ly 不受旋转影响
+                    rotated.add(new int[]{rlx, wp[1] - controllerPos.getY(), rlz});
+                    if (rlx < minLx) minLx = rlx;
+                    if (rlx > maxLx) maxLx = rlx;
+                    if (rlz < minLz) minLz = rlz;
+                    if (rlz > maxLz) maxLz = rlz;
+                }
+                typeToLocalPos.put(entry.getKey(), rotated);
+            }
+
+            // 归一化到非负坐标（控制器位置移到 (abs(minLx), abs(minLz))）
+            int baseLx = -minLx;
+            int baseLz = -minLz;
+            int patSizeX = maxLx - minLx + 1;
+            int patSizeZ = maxLz - minLz + 1;
+            int patSizeY = sizeY; // Y 轴不变
+
+            int controllerPatX = baseLx; // 控制器的 dx=0,dz=0 旋转后仍为 (0,0)，plus shift
+            int controllerPatY = controllerPos.getY() - minY;
+            int controllerPatZ = baseLz;
+
+            for (var entry : typeToLocalPos.entrySet()) {
+                List<int[]> shifted = new ArrayList<>();
+                for (int[] lp : entry.getValue()) {
+                    shifted.add(new int[]{lp[0] + baseLx, lp[1], lp[2] + baseLz});
+                }
+                entry.setValue(shifted);
             }
 
             // 分配字符编码
@@ -487,12 +541,12 @@ public final class CivilizationCommand {
             // 判断是否使用双字节模式
             boolean doubleChar = typeToCode.values().stream().anyMatch(s -> s.length() == 2);
 
-            // 构建 pattern 三维字符数组
-            char[][][] pattern = new char[sizeY][sizeZ][sizeX * (doubleChar ? 2 : 1)];
+            // 构建 pattern 三维字符数组（使用旋转后的尺寸）
+            char[][][] pattern = new char[patSizeY][patSizeZ][patSizeX * (doubleChar ? 2 : 1)];
             // 初始化为空格
-            for (int y = 0; y < sizeY; y++) {
-                for (int z = 0; z < sizeZ; z++) {
-                    int width = sizeX * (doubleChar ? 2 : 1);
+            for (int y = 0; y < patSizeY; y++) {
+                for (int z = 0; z < patSizeZ; z++) {
+                    int width = patSizeX * (doubleChar ? 2 : 1);
                     for (int x = 0; x < width; x++) {
                         pattern[y][z][x] = ' ';
                     }
@@ -510,7 +564,7 @@ public final class CivilizationCommand {
                     int ly = pos[1];
                     int lz = pos[2];
                     // 验证局部坐标范围
-                    if (ly < 0 || ly >= sizeY || lz < 0 || lz >= sizeZ || lx < 0 || lx >= sizeX) continue;
+                    if (ly < 0 || ly >= patSizeY || lz < 0 || lz >= patSizeZ || lx < 0 || lx >= patSizeX) continue;
 
                     if (doubleChar) {
                         int cx2 = lx * 2;
@@ -530,9 +584,9 @@ public final class CivilizationCommand {
 
             // 通配符位置（空气）在双字节模式下写为 __
             if (doubleChar) {
-                for (int y = 0; y < sizeY; y++) {
-                    for (int z = 0; z < sizeZ; z++) {
-                        for (int x = 0; x < sizeX; x++) {
+                for (int y = 0; y < patSizeY; y++) {
+                    for (int z = 0; z < patSizeZ; z++) {
+                        for (int x = 0; x < patSizeX; x++) {
                             if (pattern[y][z][x * 2] == ' ' && pattern[y][z][x * 2 + 1] == ' ') {
                                 pattern[y][z][x * 2] = '_';
                                 pattern[y][z][x * 2 + 1] = '_';
@@ -547,20 +601,20 @@ public final class CivilizationCommand {
             JsonObject structures = new JsonObject();
             JsonObject structure = new JsonObject();
 
-            // controller（局部坐标，包围盒最小角为原点）
+            // controller（旋转归一化后的 pattern 坐标）
             JsonArray controllerArr = new JsonArray();
-            controllerArr.add(controllerPos.getY() - minY);
-            controllerArr.add(controllerPos.getX() - minX);
-            controllerArr.add(controllerPos.getZ() - minZ);
+            controllerArr.add(controllerPatY);
+            controllerArr.add(controllerPatX);
+            controllerArr.add(controllerPatZ);
             structure.add("controller", controllerArr);
 
             // pattern
             JsonObject patternObj = new JsonObject();
-            for (int y = 0; y < sizeY; y++) {
+            for (int y = 0; y < patSizeY; y++) {
                 StringBuilder layer = new StringBuilder();
-                for (int z = 0; z < sizeZ; z++) {
+                for (int z = 0; z < patSizeZ; z++) {
                     if (z > 0) layer.append(',');
-                    for (int x = 0; x < (doubleChar ? sizeX * 2 : sizeX); x++) {
+                    for (int x = 0; x < (doubleChar ? patSizeX * 2 : patSizeX); x++) {
                         layer.append(pattern[y][z][x]);
                     }
                 }
