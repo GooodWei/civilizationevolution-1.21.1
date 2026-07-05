@@ -337,13 +337,9 @@ public class PrimitiveStoragePitMenu extends AbstractContainerMenu {
             }
             stackInSlot.setCount(leftover.getCount());
         } else if (slot instanceof OversizedSlot) {
-            // 存储槽位 → 玩家背包：一次只移动一组（照搬 SS mergeItemStack）
-            int maxExtract = Math.min(stackInSlot.getCount(), stackInSlot.getMaxStackSize());
-            ItemStack remaining = OversizedMenuHelper.mergeToPlayerInventory(
-                    this, PLAYER_INV_START, PLAYER_HOTBAR_START + 8,
-                    stackInSlot.copy(), maxExtract);
-            slot.set(remaining);
-            if (remaining.getCount() == stackInSlot.getCount()) {
+            // 存储槽位 → 玩家背包：一次只移动一组
+            if (!OversizedMenuHelper.quickMoveFromOversizedSlot(
+                    this, slot, PLAYER_INV_START, PLAYER_HOTBAR_START + 8)) {
                 return ItemStack.EMPTY;
             }
             return ItemStack.EMPTY;
@@ -367,127 +363,13 @@ public class PrimitiveStoragePitMenu extends AbstractContainerMenu {
      * 覆盖 {@link AbstractContainerMenu#clicked}，针对 {@link OversizedSlot}
      * 完整接管 PICKUP（左/右键）和 SWAP（数字键）的处理逻辑。
      *
-     * <p>照搬 SophisticatedCore {@code StorageContainerMenuBase.doClick()}。
+     * <p>委托给 {@link OversizedMenuHelper#handleOversizedSlotClick}。
      */
     @Override
     public void clicked(int slotId, int dragType, ClickType clickType, Player player) {
-        // ========== SWAP（数字键）==========
-        if (clickType == ClickType.SWAP && slotId >= 0) {
-            Slot slot = this.slots.get(slotId);
-            if (slot instanceof OversizedSlot) {
-                Inventory inv = player.getInventory();
-                ItemStack hotbarStack = inv.getItem(dragType);
-                ItemStack slotStack = slot.getItem();
-
-                if (hotbarStack.isEmpty() && !slotStack.isEmpty()) {
-                    if (slot.mayPickup(player)) {
-                        if (slotStack.getCount() <= slotStack.getMaxStackSize()) {
-                            inv.setItem(dragType, slotStack.copy());
-                            slot.set(ItemStack.EMPTY);
-                            slot.onTake(player, slotStack);
-                        } else {
-                            inv.setItem(dragType, slotStack.copyWithCount(slotStack.getMaxStackSize()));
-                            slot.set(slotStack.copyWithCount(slotStack.getCount() - slotStack.getMaxStackSize()));
-                        }
-                    }
-                } else if (!hotbarStack.isEmpty() && slotStack.isEmpty()) {
-                    if (slot.mayPlace(hotbarStack)) {
-                        int limit = slot.getMaxStackSize(hotbarStack);
-                        if (hotbarStack.getCount() > limit) {
-                            slot.set(hotbarStack.split(limit));
-                        } else {
-                            slot.set(hotbarStack.copy());
-                            inv.setItem(dragType, ItemStack.EMPTY);
-                        }
-                    }
-                } else if (!hotbarStack.isEmpty() && !slotStack.isEmpty()) {
-                    if (slotStack.getCount() <= slotStack.getMaxStackSize()
-                            && slot.mayPickup(player) && slot.mayPlace(hotbarStack)) {
-                        int limit = slot.getMaxStackSize(hotbarStack);
-                        if (hotbarStack.getCount() > limit) {
-                            slot.set(hotbarStack.split(limit));
-                            slot.onTake(player, slotStack);
-                            if (!inv.add(slotStack)) {
-                                player.drop(slotStack, true);
-                            }
-                        } else {
-                            ItemStack slotCopy = slotStack.copy();
-                            slot.set(hotbarStack.copy());
-                            inv.setItem(dragType, slotCopy);
-                            slot.onTake(player, slotCopy);
-                        }
-                    }
-                }
-                slot.setChanged();
-                return;
-            }
+        if (OversizedMenuHelper.handleOversizedSlotClick(this, slotId, dragType, clickType, player)) {
+            return;
         }
-
-        // ========== QUICK_MOVE（Shift+点击）==========
-        if (clickType == ClickType.QUICK_MOVE && slotId >= 0) {
-            Slot slot = this.slots.get(slotId);
-            if (slot instanceof OversizedSlot && slot.mayPickup(player)) {
-                quickMoveStack(player, slotId);
-                return;
-            }
-        }
-
-        // ========== PICKUP（左/右键）==========
-        if (clickType == ClickType.PICKUP && slotId >= 0 && (dragType == 0 || dragType == 1)) {
-            Slot slot = this.slots.get(slotId);
-            if (slot instanceof OversizedSlot) {
-                boolean isPrimary = dragType == 0;
-                ItemStack carriedStack = getCarried();
-                ItemStack slotStack = slot.getItem();
-
-                if (slotStack.isEmpty()) {
-                    if (!carriedStack.isEmpty()) {
-                        int count = isPrimary ? carriedStack.getCount() : 1;
-                        setCarried(slot.safeInsert(carriedStack, count));
-                    }
-                } else if (slot.mayPickup(player)) {
-                    if (carriedStack.isEmpty()) {
-                        int toRemove = Math.min(slotStack.getCount(), slotStack.getMaxStackSize());
-                        if (!isPrimary) {
-                            toRemove = toRemove / 2 + toRemove % 2;
-                        }
-                        var extracted = slot.tryRemove(toRemove, Integer.MAX_VALUE, player);
-                        extracted.ifPresent(s -> {
-                            setCarried(s);
-                            slot.onTake(player, s);
-                        });
-                    } else if (slot.mayPlace(carriedStack)) {
-                        if (ItemStack.isSameItemSameComponents(slotStack, carriedStack)) {
-                            int count = isPrimary ? carriedStack.getCount() : 1;
-                            setCarried(slot.safeInsert(carriedStack, count));
-                        } else if (carriedStack.getCount() <= slot.getMaxStackSize(carriedStack)
-                                && slotStack.getCount() <= slotStack.getMaxStackSize()) {
-                            slot.set(carriedStack.copy());
-                            setCarried(slotStack.copy());
-                            slot.setChanged();
-                            return;
-                        }
-                    } else if (!ItemStack.isSameItemSameComponents(slotStack, carriedStack)
-                            && carriedStack.getCount() <= slot.getMaxStackSize(carriedStack)
-                            && slotStack.getCount() <= slotStack.getMaxStackSize()) {
-                        slot.set(carriedStack.copy());
-                        setCarried(slotStack.copy());
-                        slot.setChanged();
-                        return;
-                    } else if (ItemStack.isSameItemSameComponents(slotStack, carriedStack)) {
-                        var extracted = slot.tryRemove(slotStack.getCount(),
-                                carriedStack.getMaxStackSize() - carriedStack.getCount(), player);
-                        extracted.ifPresent(s -> {
-                            carriedStack.grow(s.getCount());
-                            slot.onTake(player, s);
-                        });
-                    }
-                }
-                slot.setChanged();
-                return;
-            }
-        }
-
         super.clicked(slotId, dragType, clickType, player);
     }
 
