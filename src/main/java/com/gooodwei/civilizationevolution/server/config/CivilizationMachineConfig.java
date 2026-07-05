@@ -54,9 +54,53 @@ public final class CivilizationMachineConfig {
 
     // ==================== 内部记录 ====================
 
-    /** 食物因子归一化分母，控制食物营养值对机器效率的影响程度。
-     * 值越大，同等食物带来的效率越低。默认 176.0（约为牛排营养值 8×22 的近似值）。 */
-    public static double FOOD_FACTOR_NORMALIZER = 176.0;
+    /**
+     * 人口效率计算公式的对数底数，控制多人合作时效率增长的速度。
+     *
+     * <p>效率 = avg × (1 + log_b(n))
+     * <ul>
+     *   <li>avg = 总人口效率 / 工人数量（工人平均 NBT 效率）</li>
+     *   <li>n   = 工人数量</li>
+     *   <li>b   = 底数（本配置项）</li>
+     * </ul>
+     *
+     * <p>b=3 时每 3 倍工人效率翻倍：1人→1.00x、3人→2.00x、9人→3.00x。
+     * b=2 增长更快，b=e≈2.718 为自然对数，b=4 增长更缓。
+     * 设为 1.0 时退化为 avg（仅平均，不考虑人数）。
+     */
+    public static double EFFICIENCY_LOG_BASE = 3.0;
+
+    /**
+     * 食物因子基准值（面包的校准营养值），低于此值时按比例计算，高于此值时使用对数公式。
+     *
+     * <p>校准营养值 = nutrition + saturationModifier × nutrition × 2。
+     * 面包的校准值 = 5 + 0.6×5×2 = 11.0。
+     */
+    public static double FOOD_REFERENCE_VALUE = 11.0;
+
+    /**
+     * 食物因子的对数底数，控制高品质食物的边际递减速度。
+     *
+     * <p>食物因子公式（两段式）：
+     * <pre>
+     * avg &lt; R  →  factor = avg / R          （线性比例）
+     * avg ≥ R  →  factor = 1 + log_b(avg/R)  （对数增长，品质每翻 b 倍 +1）
+     * </pre>
+     *
+     * <ul>
+     *   <li>avg = 工作人口消耗食物的人均校准营养值</li>
+     *   <li>R   = food_reference_value（默认 11.0 = 面包）</li>
+     *   <li>b   = food_log_base（默认 2.0，品质翻倍 = +1）</li>
+     * </ul>
+     *
+     * <p>示例（b=2, R=11）：
+     * <ul>
+     *   <li>苹果（6.4） → 6.4/11 = 0.58</li>
+     *   <li>面包（11.0）→ 1.00（基准）</li>
+     *   <li>牛排（20.8）→ 1 + log₂(20.8/11) = 1.92</li>
+     * </ul>
+     */
+    public static double FOOD_LOG_BASE = 2.0;
 
     /** 单台机器的配置项 */
     public record MachineSection(int workTotalTime, int ageIncrement, int maxAnimalCount,
@@ -275,6 +319,54 @@ public final class CivilizationMachineConfig {
         String defaults = """
                 # CivilizationEvolution 文明机器配置
                 # 工作周期单位为 tick（20 tick = 1 秒）
+
+                # ============================================================
+                # 全局配置
+                # ============================================================
+
+                # ========== 人口效率计算公式 ==========
+                #
+                #   效率 = avg × (1 + log_b(n))
+                #
+                #   avg = 所有工人的 NBT 效率之和 / 工人数量 n（即平均效率）
+                #   n   = 实际参与工作的工人数量（符合年龄和职业要求的人口）
+                #   b   = 底数（本配置项），含义：每 b 倍工人数量，效率翻倍
+                #
+                # 示例（b=3 时）：
+                #   1 个工人 → 效率 = avg × 1.00
+                #   3 个工人 → 效率 = avg × 2.00
+                #   9 个工人 → 效率 = avg × 3.00
+                #
+                # 调节指南：
+                #   b=2   — 增长快，2 人即翻倍，适合小规模团战
+                #   b=3   — 默认值，平衡，3 人翻倍
+                #   b=4   — 增长缓，4 人翻倍，大型团队惩罚大
+                #   b=1.0 — 退化为纯平均（avg），人数完全不产生加成
+                efficiency_log_base: 3.0
+
+                # ========== 食物因子计算公式 ==========
+                #
+                # 两段式公式（avg = 工作人口消耗食物的人均校准营养值）：
+                #
+                #   avg < R  →  factor = avg / R          （低于基准：线性比例）
+                #   avg ≥ R  →  factor = 1 + log_b(avg/R)  （达到基准后：对数增长）
+                #
+                #   校准营养值 = nutrition + saturationModifier × nutrition × 2
+                #   R = food_reference_value（基准值，默认 11.0 = 面包）
+                #   b = food_log_base（底数，默认 2.0 = 品质翻倍 +1 效率）
+                #
+                # 示例（b=2, R=11）：
+                #   腐肉（10.4）→ 10.4/11 = 0.95
+                #   面包（11.0）→ 1.00（基准参照点）
+                #   金胡萝卜（14.4）→ 1 + log₂(14.4/11) = 1.39
+                #   牛排（20.8）→ 1 + log₂(20.8/11) = 1.92
+                #
+                # 调节指南：
+                #   food_reference_value=11  — 以面包为基准
+                #   food_log_base=2  — 品质翻倍 +1，增长适中
+                #   food_log_base=3  — 品质翻 3 倍 +1，增长更缓
+                food_reference_value: 11.0
+                food_log_base: 2.0
 
                 camp:
                   # 营地完成一次工作所需的 tick 数（12000 tick = 10 分钟）
@@ -514,7 +606,32 @@ public final class CivilizationMachineConfig {
             String name = sectionEntry.getKey();
             Map<String, String> kv = sectionEntry.getValue();
 
-            if (kv.containsKey("pit_wall_block_tags")) {
+            if ("global".equals(name)) {
+                // 全局配置：读取效率计算公式底数
+                String baseStr = kv.get("efficiency_log_base");
+                if (baseStr != null && !baseStr.isEmpty()) {
+                    try {
+                        double base = Double.parseDouble(baseStr);
+                        if (base > 0) EFFICIENCY_LOG_BASE = base;
+                    } catch (NumberFormatException ignored) {}
+                }
+                // 食物因子基准值（面包校准值）
+                String refStr = kv.get("food_reference_value");
+                if (refStr != null && !refStr.isEmpty()) {
+                    try {
+                        double ref = Double.parseDouble(refStr);
+                        if (ref > 0) FOOD_REFERENCE_VALUE = ref;
+                    } catch (NumberFormatException ignored) {}
+                }
+                // 食物因子对数底数
+                String foodBaseStr = kv.get("food_log_base");
+                if (foodBaseStr != null && !foodBaseStr.isEmpty()) {
+                    try {
+                        double foodBase = Double.parseDouble(foodBaseStr);
+                        if (foodBase > 0) FOOD_LOG_BASE = foodBase;
+                    } catch (NumberFormatException ignored) {}
+                }
+            } else if (kv.containsKey("pit_wall_block_tags")) {
                 // 储物容器 section
                 STORAGE_SECTIONS.put(name, new StorageSection(
                         parseJsonArray(kv.get("pit_wall_block_tags")),

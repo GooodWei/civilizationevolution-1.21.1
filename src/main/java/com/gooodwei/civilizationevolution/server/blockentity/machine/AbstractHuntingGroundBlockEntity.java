@@ -63,7 +63,8 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
     protected abstract String getMachineConfigKey();
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
-    protected int getFoodPerPopulation() {
+    @Override
+    public int getFoodPerPopulation() {
         return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 32);
     }
 
@@ -165,7 +166,7 @@ public abstract class AbstractHuntingGroundBlockEntity extends AbstractRangeMach
 
             if (!grouped.isEmpty()) {
                 ItemStack weapon = this.getItem(getWeaponSlot());
-                float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
+                float efficiency = calculateEfficiency();
                 if (weapon.isEmpty()) {
                     efficiency *= getEfficiencyNoWeapon();
                 }

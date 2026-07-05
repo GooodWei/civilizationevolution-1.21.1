@@ -158,7 +158,7 @@ public interface IPopulationMachine {
             FoodProperties food = stack.getFoodProperties(null);
             float nutrition = food != null ? food.nutrition() : 0;
             // 实际饱和度 = nutrition × saturationModifier × 2
-            float saturation = food != null ? nutrition * food.saturation() : 0;
+            float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
 
             int toRemove = Math.min(stack.getCount(), remaining);
             stack.shrink(toRemove);
@@ -177,7 +177,7 @@ public interface IPopulationMachine {
      *
      * <p><b>食物充足时（正常路径）：</b>
      * <ol>
-     *   <li>消耗食物物品用于本次工作，按 {@code formula} 计算食物因子</li>
+     *   <li>消耗食物物品用于本次工作，按 {@link #calculateFoodFactor} 计算食物因子</li>
      *   <li>额外遍历所有人口槽位：若某人口 NBT 饱食度 &lt; 100，额外消耗一份食物，
      *       将其 {@code nutrition + saturation × 2} 加到该人口 NBT 饱食度上</li>
      *   <li>喂食只喂饱食度 &lt; 100 的人口，喂食后允许超过 100</li>
@@ -187,22 +187,16 @@ public interface IPopulationMachine {
      * <p><b>食物不足时（回退路径）：</b>
      * <ol>
      *   <li>不消耗任何食物物品</li>
-     *   <li>从每个人口物品的 NBT 饱食度扣除 16 点 → 食物因子 0.75</li>
-     *   <li>饱食度不足 16 时，先扣尽饱食度，差额从生命值扣除 → 食物因子 0.5</li>
-     *   <li>生命值降至 ≤ 0 时标记人口死亡</li>
+     *   <li>调用 {@link #applyFoodFallback}：从每个人口 NBT 饱食度扣除 16 点</li>
+     *   <li>饱食度不足时扣生命值，生命值 ≤ 0 标记死亡</li>
      * </ol>
      *
-     * <p>食物因子取最差情况：只要有任何一个人口扣了生命值，整体因子就是 0.5。
-     *
      * @param foodPerPopulation 每个人口槽位每次工作消耗的食物物品量
-     * @param formula           正常路径的食物因子计算公式
      * @param eligibleCount     符合工作要求的人口数量（影响营养值计算比例）。
      *                          传 -1 表示所有已填满的人口槽位均计入（营地模式）
      * @return 食物因子（正常公式值 / 0.75 / 0.5 / 0）
      */
-    default float consumeFoodWithFallback(int foodPerPopulation,
-                                          java.util.function.DoubleUnaryOperator formula,
-                                          int eligibleCount) {
+    default float consumeFoodWithFallback(int foodPerPopulation, int eligibleCount) {
         Container c = getContainer();
         int filledSlots = countPopulationSlots();
         if (filledSlots == 0) return 0;
@@ -224,9 +218,9 @@ public interface IPopulationMachine {
 
         // ===== 第二步：食物充足 → 正常路径 =====
         if (available >= totalNeeded) {
-            // 2a. 消耗食物物品用于工作（复用现有逻辑）
             int remaining = totalNeeded;
             int eligibleRemaining = eligibleNeeded;
+            int eligibleConsumed = 0;
             float totalNutrition = 0;
             float totalSaturation = 0;
 
@@ -237,7 +231,8 @@ public interface IPopulationMachine {
 
                 FoodProperties food = stack.getFoodProperties(null);
                 float nutrition = food != null ? food.nutrition() : 0;
-                float saturation = food != null ? nutrition * food.saturation() : 0;
+                // 实际饱和度 = nutrition × saturationModifier × 2
+                float saturation = food != null ? nutrition * food.saturation() * 2 : 0;
 
                 int toRemove = Math.min(stack.getCount(), remaining);
                 stack.shrink(toRemove);
@@ -248,13 +243,16 @@ public interface IPopulationMachine {
                     totalNutrition += nutrition * eligiblePortion;
                     totalSaturation += saturation * eligiblePortion;
                     eligibleRemaining -= eligiblePortion;
+                    eligibleConsumed += eligiblePortion;
                 }
             }
 
-            double factor = formula.applyAsDouble(totalNutrition + totalSaturation);
-            float foodFactor = (float) (Math.round(factor * 1000.0) / 1000.0);
+            // 使用统一的两段式食物因子公式
+            double avgNutrition = eligibleConsumed > 0
+                    ? (totalNutrition + totalSaturation) / eligibleConsumed : 0;
+            float foodFactor = (float) (Math.round(calculateFoodFactor(avgNutrition) * 1000.0) / 1000.0);
 
-            // 2b. 额外喂食：对每个饱食度 < 100 的人口，喂一份食物
+            // 额外喂食：对每个饱食度 < 100 的人口，喂一份食物
             for (int slot : populationSlots()) {
                 ItemStack popStack = getPopulationStackUnchecked(slot);
                 if (popStack == null || PopulationNBT.isDead(popStack)) continue;
@@ -282,12 +280,31 @@ public interface IPopulationMachine {
 
         // ===== 第三步：食物不足 → 回退路径 =====
         // 不消耗任何食物物品
+        List<ItemStack> popStacks = new ArrayList<>();
+        for (int slot : populationSlots()) {
+            ItemStack popStack = getPopulationStackUnchecked(slot);
+            if (popStack != null) popStacks.add(popStack);
+        }
+        return applyFoodFallback(popStacks);
+    }
+
+    /**
+     * 食物不足时的 NBT 回退链：扣除人口饱食度 → 扣除生命值 → 标记死亡。
+     *
+     * <p>每人扣除 16 点，先扣 NBT 饱食度，不足时扣生命值。
+     * 不消耗任何食物物品。
+     *
+     * @param popStacks 人口物品列表（不会为 null）
+     * @return 0.75（仅扣饱食度）/ 0.5（扣了生命值）/ 0（全部死亡或列表为空）
+     */
+    default float applyFoodFallback(List<ItemStack> popStacks) {
+        if (popStacks.isEmpty()) return 0;
+
         boolean anyHealthUsed = false;
         boolean anyFoodValueUsed = false;
 
-        for (int slot : populationSlots()) {
-            ItemStack popStack = getPopulationStackUnchecked(slot);
-            if (popStack == null || PopulationNBT.isDead(popStack)) continue;
+        for (ItemStack popStack : popStacks) {
+            if (PopulationNBT.isDead(popStack)) continue;
 
             int currentFood = PopulationNBT.getFood(popStack);
             int currentHealth = PopulationNBT.getHealth(popStack);
@@ -877,21 +894,148 @@ public interface IPopulationMachine {
         return eligible;
     }
 
-    // ==================== 工作效率计算 ====================
+    // ==================== 工作效率计算（模板方法） ====================
 
     /**
-     * 计算本周期工作效率：食物因子 × Σ人口工作效率。
+     * 每个人口每次工作消耗的食物份数。
      *
-     * <p>封装了"消耗食物 → 获取食物因子 → 计算总效率"的标准流程，
-     * 供 Ranch/HG/Farm/Harvester 等机器的 {@code executeWorkCycle} 使用。
+     * <p>所有机器都必须声明其食物消耗量。默认返回 1。
+     * 具体机器应覆写此方法，通常从 {@code CivilizationMachineConfig} 读取配置值。
      *
-     * @param foodPerPopulation 每个人口槽位每次工作消耗的食物量
+     * @return 每个人口每次工作消耗的食物份数
+     */
+    default int getFoodPerPopulation() {
+        return 1;
+    }
+
+    /**
+     * 对人口总效率应用修正平均公式。
+     *
+     * <p>公式：效率 = (totalEfficiency / workerCount) × (1 + log_b(workerCount))
+     *
+     * <p>其中底数 b 来自 {@code CivilizationMachineConfig.EFFICIENCY_LOG_BASE}。
+     * 单人时等价于原值，多人时每翻 b 倍人数获得 +1.0 加成倍率，
+     * 对高人口数量有边际递减效果，同时不稀释精英个体的价值。
+     *
+     * @param totalEfficiency 所有工人 NBT 效率之和（∑ workEfficiency）
+     * @param workerCount     工人数量
+     * @return 修正后的总效率（0.0 ~ N）
+     */
+    static double applyPopulationEfficiencyFormula(double totalEfficiency, int workerCount) {
+        if (workerCount <= 0) return 0;
+        double base = com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig.EFFICIENCY_LOG_BASE;
+        // base ≤ 1 时退化为纯平均（log_b(1)=0，无人数加成）
+        double logFactor = base > 1.0 ? Math.log(workerCount) / Math.log(base) : 0;
+        return (totalEfficiency / workerCount) * (1.0 + logFactor);
+    }
+
+    /**
+     * 计算食物因子（统一的两段式公式）。
+     *
+     * <p>公式：
+     * <pre>
+     * avg < R  →  factor = avg / R          （线性比例）
+     * avg ≥ R  →  factor = 1 + log_b(avg/R)  （对数增长）
+     * </pre>
+     *
+     * <p>其中 R = {@code FOOD_REFERENCE_VALUE}（默认 11.0 = 面包校准值），
+     * b = {@code FOOD_LOG_BASE}（默认 2.0，品质翻倍 +1）。
+     *
+     * <p>校准营养值 = nutrition + saturationModifier × nutrition × 2。
+     *
+     * @param averageNutrition 工作人口消耗食物的人均校准营养值
+     * @return 食物因子（0.0 ~ N）
+     */
+    static double calculateFoodFactor(double averageNutrition) {
+        if (averageNutrition <= 0) return 0;
+        double ref = com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig.FOOD_REFERENCE_VALUE;
+        if (averageNutrition < ref) {
+            return averageNutrition / ref;
+        }
+        double base = com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig.FOOD_LOG_BASE;
+        if (base <= 1.0) return 1.0;
+        return 1.0 + Math.log(averageNutrition / ref) / Math.log(base);
+    }
+
+    /**
+     * 消耗食物并返回食物因子（模板方法，可覆写）。
+     *
+     * <p>默认实现：从内部食物槽位消耗食物，仅合格工人消耗的食物计入因子计算。
+     * 使用统一两段式公式 {@link #calculateFoodFactor} 和完整回退链。
+     *
+     * <p>多方块机器（采石场、医院）应覆写此方法，改为从食物仓室消耗食物。
+     *
+     * @return 食物因子（正常公式值 / 0.75 / 0.5 / 0）
+     */
+    default float consumeAndGetFoodFactor() {
+        List<ItemStack> workers = getAvailableWorkers();
+        return consumeFoodWithFallback(getFoodPerPopulation(), workers.size());
+    }
+
+    /**
+     * 计算人口效率（模板方法，可覆写）。
+     *
+     * <p>默认实现：获取可用工人列表，使用
+     * {@link #applyPopulationEfficiencyFormula} 修正平均公式计算。
+     *
+     * <p>医院等需要自定义人口效率聚合方式的机器应覆写此方法。
+     *
+     * @return 人口效率（0.0 ~ N），无工人时返回 0
+     */
+    default double calculatePopulationEfficiency() {
+        List<ItemStack> workers = getAvailableWorkers();
+        if (workers.isEmpty()) return 0;
+        return applyPopulationEfficiencyFormula(
+                calculateTotalWorkEfficiency(workers), workers.size());
+    }
+
+    /**
+     * 计算本周期最终工作效率（模板方法，可覆写）。
+     *
+     * <p>默认公式：{@code 效率 = 食物因子 × 人口效率}
+     *
+     * <p>此方法封装了"食物因子 → 人口效率 → 组合"的标准流程。
+     * 营地（乘法繁殖）、医院（医生加权效率）等非标准机器应覆写此方法。
+     *
+     * <p>扩展指南：
+     * <ul>
+     *   <li>仅需改变食物来源（如多方块仓室）→ 覆写 {@link #consumeAndGetFoodFactor()}</li>
+     *   <li>仅需改变人口聚合方式 → 覆写 {@link #calculatePopulationEfficiency()}</li>
+     *   <li>需要改变因子组合方式或整体计算流程 → 覆写此方法</li>
+     * </ul>
+     *
      * @return 工作效率（0.0 ~ N）
      */
-    default float calculateWorkEfficiency(int foodPerPopulation) {
-        List<ItemStack> workers = getAvailableWorkers();
-        float foodFactor = consumeFoodWithFallback(foodPerPopulation, Math::sqrt, workers.size());
-        return foodFactor * (float) calculateTotalWorkEfficiency(workers);
+    default float calculateEfficiency() {
+        float result = consumeAndGetFoodFactor() * (float) calculatePopulationEfficiency();
+        recordEfficiency(result);
+        return result;
+    }
+
+    /**
+     * 记录本次工作效率到历史记录中，供 Jade 显示近 5 次平均效率。
+     *
+     * <p>默认空实现（非机器 BE 的 IPopulationMachine 实现无需此功能）。
+     * {@link com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity}
+     * 覆写此方法将数据写入环形缓冲区并持久化到 NBT。
+     *
+     * @param efficiency 本次工作效率值
+     */
+    default void recordEfficiency(float efficiency) {
+        // 默认空实现
+    }
+
+    /**
+     * 获取近 5 次工作的平均效率（不足 5 次取全部已有次数）。
+     *
+     * <p>默认返回 0（非机器 BE 无历史数据）。
+     * {@link com.gooodwei.civilizationevolution.server.blockentity.machine.AbstractMachineBlockEntity}
+     * 覆写此方法从环形缓冲区计算平均值。
+     *
+     * @return 近 5 次平均效率，无记录时返回 0
+     */
+    default float getAverageEfficiency() {
+        return 0;
     }
 
     // ==================== 物品输出路由 ====================

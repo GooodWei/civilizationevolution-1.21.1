@@ -93,6 +93,14 @@ public class MachineComponentProvider implements IBlockComponentProvider {
         }
         // 仓室、结构外壳等纯 IMultiBlockPart → 仅显示 Tier 行，不显示绑定信息
 
+        // ---- 工作效率（近 5 次平均） ----
+        if (data.contains("AvgEfficiency")) {
+            float avgEff = data.getFloat("AvgEfficiency");
+            tooltip.add(Component.translatable(
+                    "jade.civilizationevolution.avg_efficiency",
+                    String.format("%.2f", avgEff)));
+        }
+
         // ---- 储物坑：显示已使用槽位 / 总槽位 ----
         if (data.getBoolean("IsStoragePit")) {
             int used = data.getInt("StorageUsed");

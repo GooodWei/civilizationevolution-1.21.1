@@ -71,7 +71,7 @@ public class PrimitiveDoctorCabinBlockEntity extends AbstractHospitalBlockEntity
     }
 
     @Override
-    protected int getFoodPerPopulation() {
+    public int getFoodPerPopulation() {
         return CivilizationMachineConfig.getFoodPerPopulation(CONFIG_KEY);
     }
 

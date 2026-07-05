@@ -90,11 +90,17 @@ public class MachineDataProvider implements IServerDataProvider<BlockAccessor> {
             return;
         }
 
-        // ---- 3. 普通机器：绑定信息 ----
+        // ---- 3. 普通机器：绑定信息 + 工作效率 ----
         if (be instanceof IPopulationMachine machine) {
             data.putBoolean("IsController", false);
             boolean bound = machine.isBound();
             data.putBoolean("IsBound", bound);
+
+            // 近 5 次平均工作效率
+            float avgEff = machine.getAverageEfficiency();
+            if (avgEff > 0) {
+                data.putFloat("AvgEfficiency", avgEff);
+            }
 
             if (bound) {
                 String uuid = machine.getBoundCoreUuid();

@@ -137,14 +137,13 @@ public final class Population {
         tag.putInt(TAG_PROFICIENCY, isBaby
                 ? PopulationConfig.getChildProficiency()
                 : PopulationConfig.getAdultProficiency());
-        tag.putDouble(TAG_WORK_EFFICIENCY, isBaby
-                ? PopulationConfig.getChildWorkEfficiency()
-                : PopulationConfig.getAdultWorkEfficiency());
         tag.putDouble(TAG_MENTAL_STATE, isBaby
                 ? rand.nextDouble() * (PopulationConfig.getChildMentalStateMax() - PopulationConfig.getChildMentalStateMin()) + PopulationConfig.getChildMentalStateMin()
                 : PopulationConfig.getAdultMentalState());
 
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        // 立即根据实际属性计算工作效率，避免初始值为 0 导致机器无法工作
+        recalcEfficiency(stack);
         return stack;
     }
 

@@ -157,6 +157,7 @@
   "jade.civilizationevolution.not_bound": "§7Not bound",
   "jade.civilizationevolution.core_uuid": "§9Core UUID: %s",
   "jade.civilizationevolution.no_core": "§7No civilization core",
+  "jade.civilizationevolution.avg_efficiency": "§9Avg Efficiency: %s",
 
   "item.civilizationevolution.debug_structure_getter": "Debug Structure Getter",
   "tooltip.civilizationevolution.debug_structure_getter.pos1": "Pos1: (%d, %d, %d) [%s]",

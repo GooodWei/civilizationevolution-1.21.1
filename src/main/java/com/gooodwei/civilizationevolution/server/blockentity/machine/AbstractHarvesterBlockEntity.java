@@ -62,7 +62,7 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
         if (level instanceof ServerLevel serverLevel && this.canWork()) {
             addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
-            float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
+            float efficiency = calculateEfficiency();
             int cropCount = Math.max(1, Math.round(efficiency));
             int waterPerCrop = CivilizationMachineConfig.getWaterPerCrop(getMachineConfigKey());
             AABB range = getSelectionRange();
@@ -156,7 +156,8 @@ public abstract class AbstractHarvesterBlockEntity extends AbstractRangeMachineB
     protected abstract String getMachineConfigKey();
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
-    protected int getFoodPerPopulation() {
+    @Override
+    public int getFoodPerPopulation() {
         return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
     }
 

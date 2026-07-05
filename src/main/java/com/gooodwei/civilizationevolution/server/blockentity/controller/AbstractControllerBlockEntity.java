@@ -420,11 +420,12 @@ public abstract class AbstractControllerBlockEntity
             saveCounter = 0;
         }
 
-        // 信标光柱开关：红石信号 + 核心 UUID 同时满足时激活
-        boolean shouldBeam = be.currentUuid != null && level.hasNeighborSignal(pos);
+        // 信标光柱开关：红石信号 + 核心 UUID + 结构成型 同时满足时激活
+        // flag=2（仅 UPDATE_CLIENTS），光柱为纯视觉效果，无需触发邻居方块更新
+        boolean shouldBeam = be.currentUuid != null && level.hasNeighborSignal(pos) && be.isStructureFormed();
         if (blockState.hasProperty(AbstractControllerBlock.BEAM_ACTIVE)
                 && blockState.getValue(AbstractControllerBlock.BEAM_ACTIVE) != shouldBeam) {
-            level.setBlock(pos, blockState.setValue(AbstractControllerBlock.BEAM_ACTIVE, shouldBeam), 3);
+            level.setBlock(pos, blockState.setValue(AbstractControllerBlock.BEAM_ACTIVE, shouldBeam), 2);
         }
 
         setChanged(level, pos, blockState);

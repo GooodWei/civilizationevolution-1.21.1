@@ -57,7 +57,8 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     public abstract String getWorkerCareer();
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
-    protected int getFoodPerPopulation() {
+    @Override
+    public int getFoodPerPopulation() {
         return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 8);
     }
 
@@ -69,9 +70,18 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
     /** 父代槽位 B 的索引 */
     protected int getParentSlotB() { return 5; }
 
-    /** 食物因子计算公式，归一化分母引用 {@link CivilizationMachineConfig#FOOD_FACTOR_NORMALIZER} */
-    protected double getFoodFactorFormula(double total) {
-        return Math.sqrt(total / CivilizationMachineConfig.FOOD_FACTOR_NORMALIZER);
+    /**
+     * 营地效率 = 食物因子（覆写默认的 食物因子 × 人口效率 公式）。
+     *
+     * <p>营地采用乘法繁殖模型：子嗣数 = 父A效率 × 父B效率 × 食物因子。
+     * 人口效率由两亲本各自的工作效率相乘来体现，不在此方法中计算。
+     * eligibleCount = -1 表示所有已填充槽位的父母均计入食物因子。
+     */
+    @Override
+    public float calculateEfficiency() {
+        float result = consumeFoodWithFallback(getFoodPerPopulation(), -1);
+        recordEfficiency(result);
+        return result;
     }
 
     /** 父代最低生育年龄，优先从配置读取 */
@@ -151,8 +161,7 @@ public abstract class AbstractCampBlockEntity extends AbstractMachineBlockEntity
         this.fluctuateHealth(getHealthFluctuateMin(), getHealthFluctuateMax());
 
         if (this.canWork()) {
-            float foodFactor = this.consumeFoodWithFallback(getFoodPerPopulation(),
-                    this::getFoodFactorFormula, -1);
+            float foodFactor = calculateEfficiency();
             this.doReproduction(level, foodFactor);
         }
         BlockPos pos = this.getBlockPos();

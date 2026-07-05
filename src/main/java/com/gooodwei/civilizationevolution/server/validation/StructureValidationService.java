@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -372,6 +373,7 @@ public final class StructureValidationService {
     /** 在<b>主线程</b>应用后台验证结果 */
     private static void applyResult(IMultiBlockMachine machine, ValidationResult result) {
         var mbs = machine.mbs();
+        Level level = machine.getLevel();
 
         if (result.structureFormed) {
             mbs.inputHatches.clear();
@@ -389,13 +391,23 @@ public final class StructureValidationService {
             mbs.allPartPositions.clear();
             mbs.allPartPositions.addAll(result.allPartPositions);
 
-            if (!mbs.structureFormed) {
-                mbs.structureFormed = true;
-                machine.markChanged();
+            // 首次成型或状态变更时认领所有零件（与同步验证路径的 claimPart 保持一致）
+            if (!mbs.structureFormed && level != null) {
+                BlockPos controllerPos = machine.getBlockPos();
+                for (BlockPos partPos : result.allPartPositions) {
+                    IMultiBlockPart part = machine.resolveMultiBlockPart(partPos);
+                    if (part != null) {
+                        part.claimPart(level, partPos, controllerPos);
+                    }
+                }
             }
+            mbs.structureFormed = true;
+            machine.markChanged();
         } else {
             if (mbs.structureFormed) {
                 mbs.structureFormed = false;
+                // 释放已认领的零件（与同步验证路径的 notifyPartsUnformed 保持一致）
+                machine.notifyPartsUnformed();
                 mbs.clearPartCaches();
                 machine.markChanged();
             }

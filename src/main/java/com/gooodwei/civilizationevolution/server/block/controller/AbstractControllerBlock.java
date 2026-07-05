@@ -27,8 +27,9 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
  * <ol>
  *   <li>控制器内有文明核心物品（UUID 非空）</li>
  *   <li>方块收到红石信号（任意强度）</li>
+ *   <li>多方块结构已成型（{@link IMultiBlockMachine#isStructureFormed()}）</li>
  * </ol>
- * 两者同时满足时设为 {@code true}，否则为 {@code false}。
+ * 三者同时满足时设为 {@code true}，否则为 {@code false}。
  * 客户端 {@link com.gooodwei.civilizationevolution.client.renderer.ControllerBeamRenderer}
  * 读取此属性决定是否渲染信标光柱。
  *

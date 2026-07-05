@@ -52,6 +52,12 @@ public abstract class AbstractMachineBlockEntity
     public static final String TAG_BOUND_CORE_UUID = "BoundCoreUuid";
     /** NBT key：绑定的控制器所在维度 */
     public static final String TAG_BOUND_CONTROLLER_DIMENSION = "BoundControllerDimension";
+    /** NBT key：效率历史记录数量 */
+    private static final String TAG_EFF_HISTORY_COUNT = "EffHistoryCount";
+    /** NBT key：效率历史记录写入位置 */
+    private static final String TAG_EFF_HISTORY_INDEX = "EffHistoryIndex";
+    /** NBT key 前缀：效率历史记录值（EffHistory0 ~ EffHistory4） */
+    private static final String TAG_EFF_HISTORY_PREFIX = "EffHistory";
 
     // ==================== 共享字段 ====================
 
@@ -65,6 +71,15 @@ public abstract class AbstractMachineBlockEntity
     protected String boundCoreUuid = null;
     /** 绑定的控制器所在维度 ID（如 "minecraft:overworld"），未绑定时为 null */
     protected String boundControllerDimension = null;
+
+    // ==================== 效率历史记录（环形缓冲区） ====================
+
+    /** 近 5 次工作效率记录（环形缓冲区），供 Jade 显示平均效率 */
+    private final float[] efficiencyHistory = new float[5];
+    /** 环形缓冲区下一次写入位置（0-4） */
+    private int efficiencyHistoryIndex = 0;
+    /** 已记录的工作次数（0-5），不足 5 次时取此值计算平均 */
+    private int efficiencyHistoryCount = 0;
 
     // ==================== 构造器 ====================
 
@@ -161,6 +176,36 @@ public abstract class AbstractMachineBlockEntity
         return isBound();
     }
 
+    // ==================== 效率历史记录 ====================
+
+    /**
+     * 记录本次工作效率到环形缓冲区中。
+     *
+     * <p>由 {@link IPopulationMachine#calculateEfficiency()} 自动调用。
+     * 覆写 {@code calculateEfficiency()} 的机器（如营地）需手动调用此方法。
+     */
+    @Override
+    public void recordEfficiency(float efficiency) {
+        efficiencyHistory[efficiencyHistoryIndex] = efficiency;
+        efficiencyHistoryIndex = (efficiencyHistoryIndex + 1) % 5;
+        if (efficiencyHistoryCount < 5) efficiencyHistoryCount++;
+    }
+
+    /**
+     * 获取近 5 次工作的平均效率（不足 5 次取全部已有次数）。
+     *
+     * @return 近 5 次平均效率，无记录时返回 0
+     */
+    @Override
+    public float getAverageEfficiency() {
+        if (efficiencyHistoryCount == 0) return 0;
+        float sum = 0;
+        for (int i = 0; i < efficiencyHistoryCount; i++) {
+            sum += efficiencyHistory[i];
+        }
+        return sum / efficiencyHistoryCount;
+    }
+
     // ==================== 健康度波动（子类可覆写） ====================
 
     /** 每次工作周期后人口健康度随机波动下限（默认 -5） */
@@ -223,6 +268,12 @@ public abstract class AbstractMachineBlockEntity
             tag.putString(TAG_BOUND_CONTROLLER_DIMENSION, boundControllerDimension);
         }
         ContainerHelper.saveAllItems(tag, items, registries);
+        // 效率历史记录
+        tag.putInt(TAG_EFF_HISTORY_COUNT, efficiencyHistoryCount);
+        tag.putInt(TAG_EFF_HISTORY_INDEX, efficiencyHistoryIndex);
+        for (int i = 0; i < efficiencyHistoryCount; i++) {
+            tag.putFloat(TAG_EFF_HISTORY_PREFIX + i, efficiencyHistory[i]);
+        }
     }
 
     /**
@@ -238,5 +289,11 @@ public abstract class AbstractMachineBlockEntity
         String dimension = tag.getString(TAG_BOUND_CONTROLLER_DIMENSION);
         boundControllerDimension = dimension.isEmpty() ? null : dimension;
         ContainerHelper.loadAllItems(tag, items, registries);
+        // 效率历史记录
+        efficiencyHistoryCount = tag.getInt(TAG_EFF_HISTORY_COUNT);
+        efficiencyHistoryIndex = tag.getInt(TAG_EFF_HISTORY_INDEX);
+        for (int i = 0; i < efficiencyHistoryCount; i++) {
+            efficiencyHistory[i] = tag.getFloat(TAG_EFF_HISTORY_PREFIX + i);
+        }
     }
 }

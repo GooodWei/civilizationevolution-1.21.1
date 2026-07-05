@@ -61,7 +61,8 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
     protected abstract String getMachineConfigKey();
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
-    protected int getFoodPerPopulation() {
+    @Override
+    public int getFoodPerPopulation() {
         return CivilizationMachineConfig.getFoodPerPopulation(getMachineConfigKey(), 2);
     }
 
@@ -170,7 +171,7 @@ public abstract class AbstractRanchBlockEntity extends AbstractRangeMachineBlock
                         Animal::getClass);
 
                 if (!grouped.isEmpty()) {
-                    float efficiency = calculateWorkEfficiency(getFoodPerPopulation());
+                    float efficiency = calculateEfficiency();
                     feedAnimals(grouped, serverLevel, efficiency);
                 }
             }

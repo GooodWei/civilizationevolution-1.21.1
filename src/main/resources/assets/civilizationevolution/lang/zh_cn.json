@@ -158,6 +158,7 @@
   "jade.civilizationevolution.not_bound": "§7未绑定控制器",
   "jade.civilizationevolution.core_uuid": "§9文明核心 UUID: %s",
   "jade.civilizationevolution.no_core": "§7无文明核心",
+  "jade.civilizationevolution.avg_efficiency": "§9平均效率: %s",
 
   "item.civilizationevolution.debug_structure_getter": "结构调试获取器",
   "tooltip.civilizationevolution.debug_structure_getter.pos1": "坐标1: (%d, %d, %d) [%s]",

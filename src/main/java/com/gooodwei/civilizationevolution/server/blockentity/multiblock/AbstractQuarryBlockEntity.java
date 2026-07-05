@@ -4,19 +4,16 @@ import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
 import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.block.part.MiningShaftPipe;
 import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFluidHatchBlockEntity;
-import com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFoodInputHatchBlockEntity;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 import com.gooodwei.civilizationevolution.server.item.PopulationItem;
 import com.gooodwei.civilizationevolution.server.registry.BlockRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -105,7 +102,8 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
     }
 
     /** 每个人口每次工作消耗的食物份数，优先从配置读取 */
-    protected int getFoodPerPopulation() {
+    @Override
+    public int getFoodPerPopulation() {
         return CivilizationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
     }
 
@@ -218,111 +216,14 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
         }
     }
 
-    // ==================== 食物消耗 ====================
+    // 食物因子：从多方块食物仓室消耗（覆写 IPopulationMachine 默认的内部槽位方式）
 
-    /**
-     * 从食物输入仓室消耗食物，计算食物因子。
-     *
-     * @param level 服务端世界
-     * @param foodPerPopulation 每个人口消耗的食物份数
-     * @param workerCount 工作人口数量
-     * @return 食物因子（0.5 ~ N）
-     */
-    @SuppressWarnings("unused")
-    protected float consumeFoodFromHatches(ServerLevel level, int foodPerPopulation, int workerCount) {
-        int totalNeeded = workerCount * foodPerPopulation;
-        if (totalNeeded <= 0) return 1.0f;
-
-        float totalNutrition = 0;
-        float totalSaturation = 0;
-        int collected = 0;
-
-        // 记录消耗信息用于第二遍实际消耗
-        record FoodEntry(BlockPos pos, int count, float nutrition, float saturation) {}
-        List<FoodEntry> consumed = new ArrayList<>();
-
-        for (BlockPos hatchPos : getFoodHatches()) {
-            if (collected >= totalNeeded) break;
-            if (!(level.getBlockEntity(hatchPos) instanceof AbstractFoodInputHatchBlockEntity hatch)) continue;
-            ItemStack stack = hatch.getItem(0);
-            if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
-
-            FoodProperties food = stack.get(DataComponents.FOOD);
-            float nut = food != null ? food.nutrition() : 0;
-            float sat = food != null ? nut * food.saturation() : 0;
-
-            int take = Math.min(stack.getCount(), totalNeeded - collected);
-            consumed.add(new FoodEntry(hatchPos, take, nut, sat));
-            totalNutrition += nut * take;
-            totalSaturation += sat * take;
-            collected += take;
-        }
-
-        if (collected == 0) return 0.5f; // 无食物 → 50% 效率
-
-        // 第二遍：实际消耗（需要重新锁定）
-        for (FoodEntry entry : consumed) {
-            if (level.getBlockEntity(entry.pos()) instanceof AbstractFoodInputHatchBlockEntity hatch) {
-                hatch.getItem(0).shrink(entry.count());
-                hatch.setChanged();
-            }
-        }
-
-        // 食物因子 = sqrt(totalNutrition + totalSaturation)
-        double factor = Math.sqrt(totalNutrition + totalSaturation);
-        return (float) (Math.round(factor * 1000.0) / 1000.0);
-    }
-
-    /**
-     * 额外每人口消耗 1 个食物，将食物营养值直接加到人口的饱食度上。
-     *
-     * <p>与 {@link #consumeFoodFromHatches} 独立——后者用于计算效率因子，
-     * 本方法直接提升人口 NBT 中的 food 值。
-     *
-     * @param level   服务端世界
-     * @param workers 可用工作人口列表
-     */
-    protected void feedWorkersDirectly(ServerLevel level, List<ItemStack> workers) {
-        if (workers.isEmpty()) return;
-
-        int needed = workers.size(); // 每人 1 份食物
-        List<BlockPos> foodHatches = getFoodHatches();
-        if (foodHatches.isEmpty()) return;
-
-        // 收集食物
-        record FoodItem(BlockPos pos, FoodProperties food) {}
-        List<FoodItem> available = new ArrayList<>();
-        for (BlockPos hatchPos : foodHatches) {
-            if (available.size() >= needed) break;
-            if (!(level.getBlockEntity(hatchPos) instanceof AbstractFoodInputHatchBlockEntity hatch)) continue;
-            ItemStack stack = hatch.getItem(0);
-            if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
-            int take = Math.min(stack.getCount(), needed - available.size());
-            for (int i = 0; i < take; i++) {
-                available.add(new FoodItem(hatchPos, stack.get(DataComponents.FOOD)));
-            }
-        }
-
-        if (available.isEmpty()) return;
-
-        // 每人消耗 1 份食物，累加饱食度（需要重新锁定）
-        for (int i = 0; i < workers.size() && i < available.size(); i++) {
-            ItemStack workerStack = workers.get(i);
-            FoodItem foodItem = available.get(i);
-            FoodProperties food = foodItem.food();
-
-            if (food != null) {
-                int currentFood = PopulationNBT.getFood(workerStack);
-                int newFood = Math.min(100, currentFood + food.nutrition());
-                PopulationNBT.setFood(workerStack, newFood);
-            }
-
-            // 从食物输入仓扣除
-            if (level.getBlockEntity(foodItem.pos()) instanceof AbstractFoodInputHatchBlockEntity hatch) {
-                hatch.getItem(0).shrink(1);
-                hatch.setChanged();
-            }
-        }
+    @Override
+    public float consumeAndGetFoodFactor() {
+        List<ItemStack> workers = getAvailableWorkers();
+        return consumeFoodFromHatchesWithFallback(
+                workers.size() * getFoodPerPopulation(),
+                workers.size() * getFoodPerPopulation());
     }
 
     // ==================== 管道连贯性 ====================
@@ -526,15 +427,8 @@ public abstract class AbstractQuarryBlockEntity extends AbstractMultiBlockMachin
         // 1. 学徒系统
         addApprenticeExpToPopulationSlots(getWorkerCareer(), getApprenticeExpPerCycle());
 
-        // 2. 计算工作效率
-        List<ItemStack> workers = getAvailableWorkers();
-        double totalWorkEfficiency = calculateTotalWorkEfficiency(workers);
-        float foodFactor = consumeFoodFromHatches(serverLevel,
-                getFoodPerPopulation(), workers.size());
-        float efficiency = foodFactor * (float) totalWorkEfficiency;
-
-        // 2.5. 额外每人口消耗 1 食物直接补充人口饱食度
-        feedWorkersDirectly(serverLevel, workers);
+        // 2. 计算工作效率（食物因子 × 人口效率，食物从多方块仓室消耗）
+        float efficiency = calculateEfficiency();
 
         // 每周期最多破坏方块数 = floor(效率 × 乘数)，至少 1 块
         int blocksPerCycle = Math.max(1, (int) (efficiency * getBlocksPerCycleMultiplier()));

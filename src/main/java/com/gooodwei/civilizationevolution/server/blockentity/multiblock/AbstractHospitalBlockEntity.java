@@ -8,11 +8,9 @@ import com.gooodwei.civilizationevolution.api.util.PopulationNBT;
 import com.gooodwei.civilizationevolution.server.config.CivilizationMachineConfig;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
@@ -125,21 +123,8 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
         // ===== 2. 医生学徒经验（委托 IPopulationItem.addApprenticeExp） =====
         addApprenticeExpToPopulationSlots(CareerNames.CLERIC, getApprenticeExpPerCycle());
 
-        // ===== 3. 计算机器效率 =====
-        List<ItemStack> doctors = getActiveDoctors();
-        double avgEfficiency = 0.5; // 无医生时默认 0.5
-        if (!doctors.isEmpty()) {
-            avgEfficiency = doctors.stream()
-                    .mapToDouble(PopulationNBT::getWorkEfficiency)
-                    .average().orElse(0.5);
-        }
-
-        // ===== 4. 消耗食物并计算食物因子 =====
-        int patientCount = countInputHatchPatients();
-        int totalMouths = patientCount + doctors.size();
-        float foodFactor = consumeFoodAndGetFactor(totalMouths, doctors.size());
-
-        double machineEfficiency = avgEfficiency * foodFactor;
+        // ===== 3. 计算机器效率（食物因子 × 医生人口效率） =====
+        double machineEfficiency = calculateEfficiency();
 
         // ===== 5. 处理病人 =====
         for (BlockPos hatchPos : getInputHatches()) {
@@ -276,10 +261,9 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
 
     // ==================== 食物系统 ====================
 
-    /**
-     * 获取单位人口食物消耗量，优先从配置读取。
-     */
-    protected int getFoodPerPopulation() {
+    /** 获取单位人口食物消耗量，优先从配置读取。 */
+    @Override
+    public int getFoodPerPopulation() {
         return CivilizationMachineConfig.getFoodPerPopulation(getConfigKey(), 1);
     }
 
@@ -291,53 +275,39 @@ public abstract class AbstractHospitalBlockEntity extends AbstractMultiBlockMach
     }
 
     /**
-     * 从食物仓室消耗食物并计算食物因子。
+     * 从食物仓室消耗食物并返回食物因子（覆写默认的内部槽位方式）。
      *
-     * <p>总消耗 = totalMouths × foodPerPopulation。
-     * 食物因子 = sqrt(医生部分营养值 / 176.0)，仅按医生消耗的食物营养值计算。
-     *
-     * @param totalMouths 总人口数（医生 + 病人）
-     * @param doctorCount 活跃医生数
-     * @return 食物因子（0.0 ~ N），取小数点后三位
+     * <p>医院特殊逻辑：总消耗 = (病人 + 医生) × 单位消耗，
+     * 但仅医生消耗的食物计入因子计算。
      */
-    protected float consumeFoodAndGetFactor(int totalMouths, int doctorCount) {
-        int fp = getFoodPerPopulation();
-        int totalNeeded = totalMouths * fp;
-        int doctorNeeded = doctorCount * fp;
+    @Override
+    public float consumeAndGetFoodFactor() {
+        List<ItemStack> doctors = getActiveDoctors();
+        int patientCount = countInputHatchPatients();
+        int totalMouths = patientCount + doctors.size();
+        int totalNeeded = totalMouths * getFoodPerPopulation();
+        int eligibleNeeded = doctors.size() * getFoodPerPopulation();
+        return consumeFoodFromHatchesWithFallback(totalNeeded, eligibleNeeded);
+    }
 
-        if (totalNeeded <= 0 || getFoodHatches().isEmpty()) return 1.0f;
-
-        float doctorNutrition = 0;
-        int remaining = totalNeeded;
-
-        for (BlockPos hatchPos : getFoodHatches()) {
-            if (remaining <= 0) break;
-            BlockEntity be = level.getBlockEntity(hatchPos);
-            if (!(be instanceof com.gooodwei.civilizationevolution.server.blockentity.hatch.AbstractFoodInputHatchBlockEntity hatch))
-                continue;
-            for (int i = 0; i < hatch.getContainerSize() && remaining > 0; i++) {
-                ItemStack stack = hatch.getItem(i);
-                if (stack.isEmpty() || !stack.has(DataComponents.FOOD)) continue;
-
-                FoodProperties food = stack.getFoodProperties(null);
-                float nutrition = food != null ? food.nutrition() : 0;
-                float saturation = food != null ? nutrition * food.saturation() : 0;
-                float unitNutrition = nutrition + saturation;
-
-                int toRemove = Math.min(stack.getCount(), remaining);
-                stack.shrink(toRemove);
-                remaining -= toRemove;
-
-                // 医生部分按比例计入营养因子
-                float docRatio = totalNeeded > 0 ? (float) doctorNeeded / totalNeeded : 0;
-                doctorNutrition += unitNutrition * toRemove * docRatio;
-
-                hatch.setChanged();
-            }
+    /**
+     * 计算医生人口效率（覆写默认的工人平均公式）。
+     *
+     * <p>医院特殊逻辑：无医生时默认 0.5，有医生时使用
+     * 医生平均效率 × (1 + log_b(医生数)) 修正公式。
+     */
+    @Override
+    public double calculatePopulationEfficiency() {
+        List<ItemStack> doctors = getActiveDoctors();
+        if (doctors.isEmpty()) return 0.5;
+        double avgEfficiency = doctors.stream()
+                .mapToDouble(PopulationNBT::getWorkEfficiency)
+                .average().orElse(0.5);
+        double base = CivilizationMachineConfig.EFFICIENCY_LOG_BASE;
+        if (base > 1.0) {
+            avgEfficiency *= 1.0 + Math.log(doctors.size()) / Math.log(base);
         }
-
-        double factor = Math.sqrt(doctorNutrition / CivilizationMachineConfig.FOOD_FACTOR_NORMALIZER);
-        return (float) (Math.round(factor * 1000.0) / 1000.0);
+        return avgEfficiency;
     }
 
     // ==================== 槽位分类 ====================
