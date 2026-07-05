@@ -274,17 +274,17 @@ public final class MultiBlockConfig {
         // ========== village_mill ==========
         JsonObject villageMill = new JsonObject();
 
-        // controller [y, x, z] — 在背面中央偏右
+        // controller [y, x, z] — 在正面中央（z=0），结构向背后延伸
         JsonArray vmCtrl = new JsonArray();
-        vmCtrl.add(0); vmCtrl.add(2); vmCtrl.add(5);
+        vmCtrl.add(0); vmCtrl.add(2); vmCtrl.add(0);
         villageMill.add("controller", vmCtrl);
 
-        // pattern — 5×4×6（宽×高×深），控制器在背面，结构向前延伸
+        // pattern — 5×4×6（宽×高×深），控制器在正面，结构向后延伸
         JsonObject vmPattern = new JsonObject();
-        vmPattern.addProperty("y0", "  A  ,     , AAA , AAA , AAA , ABA ");
-        vmPattern.addProperty("y1", "     , AAA , A A , A A , A A , A A ");
-        vmPattern.addProperty("y2", " AAA ,AAAAA,AA AA,AAAAA, AAA ,     ");
-        vmPattern.addProperty("y3", "  A  ,     ,     ,     ,     ,     ");
+        vmPattern.addProperty("y0", " ABA , AAA , AAA , AAA ,     ,  A  ");
+        vmPattern.addProperty("y1", " A A , A A , A A , A A , AAA ,     ");
+        vmPattern.addProperty("y2", "     , AAA ,AAAAA,AA AA,AAAAA, AAA ");
+        vmPattern.addProperty("y3", "     ,     ,     ,     ,     ,  A  ");
         villageMill.add("pattern", vmPattern);
 
         villageMill.addProperty("validate_interval", 30);

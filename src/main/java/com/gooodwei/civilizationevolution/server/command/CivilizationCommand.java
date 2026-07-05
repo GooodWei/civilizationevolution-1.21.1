@@ -500,10 +500,10 @@ public final class CivilizationCommand {
                     int dz = wp[2] - cwz; // 世界 Z 偏移
                     int rlx, rlz;
                     switch (facing) {
-                        case NORTH -> { rlx = dx;        rlz = -dz;      }
-                        case SOUTH -> { rlx = -dx;       rlz = dz;       }
-                        case WEST  -> { rlx = dz;        rlz = -dx;      }
-                        case EAST  -> { rlx = -dz;       rlz = dx;       }
+                        case NORTH -> { rlx = dx;        rlz = dz;       }
+                        case SOUTH -> { rlx = -dx;       rlz = -dz;      }
+                        case WEST  -> { rlx = dz;        rlz = dx;       }
+                        case EAST  -> { rlx = -dz;       rlz = -dx;      }
                         default   -> { rlx = dx;         rlz = dz;       }
                     }
                     // ly 不受旋转影响
