@@ -19,6 +19,7 @@ import com.gooodwei.civilizationevolution.server.item.CivilizationCoreItem;
 import com.gooodwei.civilizationevolution.server.item.DebugStructureGetterItem;
 import com.gooodwei.civilizationevolution.server.item.ProjectorItem;
 import com.gooodwei.civilizationevolution.server.registry.BlockEntityRegistry;
+import com.gooodwei.civilizationevolution.server.registry.ModRecipeTypes;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
 import com.gooodwei.civilizationevolution.server.validation.StructureValidationService;
 import com.mojang.logging.LogUtils;
@@ -94,6 +95,7 @@ public class CivilizationEvolution {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(NetworkHandler::register);
         modEventBus.addListener(this::registerCapabilities);
+        ModRecipeTypes.register(modEventBus);
 
         // 注册自身以监听服务器事件（onServerStarting / onServerStarted / onServerStopping）
         NeoForge.EVENT_BUS.register(this);
