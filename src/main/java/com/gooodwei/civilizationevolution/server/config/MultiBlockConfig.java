@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.config;
 
+import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
 import com.google.gson.*;
 import com.mojang.logging.LogUtils;
 import net.neoforged.fml.loading.FMLPaths;
@@ -118,8 +119,8 @@ public final class MultiBlockConfig {
         pattern.addProperty("y1", "XX,XX");
         doctorCabin.add("pattern", pattern);
 
-        // 定时验证间隔（秒），默认 30 秒
-        doctorCabin.addProperty("validate_interval", 30);
+        // 定时验证间隔（引用 IMultiBlockMachine.DEFAULT_VALIDATE_INTERVAL_TICKS，增量验证已覆盖即时检测）
+        doctorCabin.addProperty("validate_interval", IMultiBlockMachine.DEFAULT_VALIDATE_INTERVAL_TICKS / 20);
         // 结构零件是否允许多个控制器共用（默认 true）
         doctorCabin.addProperty("shareable", true);
 
@@ -171,7 +172,7 @@ public final class MultiBlockConfig {
         ctrlPattern.addProperty("y1", "   , C ,   ");
         primitiveController.add("pattern", ctrlPattern);
 
-        primitiveController.addProperty("validate_interval", 30);
+        primitiveController.addProperty("validate_interval", IMultiBlockMachine.DEFAULT_VALIDATE_INTERVAL_TICKS / 20);
         primitiveController.addProperty("shareable", true);
 
         // key
@@ -230,7 +231,7 @@ public final class MultiBlockConfig {
         vqPattern.addProperty("y3", "       ,       ,       ,   E   ,       ,       ,       ");
         villageQuarry.add("pattern", vqPattern);
 
-        villageQuarry.addProperty("validate_interval", 30);
+        villageQuarry.addProperty("validate_interval", IMultiBlockMachine.DEFAULT_VALIDATE_INTERVAL_TICKS / 20);
         villageQuarry.addProperty("shareable", true);
 
         // key — A 为村庄外壳（min 8），c/f/i/o 为仓室替代（靠 min_count 保证最低数量）
@@ -287,7 +288,7 @@ public final class MultiBlockConfig {
         vmPattern.addProperty("y3", "     ,     ,     ,     ,     ,  A  ");
         villageMill.add("pattern", vmPattern);
 
-        villageMill.addProperty("validate_interval", 30);
+        villageMill.addProperty("validate_interval", IMultiBlockMachine.DEFAULT_VALIDATE_INTERVAL_TICKS / 20);
         villageMill.addProperty("shareable", true);
 
         // key — A 为村庄结构外壳（min 20），f/i/o 为仓室替代
@@ -341,7 +342,7 @@ public final class MultiBlockConfig {
         vcPattern.addProperty("y6", "         ,    A    ,    A    ,   CEC   , AAECEAA ,   CEC   ,    A    ,    A    ,         ");
         villageCtrl.add("pattern", vcPattern);
 
-        villageCtrl.addProperty("validate_interval", 30);
+        villageCtrl.addProperty("validate_interval", IMultiBlockMachine.DEFAULT_VALIDATE_INTERVAL_TICKS / 20);
         villageCtrl.addProperty("shareable", true);
 
         JsonObject vcKey = new JsonObject();

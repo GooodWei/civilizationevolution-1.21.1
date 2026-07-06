@@ -1,8 +1,12 @@
 package com.gooodwei.civilizationevolution.server.block.part;
 
+import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
 import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -26,5 +30,28 @@ public abstract class AbstractMultiBlockPart extends Block implements IMultiBloc
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    /**
+     * 零件被破坏时通知所属控制器立即执行全量验证。
+     *
+     * <p>通过 {@link IMultiBlockPart#getOwningController} 反向查询所属控制器，
+     * 释放认领后调用 {@link IMultiBlockMachine#handlePartBroken(BlockPos)} 触发验证。
+     * 仅在服务端、方块确实被替换（非活塞推动）时执行。
+     */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos,
+                             BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide) {
+            BlockPos owner = getOwningController(level, pos);
+            if (owner != null) {
+                releasePart(level, pos, owner);
+                BlockEntity be = level.getBlockEntity(owner);
+                if (be instanceof IMultiBlockMachine mbm) {
+                    mbm.handlePartBroken(pos);
+                }
+            }
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 }

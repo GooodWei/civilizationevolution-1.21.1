@@ -1,5 +1,6 @@
 package com.gooodwei.civilizationevolution.server.block.hatch;
 
+import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
 import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -89,5 +90,31 @@ public abstract class AbstractHatchBlock extends BaseEntityBlock implements IMul
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    /**
+     * 仓室被破坏时通知所属控制器立即执行全量验证。
+     *
+     * <p>与 {@code AbstractMultiBlockPart} 不同，hatch 有独立的 BlockEntity 和
+     * NBT 持久化的 {@code owningController} 字段，因此需要独立的 onRemove 实现。
+     * 仅在服务端、方块确实被替换（非活塞推动）时执行。
+     */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos,
+                             BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof IMultiBlockPart part) {
+                BlockPos owner = part.getOwningController(level, pos);
+                if (owner != null) {
+                    part.releasePart(level, pos, owner);
+                    BlockEntity controllerBe = level.getBlockEntity(owner);
+                    if (controllerBe instanceof IMultiBlockMachine mbm) {
+                        mbm.handlePartBroken(pos);
+                    }
+                }
+            }
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 }

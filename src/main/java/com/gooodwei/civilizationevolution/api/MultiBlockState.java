@@ -44,17 +44,18 @@ public class MultiBlockState {
     public String parseError;
 
     /** 结构零件位置缓存（世界坐标），按角色分类。每次 validateStructure() 成功后重建 */
-    public final List<BlockPos> populationInputHatches = new ArrayList<>();
-    public final List<BlockPos> populationOutputHatches = new ArrayList<>();
-    public final List<BlockPos> itemInputHatches = new ArrayList<>();
-    public final List<BlockPos> itemOutputHatches = new ArrayList<>();
-    public final List<BlockPos> foodHatches = new ArrayList<>();
-    public final List<BlockPos> fluidInputHatches = new ArrayList<>();
-    public final List<BlockPos> fluidOutputHatches = new ArrayList<>();
-    public final List<BlockPos> casingPositions = new ArrayList<>();
+    public final List<BlockPos> populationInputHatches = new ArrayList<>(4);
+    public final List<BlockPos> populationOutputHatches = new ArrayList<>(4);
+    public final List<BlockPos> itemInputHatches = new ArrayList<>(4);
+    public final List<BlockPos> itemOutputHatches = new ArrayList<>(4);
+    public final List<BlockPos> foodHatches = new ArrayList<>(4);
+    public final List<BlockPos> fluidInputHatches = new ArrayList<>(4);
+    public final List<BlockPos> fluidOutputHatches = new ArrayList<>(4);
+    /** 外壳方块通常数量较多，预分配 32 容量 */
+    public final List<BlockPos> casingPositions = new ArrayList<>(32);
 
     /** 所有已成型零件位置（不分类型），用于破坏时通知所有零件 */
-    public final Set<BlockPos> allPartPositions = new LinkedHashSet<>();
+    public final Set<BlockPos> allPartPositions = new LinkedHashSet<>(64);
 
     // ==================== NBT 持久化 ====================
 

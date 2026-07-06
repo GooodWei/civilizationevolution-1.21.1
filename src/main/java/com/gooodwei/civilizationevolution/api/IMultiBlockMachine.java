@@ -57,8 +57,8 @@ public interface IMultiBlockMachine {
 
     // ==================== 常量 ====================
 
-    /** 默认定时验证间隔（tick），当配置未指定或解析失败时使用 */
-    int DEFAULT_VALIDATE_INTERVAL_TICKS = 600; // 30 秒
+    /** 默认定时验证间隔（tick），当配置未指定或解析失败时使用（10 分钟安全网，增量验证已覆盖主要检测） */
+    int DEFAULT_VALIDATE_INTERVAL_TICKS = 12000; // 600 秒 = 10 分钟
 
     /**
      * 结构验证服务实现 —— 由服务端初始化代码注入。
@@ -91,6 +91,49 @@ public interface IMultiBlockMachine {
     ) {}
 
     /**
+     * 匹配策略分类，用于预编译 BlockState 验证路径。
+     *
+     * <p>在 {@link #parsePatternFromJson} 阶段编译每个 key 字符的匹配策略，
+     * 消除验证循环中的运行时字符串分析（{@code indexOf(':')}、{@code startsWith("tag:")} 等）。
+     */
+    enum MatchKind {
+        /** 精确方块 ID（如 {@code "minecraft:stone_bricks"}） */
+        BLOCK_ID,
+        /** Block Tag（如 {@code "tag:minecraft:planks"}） */
+        BLOCK_TAG,
+        /** {@link IMultiBlockPart} 零件类型（如 {@code "food_hatch"}） */
+        PART_TYPE,
+        /** 控制器自身（{@code "self"}），验证时跳过 */
+        SELF
+    }
+
+    /**
+     * 解析后的匹配目标，消除验证循环中的运行时字符串分析。
+     *
+     * @param kind  匹配策略
+     * @param value 匹配目标值（BLOCK_ID → {@link Block}，BLOCK_TAG → {@code TagKey<Block>}，
+     *              PART_TYPE → String，SELF → null）
+     */
+    record MatchTarget(MatchKind kind, @Nullable Object value) {}
+
+    /**
+     * 预计算位置的验证策略分类。
+     *
+     * <p>在 {@link #parsePatternFromJson} 的预计算阶段（步骤 12）对每个有效位置分类，
+     * 让验证循环对简单位置走 O(1) 的 {@link Block} 引用直接比较，跳过完整的
+     * {@link MatchTarget} 管道。
+     */
+    enum PositionKind {
+        /**
+         * 简单位置：纯方块 ID 匹配，无 alternatives、无 min/max 约束。
+         * 验证时直接 {@code BlockState.getBlock() == expected} 引用比较。
+         */
+        SIMPLE_BLOCK,
+        /** 复杂位置：需要走完整的 {@link MatchTarget} 匹配管道 */
+        COMPLEX
+    }
+
+    /**
      * 解析后的结构模式。
      *
      * @param width                X 方向宽度（每行字符数）
@@ -112,7 +155,25 @@ public interface IMultiBlockMachine {
             Map<Character, JsonObject> key,
             Map<Character, KeyDefinition> keyDefs,
             int validateIntervalTicks,
-            boolean shareable
+            boolean shareable,
+            /** 所有有效位置的局部 X 偏移（facing=NORTH 基准，相对于控制器），按 y→z→x 遍历顺序 */
+            short[] localOffsetsX,
+            /** 所有有效位置的局部 Y 偏移 */
+            short[] localOffsetsY,
+            /** 所有有效位置的局部 Z 偏移 */
+            short[] localOffsetsZ,
+            /** 每个偏移位置对应的 layerChars 字符 */
+            char[] positionChars,
+            /** 有效位置总数（数组长度） */
+            int positionCount,
+            /** 每个 key 字符的预编译匹配策略（主类型） */
+            Map<Character, MatchTarget> matchTargets,
+            /** 每个 key 字符的完整匹配目标列表（主目标 + 所有 alternatives，预构建避免每次验证创建数组） */
+            Map<Character, MatchTarget[]> allowedTargetsCache,
+            /** 每个预计算偏移位置的验证策略分类（与 positionChars 等长） */
+            PositionKind[] positionKinds,
+            /** 每个位置的快速路径目标引用（SIMPLE_BLOCK → {@link Block} 对象，COMPLEX → null） */
+            @Nullable Object[] positionTargets
     ) {}
 
     // ==================== 抽象方法（由 BlockEntity 提供） ====================
@@ -220,6 +281,31 @@ public interface IMultiBlockMachine {
                 lx * right.getStepX() - lz * facing.getStepX(),
                 ly,
                 lx * right.getStepZ() - lz * facing.getStepZ());
+    }
+
+    /**
+     * 将预计算的局部偏移 (lx, ly, lz) 直接映射为世界坐标。
+     *
+     * <p>与 {@link #worldPosFromLocal} 等价但使用 switch 直接映射四种朝向，
+     * 避免运行时 {@code facing.getClockWise()} + 乘加运算。
+     * 预计算偏移基于 facing=NORTH 基准（x=right, z=backward）。
+     *
+     * @param lx            局部 X 偏移（right 方向）
+     * @param ly            局部 Y 偏移（up 方向）
+     * @param lz            局部 Z 偏移（backward 方向）
+     * @param facing        结构正面朝向
+     * @param controllerPos 控制器世界坐标
+     * @return 世界绝对坐标
+     */
+    static BlockPos worldPosFromPrecomputed(int lx, int ly, int lz,
+                                            Direction facing, BlockPos controllerPos) {
+        return switch (facing) {
+            case NORTH -> controllerPos.offset(lx, ly, lz);
+            case SOUTH -> controllerPos.offset(-lx, ly, -lz);
+            case WEST  -> controllerPos.offset(lz, ly, -lx);
+            case EAST  -> controllerPos.offset(-lz, ly, lx);
+            default    -> controllerPos.offset(lx, ly, lz);
+        };
     }
 
     // ==================== JSON 解析 ====================
@@ -487,6 +573,53 @@ public interface IMultiBlockMachine {
             keyDefs.put(c, new KeyDefinition(type, Collections.unmodifiableList(alternatives), minCount, maxCount));
         }
 
+        // 5b. 编译 MatchTarget（消除运行时字符串分析）
+        Map<Character, MatchTarget> matchTargets = new LinkedHashMap<>();
+        for (Map.Entry<Character, KeyDefinition> entry : keyDefs.entrySet()) {
+            char c = entry.getKey();
+            KeyDefinition kd = entry.getValue();
+            String type = kd.type;
+
+            MatchTarget target;
+            if ("self".equals(type)) {
+                target = new MatchTarget(MatchKind.SELF, null);
+            } else if (type.startsWith("tag:")) {
+                String tagStr = type.substring(4);
+                TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, ResourceLocation.parse(tagStr));
+                target = new MatchTarget(MatchKind.BLOCK_TAG, tagKey);
+            } else if (type.indexOf(':') >= 0) {
+                // 含 ":" 且非 "tag:" → 具体方块注册名
+                Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(type));
+                // Blocks.AIR 是 BuiltInRegistries 的默认返回值，需区分"未找到"和"确实是空气"
+                if (block == BuiltInRegistries.BLOCK.get(ResourceLocation.parse("minecraft:air"))
+                        && !"minecraft:air".equals(type)) {
+                    throw new JsonParseException("key '" + c + "' 引用的方块 '" + type + "' 不存在");
+                }
+                target = new MatchTarget(MatchKind.BLOCK_ID, block);
+            } else {
+                // 无 ":" → IMultiBlockPart 零件类型
+                target = new MatchTarget(MatchKind.PART_TYPE, type);
+            }
+            matchTargets.put(c, target);
+        }
+
+        // 5c. 构建 allowedTargetsCache（主目标 + alternatives 预展开）
+        Map<Character, MatchTarget[]> allowedTargetsCache = new LinkedHashMap<>();
+        for (Map.Entry<Character, KeyDefinition> entry : keyDefs.entrySet()) {
+            char c = entry.getKey();
+            KeyDefinition kd = entry.getValue();
+
+            List<MatchTarget> allTargets = new ArrayList<>();
+            allTargets.add(matchTargets.get(c)); // 主目标
+            for (char alt : kd.alternatives) {
+                MatchTarget altTarget = matchTargets.get(alt);
+                if (altTarget != null) {
+                    allTargets.add(altTarget);
+                }
+            }
+            allowedTargetsCache.put(c, allTargets.toArray(new MatchTarget[0]));
+        }
+
         // 6. 验证 alternatives 引用的字符在 key 中有定义
         for (Map.Entry<Character, KeyDefinition> entry : keyDefs.entrySet()) {
             for (char alt : entry.getValue().alternatives) {
@@ -556,7 +689,7 @@ public interface IMultiBlockMachine {
             }
         }
 
-        // 10. 解析 validate_interval（秒 → tick，默认 30 秒 = 600 tick）
+        // 10. 解析 validate_interval（秒 → tick，默认 600 秒 = 12000 tick = 10 分钟）
         int validateIntervalTicks = DEFAULT_VALIDATE_INTERVAL_TICKS;
         if (root.has("validate_interval")) {
             int seconds = root.get("validate_interval").getAsInt();
@@ -571,8 +704,76 @@ public interface IMultiBlockMachine {
             shareable = root.get("shareable").getAsBoolean();
         }
 
+        // 12. 预计算所有非空格、非 self 位置的局部偏移（facing=NORTH 基准）
+        //     验证时通过 worldPosFromPrecomputed 的 switch 直接映射到世界坐标
+        //     同时分类每个位置的验证策略（SIMPLE_BLOCK vs COMPLEX）
+        List<Short> offX = new ArrayList<>();
+        List<Short> offY = new ArrayList<>();
+        List<Short> offZ = new ArrayList<>();
+        List<Character> chars = new ArrayList<>();
+        List<PositionKind> kinds = new ArrayList<>();
+        List<Object> targets = new ArrayList<>();
+
+        for (int y = 0; y < height; y++) {
+            for (int z = 0; z < depth; z++) {
+                for (int x = 0; x < width; x++) {
+                    if (y == controllerY && x == controllerX && z == controllerZ) continue;
+                    char c = layerChars[y][z][x];
+                    if (c == ' ') continue;
+                    KeyDefinition kd = keyDefs.get(c);
+                    if (kd == null) continue;
+                    if ("self".equals(kd.type)) continue;
+                    // 同时检查原始 JSON 的 "block": "self"（key 可能不含显式 type 字段）
+                    JsonObject rawDef = key.get(c);
+                    if (rawDef != null && rawDef.has("block")
+                            && "self".equals(rawDef.get("block").getAsString())) {
+                        continue;
+                    }
+
+                    offX.add((short) (x - controllerX));
+                    offY.add((short) (y - controllerY));
+                    offZ.add((short) (z - controllerZ));
+                    chars.add(c);
+
+                    // 分类：纯方块 ID + 无 alternatives + 无 min/max 约束 → 简单位置快速路径
+                    MatchTarget primaryTarget = matchTargets.get(c);
+                    if (primaryTarget != null
+                            && primaryTarget.kind() == MatchKind.BLOCK_ID
+                            && kd.alternatives().isEmpty()
+                            && kd.minCount() <= 0
+                            && kd.maxCount() == Integer.MAX_VALUE) {
+                        kinds.add(PositionKind.SIMPLE_BLOCK);
+                        targets.add(primaryTarget.value()); // Block 引用
+                    } else {
+                        kinds.add(PositionKind.COMPLEX);
+                        targets.add(null);
+                    }
+                }
+            }
+        }
+
+        int count = offX.size();
+        short[] arrX = new short[count];
+        short[] arrY = new short[count];
+        short[] arrZ = new short[count];
+        char[] arrC = new char[count];
+        PositionKind[] arrKinds = new PositionKind[count];
+        Object[] arrTargets = new Object[count];
+        for (int i = 0; i < count; i++) {
+            arrX[i] = offX.get(i);
+            arrY[i] = offY.get(i);
+            arrZ[i] = offZ.get(i);
+            arrC[i] = chars.get(i);
+            arrKinds[i] = kinds.get(i);
+            arrTargets[i] = targets.get(i);
+        }
+
         return new ParsedPattern(width, height, depth,
-                controllerY, controllerX, controllerZ, layerChars, key, keyDefs, validateIntervalTicks, shareable);
+                controllerY, controllerX, controllerZ, layerChars, key, keyDefs,
+                validateIntervalTicks, shareable,
+                arrX, arrY, arrZ, arrC, count,
+                matchTargets, allowedTargetsCache,
+                arrKinds, arrTargets);
     }
 
     /** 清除缓存的解析结果（配置变更时调用） */
@@ -705,35 +906,17 @@ public interface IMultiBlockMachine {
         Direction facing = getFacingDirection();
         List<PreviewBlockInfo> result = new java.util.ArrayList<>();
 
-        for (int y = 0; y < pattern.height; y++) {
-            for (int z = 0; z < pattern.depth; z++) {
-                for (int x = 0; x < pattern.width; x++) {
-                    char c = pattern.layerChars[y][z][x];
-                    if (c == ' ') continue;
+        for (int i = 0; i < pattern.positionCount(); i++) {
+            int lx = pattern.localOffsetsX()[i];
+            int ly = pattern.localOffsetsY()[i];
+            int lz = pattern.localOffsetsZ()[i];
+            char c = pattern.positionChars()[i];
 
-                    KeyDefinition kd = pattern.keyDefs.get(c);
-                    if (kd == null) continue;
+            BlockPos worldPos = worldPosFromPrecomputed(lx, ly, lz, facing, getBlockPos());
 
-                    // 跳过控制器自身（"block": "self"）
-                    // 注意：parsePattern 对 "block" 字段不设置 type，需检查原始 JSON
-                    if ("self".equals(kd.type)) continue;
-                    JsonObject rawKeyDef = pattern.key.get(c);
-                    if (rawKeyDef != null && rawKeyDef.has("block")
-                            && "self".equals(rawKeyDef.get("block").getAsString())) {
-                        continue;
-                    }
-
-                    BlockPos worldPos = getWorldPos(
-                            x - pattern.controllerX,
-                            y - pattern.controllerY,
-                            z - pattern.controllerZ,
-                            facing);
-
-                    Set<String> allowedTypes = buildAllowedTypes(c, pattern);
-                    result.add(new PreviewBlockInfo(worldPos,
-                            List.copyOf(allowedTypes), c));
-                }
-            }
+            Set<String> allowedTypes = buildAllowedTypes(c, pattern);
+            result.add(new PreviewBlockInfo(worldPos,
+                    List.copyOf(allowedTypes), c));
         }
         return result;
     }
@@ -771,40 +954,31 @@ public interface IMultiBlockMachine {
         Direction facing = getFacingDirection();
 
         // 临时列表，验证全部通过后替换正式缓存
-        List<BlockPos> newPopulationInputHatches = new ArrayList<>();
-        List<BlockPos> newPopulationOutputHatches = new ArrayList<>();
-        List<BlockPos> newItemInputHatches = new ArrayList<>();
-        List<BlockPos> newItemOutputHatches = new ArrayList<>();
-        List<BlockPos> newFoodHatches = new ArrayList<>();
-        List<BlockPos> newFluidInputHatches = new ArrayList<>();
-        List<BlockPos> newFluidOutputHatches = new ArrayList<>();
-        List<BlockPos> newCasingPositions = new ArrayList<>();
-        Set<BlockPos> newAllParts = new LinkedHashSet<>();
+        // 使用 positionCount 估算合理容量，减少 ArrayList 扩容开销
+        int estimatedParts = pattern.positionCount();
+        int hatchEstimate = Math.max(4, estimatedParts / 10); // 每种仓室约 10%
+
+        List<BlockPos> newPopulationInputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> newPopulationOutputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> newItemInputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> newItemOutputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> newFoodHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> newFluidInputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> newFluidOutputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> newCasingPositions = new ArrayList<>(Math.max(32, estimatedParts));
+        Set<BlockPos> newAllParts = new LinkedHashSet<>(Math.max(64, estimatedParts));
 
         // 各 key 字符在结构中实际出现的次数
-        Map<Character, Integer> keyCounts = new HashMap<>();
+        Map<Character, Integer> keyCounts = new HashMap<>(pattern.keyDefs().size());
 
-        for (int y = 0; y < pattern.height; y++) {
-            for (int z = 0; z < pattern.depth; z++) {
-                for (int x = 0; x < pattern.width; x++) {
-                    // 跳过控制器自身
-                    if (y == pattern.controllerY && x == pattern.controllerX && z == pattern.controllerZ) {
-                        continue;
-                    }
+        for (int i = 0; i < pattern.positionCount(); i++) {
+            int lx = pattern.localOffsetsX()[i];
+            int ly = pattern.localOffsetsY()[i];
+            int lz = pattern.localOffsetsZ()[i];
+            char c = pattern.positionChars()[i];
 
-                    char c = pattern.layerChars[y][z][x];
-                    // 跳过空格（任意方块）
-                    if (c == ' ') continue;
-
-                    JsonObject keyDef = pattern.key.get(c);
-                    String blockType = keyDef.has("block") ? keyDef.get("block").getAsString() : null;
-
-                    // 跳过 self 标记
-                    if ("self".equals(blockType)) continue;
-
-                    BlockPos worldPos = getWorldPos(
-                            x - pattern.controllerX, y - pattern.controllerY,
-                            z - pattern.controllerZ, facing);
+            // 使用预计算偏移 + switch 直接映射世界坐标（O(1)，无需实时旋转计算）
+            BlockPos worldPos = worldPosFromPrecomputed(lx, ly, lz, facing, getBlockPos());
 
                     // 检查区块是否已加载
                     if (!level.isLoaded(worldPos)) {
@@ -812,44 +986,56 @@ public interface IMultiBlockMachine {
                         return false;
                     }
 
-                    // 获取该位置的允许类型集合（基础类型 + alternatives）
-                    Set<String> allowedTypes = buildAllowedTypes(c, pattern);
+                    // 简单位置快速路径：纯方块 ID + 无 alternatives + 无 min/max 约束
+                    // 直接 Block 引用 == 比较，跳过 MatchTarget 管道（约占 80%+ 位置）
+                    if (pattern.positionKinds()[i] == PositionKind.SIMPLE_BLOCK) {
+                        Block expected = (Block) pattern.positionTargets()[i];
+                        if (level.getBlockState(worldPos).getBlock() != expected) {
+                            state.structureFormed = false;
+                            notifyPartsUnformed();
+                            return false;
+                        }
+                        newAllParts.add(worldPos);
+                        newCasingPositions.add(worldPos);
+                        // SIMPLE_BLOCK 无 min/max 约束，跳过 keyCounts
+                        continue;
+                    }
 
-                    // 遍历所有允许类型，任一匹配即通过
+                    // 复杂位置：走预编译 MatchTarget 完整管道
+                    MatchTarget[] targets = pattern.allowedTargetsCache().get(c);
                     boolean matched = false;
                     String matchedTypeStr = null;
 
-                    for (String typeStr : allowedTypes) {
-                        if (isBlockOrTagType(typeStr)) {
-                            // 方块注册名匹配（含 ":" 且非 "tag:" 开头）
-                            String blockName = BuiltInRegistries.BLOCK
-                                    .getKey(level.getBlockState(worldPos).getBlock()).toString();
-                            if (blockName.equals(typeStr)) {
-                                matched = true;
-                                matchedTypeStr = typeStr;
-                                break;
+                    for (MatchTarget target : targets) {
+                        switch (target.kind()) {
+                            case BLOCK_ID -> {
+                                Block expected = (Block) target.value();
+                                if (level.getBlockState(worldPos).getBlock() == expected) {
+                                    matched = true;
+                                    matchedTypeStr = BuiltInRegistries.BLOCK.getKey(expected).toString();
+                                }
                             }
-                        } else if (isTagType(typeStr)) {
-                            // Block Tag 匹配（"tag:" 前缀）
-                            String tagStr = typeStr.substring(4);
-                            TagKey<Block> tagKey = TagKey.create(Registries.BLOCK,
-                                    ResourceLocation.parse(tagStr));
-                            if (level.getBlockState(worldPos).is(tagKey)) {
-                                matched = true;
-                                matchedTypeStr = typeStr;
-                                break;
+                            case BLOCK_TAG -> {
+                                @SuppressWarnings("unchecked")
+                                TagKey<Block> tagKey = (TagKey<Block>) target.value();
+                                if (level.getBlockState(worldPos).is(tagKey)) {
+                                    matched = true;
+                                    matchedTypeStr = "tag:" + tagKey.location();
+                                }
                             }
-                        } else {
-                            // IMultiBlockPart 零件类型匹配（无 ":"）
-                            IMultiBlockPart part = resolveMultiBlockPart(worldPos);
-                            if (part != null
-                                    && part.getPartTier().getLevel() <= getTier().getLevel()
-                                    && part.getPartType().equals(typeStr)) {
-                                matched = true;
-                                matchedTypeStr = typeStr;
-                                break;
+                            case PART_TYPE -> {
+                                String partType = (String) target.value();
+                                IMultiBlockPart part = resolveMultiBlockPart(worldPos);
+                                if (part != null
+                                        && part.getPartTier().getLevel() <= getTier().getLevel()
+                                        && part.getPartType().equals(partType)) {
+                                    matched = true;
+                                    matchedTypeStr = partType;
+                                }
                             }
+                            case SELF -> { /* 不应出现（预计算已过滤 self 位置） */ }
                         }
+                        if (matched) break;
                     }
 
                     // 检查零件认领（非共享模式下的独占性）
@@ -895,8 +1081,6 @@ public interface IMultiBlockMachine {
                     // 找到与 matchedTypeStr 匹配的 key 字符（用于 min/max 计数）
                     Character matchedKey = findMatchingKey(c, matchedTypeStr, pattern);
                     keyCounts.merge(matchedKey, 1, Integer::sum);
-                }
-            }
         }
 
         // 验证 min_count / max_count 约束
@@ -1013,6 +1197,30 @@ public interface IMultiBlockMachine {
     }
 
     // ==================== 结构破坏处理 ====================
+
+    /**
+     * 当已认领零件被破坏时调用，立即触发全量结构验证。
+     *
+     * <p>此方法由零件方块的 {@code onRemove} 或 {@code BlockEvent.BreakEvent} 安全网
+     * 调用，实现事件驱动的增量验证——将结构破损检测延迟从定时扫描的分钟级降至 &lt;1 tick。
+     *
+     * <p>守卫条件：
+     * <ul>
+     *   <li>仅在 {@link MultiBlockState#structureFormed} 为 true 时执行（快速连续破坏时短路）</li>
+     *   <li>仅在 {@link MultiBlockState#allPartPositions} 包含被破坏位置时执行</li>
+     * </ul>
+     *
+     * @param brokenPos 被破坏的方块世界坐标
+     */
+    default void handlePartBroken(BlockPos brokenPos) {
+        MultiBlockState state = mbs();
+        if (!state.structureFormed) return;
+        // 检查被破坏位置是否在当前缓存的零件列表中
+        if (!state.allPartPositions.contains(brokenPos)) return;
+        // 立即全量验证
+        validateStructure();
+        markChanged();
+    }
 
     /**
      * 当控制器自身被破坏时调用，重置结构成型状态并弹出内部物品。

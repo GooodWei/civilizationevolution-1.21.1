@@ -2,6 +2,7 @@ package com.gooodwei.civilizationevolution;
 
 import com.gooodwei.civilizationevolution.api.CivilizationAPI;
 import com.gooodwei.civilizationevolution.api.IMultiBlockMachine;
+import com.gooodwei.civilizationevolution.api.IMultiBlockPart;
 import com.gooodwei.civilizationevolution.api.PartOwnershipTracker;
 import com.gooodwei.civilizationevolution.api.PreviewBlockInfo;
 import com.gooodwei.civilizationevolution.api.career.Career;
@@ -23,9 +24,11 @@ import com.gooodwei.civilizationevolution.server.registry.ModRecipeTypes;
 import com.gooodwei.civilizationevolution.server.registry.Registry;
 import com.gooodwei.civilizationevolution.server.validation.StructureValidationService;
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -35,6 +38,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -177,6 +181,42 @@ public class CivilizationEvolution {
     public void onLevelUnload(LevelEvent.Unload event) {
         if (event.getLevel() instanceof Level level) {
             PartOwnershipTracker.clearDimension(level);
+        }
+    }
+
+    /**
+     * 方块破坏事件安全网：为 {@code onRemove} 无法覆盖的边界情况做兜底。
+     *
+     * <p>此事件在方块被实际移除<b>之前</b>触发（此时 BE 和所有权记录仍可访问）。
+     * 为避免在旧方块仍存在时触发结构验证（会误判为通过），此方法仅做非破坏性
+     * 读取并调度延迟验证，实际的认领清理和即时验证由随后的 {@code onRemove} 完成。
+     *
+     * <p>调度 5 tick 延迟作为兜底——如果 {@code onRemove} 因某种原因未正常触发，
+     * 延迟验证将在方块被移除后正确检测结构破坏。
+     */
+    @SubscribeEvent
+    public void onBlockBreak(BlockEvent.BreakEvent event) {
+        Level level = (Level) event.getLevel();
+        if (level.isClientSide) return;
+
+        BlockPos pos = event.getPos();
+
+        // 非破坏性读取：不在此处移除认领，避免阻塞后续 onRemove 的正常通知流程
+        BlockPos owner = PartOwnershipTracker.getOwner(level, pos);
+        if (owner == null) {
+            // 也检查 hatch BE（使用独立 NBT 持久化，不在 PartOwnershipTracker 中）
+            BlockEntity brokenBe = level.getBlockEntity(pos);
+            if (brokenBe instanceof IMultiBlockPart part) {
+                owner = part.getOwningController(level, pos);
+            }
+        }
+
+        if (owner != null) {
+            BlockEntity be = level.getBlockEntity(owner);
+            if (be instanceof IMultiBlockMachine mbm) {
+                // 调度延迟验证作为兜底（onRemove 的即时通知会先于此完成）
+                mbm.scheduleRevalidation(5);
+            }
         }
     }
 

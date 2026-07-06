@@ -175,45 +175,28 @@ public final class StructureValidationService {
             Map<ChunkPos, LevelChunk> chunkMap,
             Map<BlockPos, PartSnapshot> outSnapshots) {
 
-        for (int y = 0; y < pattern.height(); y++) {
-            for (int z = 0; z < pattern.depth(); z++) {
-                for (int x = 0; x < pattern.width(); x++) {
-                    if (y == pattern.controllerY() && x == pattern.controllerX()
-                            && z == pattern.controllerZ()) {
-                        continue;
+        for (int i = 0; i < pattern.positionCount(); i++) {
+            int lx = pattern.localOffsetsX()[i];
+            int ly = pattern.localOffsetsY()[i];
+            int lz = pattern.localOffsetsZ()[i];
+            char c = pattern.positionChars()[i];
+
+            // 使用预编译 MatchTarget 检查是否需要收集零件快照
+            // 方块/Tag/self 类型直接读 BlockState，不需要快照；仅 PART_TYPE 需要
+            boolean needsPartSnapshot = false;
+            IMultiBlockMachine.MatchTarget[] targets = pattern.allowedTargetsCache().get(c);
+            if (targets != null) {
+                for (IMultiBlockMachine.MatchTarget t : targets) {
+                    if (t.kind() == IMultiBlockMachine.MatchKind.PART_TYPE) {
+                        needsPartSnapshot = true;
+                        break;
                     }
+                }
+            }
+            if (!needsPartSnapshot) continue;
 
-                    char c = pattern.layerChars()[y][z][x];
-                    if (c == ' ') continue;
-
-                    IMultiBlockMachine.KeyDefinition kd = pattern.keyDefs().get(c);
-                    if (kd == null) continue;
-
-                    // 检查 primary key 或其 alternatives 是否需要收集零件快照
-                    // 方块类型、Block Tag 类型、self 类型均不需要快照（直接读 BlockState）
-                    boolean needsPartSnapshot = !IMultiBlockMachine.isBlockOrTagType(kd.type())
-                            && !IMultiBlockMachine.isTagType(kd.type())
-                            && !"self".equals(kd.type());
-                    if (!needsPartSnapshot) {
-                        // primary 是方块/Tag/self 类型，但 alternatives 可能引用零件类型
-                        for (char alt : kd.alternatives()) {
-                            IMultiBlockMachine.KeyDefinition altDef = pattern.keyDefs().get(alt);
-                            if (altDef != null
-                                    && !IMultiBlockMachine.isBlockOrTagType(altDef.type())
-                                    && !IMultiBlockMachine.isTagType(altDef.type())
-                                    && !"self".equals(altDef.type())) {
-                                needsPartSnapshot = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!needsPartSnapshot) continue;
-
-                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
-                            x - pattern.controllerX(),
-                            y - pattern.controllerY(),
-                            z - pattern.controllerZ(),
-                            facing, controllerPos);
+            BlockPos worldPos = IMultiBlockMachine.worldPosFromPrecomputed(
+                    lx, ly, lz, facing, controllerPos);
 
                     // 用预取的 chunk 获取 BE（避免通过 ServerLevel 间接查找）
                     int chunkX = worldPos.getX() >> 4;
@@ -227,8 +210,6 @@ public final class StructureValidationService {
                         outSnapshots.put(worldPos, new PartSnapshot(
                                 part.getPartType(), part.getPartTier().getLevel(), owner));
                     }
-                }
-            }
         }
     }
 
@@ -249,37 +230,29 @@ public final class StructureValidationService {
             Map<BlockPos, PartSnapshot> partSnapshots,
             com.gooodwei.civilizationevolution.api.tier.Tier controllerTier) {
 
-        List<BlockPos> populationInputHatches = new ArrayList<>();
-        List<BlockPos> populationOutputHatches = new ArrayList<>();
-        List<BlockPos> itemInputHatches = new ArrayList<>();
-        List<BlockPos> itemOutputHatches = new ArrayList<>();
-        List<BlockPos> foodHatches = new ArrayList<>();
-        List<BlockPos> fluidInputHatches = new ArrayList<>();
-        List<BlockPos> fluidOutputHatches = new ArrayList<>();
-        List<BlockPos> casingPositions = new ArrayList<>();
-        Set<BlockPos> allParts = new LinkedHashSet<>();
-        Map<Character, Integer> keyCounts = new HashMap<>();
+        // 使用 positionCount 估算合理容量，减少 ArrayList 扩容开销
+        int estimatedParts = pattern.positionCount();
+        int hatchEstimate = Math.max(4, estimatedParts / 10);
 
-        for (int y = 0; y < pattern.height(); y++) {
-            for (int z = 0; z < pattern.depth(); z++) {
-                for (int x = 0; x < pattern.width(); x++) {
-                    if (y == pattern.controllerY() && x == pattern.controllerX()
-                            && z == pattern.controllerZ()) {
-                        continue;
-                    }
+        List<BlockPos> populationInputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> populationOutputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> itemInputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> itemOutputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> foodHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> fluidInputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> fluidOutputHatches = new ArrayList<>(hatchEstimate);
+        List<BlockPos> casingPositions = new ArrayList<>(Math.max(32, estimatedParts));
+        Set<BlockPos> allParts = new LinkedHashSet<>(Math.max(64, estimatedParts));
+        Map<Character, Integer> keyCounts = new HashMap<>(pattern.keyDefs().size());
 
-                    char c = pattern.layerChars()[y][z][x];
-                    if (c == ' ') continue;
+        for (int i = 0; i < pattern.positionCount(); i++) {
+            int lx = pattern.localOffsetsX()[i];
+            int ly = pattern.localOffsetsY()[i];
+            int lz = pattern.localOffsetsZ()[i];
+            char c = pattern.positionChars()[i];
 
-                    IMultiBlockMachine.KeyDefinition kd = pattern.keyDefs().get(c);
-                    if (kd == null) continue;
-                    if ("self".equals(kd.type())) continue;
-
-                    BlockPos worldPos = IMultiBlockMachine.worldPosFromLocal(
-                            x - pattern.controllerX(),
-                            y - pattern.controllerY(),
-                            z - pattern.controllerZ(),
-                            facing, controllerPos);
+            BlockPos worldPos = IMultiBlockMachine.worldPosFromPrecomputed(
+                    lx, ly, lz, facing, controllerPos);
 
                     // 从预取 chunk 获取 BlockState（数组访问，线程安全）
                     int chunkX = worldPos.getX() >> 4;
@@ -287,49 +260,60 @@ public final class StructureValidationService {
                     LevelChunk chunk = chunkMap.get(new ChunkPos(chunkX, chunkZ));
                     if (chunk == null) continue; // 不应发生（主线程已验证全部加载）
 
-                    Set<String> allowedTypes = IMultiBlockMachine.buildAllowedTypes(c, pattern);
+                    // 简单位置快速路径：纯方块 ID + 无 alternatives + 无 min/max 约束
+                    // 直接 Block 引用 == 比较，跳过 MatchTarget 管道（约占 80%+ 位置）
+                    if (pattern.positionKinds()[i] == IMultiBlockMachine.PositionKind.SIMPLE_BLOCK) {
+                        Block expected = (Block) pattern.positionTargets()[i];
+                        if (chunk.getBlockState(worldPos).getBlock() != expected) {
+                            return ValidationResult.notFormed();
+                        }
+                        allParts.add(worldPos);
+                        casingPositions.add(worldPos);
+                        // SIMPLE_BLOCK 无 min/max 约束，跳过 keyCounts
+                        continue;
+                    }
+
+                    // 复杂位置：走预编译 MatchTarget 完整管道
+                    IMultiBlockMachine.MatchTarget[] targets = pattern.allowedTargetsCache().get(c);
                     boolean matched = false;
                     String matchedTypeStr = null;
 
-                    for (String typeStr : allowedTypes) {
-                        if (IMultiBlockMachine.isTagType(typeStr)) {
-                            // Block Tag 匹配（必须放在 isBlockOrTagType 之前，后者对 "tag:" 类型返回 false）
-                            BlockState blockState = chunk.getBlockState(worldPos);
-                            String tagStr = typeStr.substring(4);
-                            TagKey<Block> tagKey = TagKey.create(Registries.BLOCK,
-                                    ResourceLocation.parse(tagStr));
-                            if (blockState.is(tagKey)) {
-                                matched = true;
-                                matchedTypeStr = typeStr;
-                                break;
-                            }
-                        } else if (IMultiBlockMachine.isBlockOrTagType(typeStr)) {
-                            // 方块注册名匹配（含 ":" 且非 "tag:" 开头）
-                            BlockState blockState = chunk.getBlockState(worldPos);
-                            String blockName = BuiltInRegistries.BLOCK
-                                    .getKey(blockState.getBlock()).toString();
-                            if (blockName.equals(typeStr)) {
-                                matched = true;
-                                matchedTypeStr = typeStr;
-                                break;
-                            }
-                        } else {
-                            // 零件类型 → 从主线程快照查找
-                            PartSnapshot snapshot = partSnapshots.get(worldPos);
-                            if (snapshot != null
-                                    && snapshot.tierLevel <= controllerTier.getLevel()
-                                    && snapshot.partType.equals(typeStr)) {
-                                // 检查零件认领（非共享模式下，已被其他控制器认领时跳过此类型）
-                                if (snapshot.owningController != null
-                                        && !snapshot.owningController.equals(controllerPos)
-                                        && !pattern.shareable()) {
-                                    continue;
+                    for (IMultiBlockMachine.MatchTarget target : targets) {
+                        switch (target.kind()) {
+                            case BLOCK_ID -> {
+                                Block expected = (Block) target.value();
+                                if (chunk.getBlockState(worldPos).getBlock() == expected) {
+                                    matched = true;
+                                    matchedTypeStr = BuiltInRegistries.BLOCK.getKey(expected).toString();
                                 }
-                                matched = true;
-                                matchedTypeStr = typeStr;
-                                break;
                             }
+                            case BLOCK_TAG -> {
+                                @SuppressWarnings("unchecked")
+                                TagKey<Block> tagKey = (TagKey<Block>) target.value();
+                                if (chunk.getBlockState(worldPos).is(tagKey)) {
+                                    matched = true;
+                                    matchedTypeStr = "tag:" + tagKey.location();
+                                }
+                            }
+                            case PART_TYPE -> {
+                                String partType = (String) target.value();
+                                PartSnapshot snapshot = partSnapshots.get(worldPos);
+                                if (snapshot != null
+                                        && snapshot.tierLevel <= controllerTier.getLevel()
+                                        && snapshot.partType.equals(partType)) {
+                                    // 检查零件认领（非共享模式下，已被其他控制器认领时跳过此类型）
+                                    if (snapshot.owningController != null
+                                            && !snapshot.owningController.equals(controllerPos)
+                                            && !pattern.shareable()) {
+                                        continue;
+                                    }
+                                    matched = true;
+                                    matchedTypeStr = partType;
+                                }
+                            }
+                            case SELF -> { /* 不应出现（预计算已过滤 self 位置） */ }
                         }
+                        if (matched) break;
                     }
 
                     if (!matched) {
@@ -357,8 +341,6 @@ public final class StructureValidationService {
 
                     Character matchedKey = IMultiBlockMachine.findMatchingKey(c, matchedTypeStr, pattern);
                     keyCounts.merge(matchedKey, 1, Integer::sum);
-                }
-            }
         }
 
         // 验证 min_count / max_count

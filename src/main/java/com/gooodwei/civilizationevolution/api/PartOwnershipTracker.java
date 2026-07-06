@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -69,6 +70,43 @@ public final class PartOwnershipTracker {
      */
     public static boolean releaseOwner(Level level, BlockPos partPos, BlockPos controllerPos) {
         return OWNERSHIP.remove(makeKey(level, partPos), controllerPos);
+    }
+
+    /**
+     * 原子地移除并返回零件的认领记录。
+     * 用于方块破坏事件中快速查找受影响的控制器。
+     *
+     * @param level   所在世界
+     * @param partPos 零件世界坐标
+     * @return 之前的控制器坐标，未认领时返回 null
+     */
+    @Nullable
+    public static BlockPos removeOwner(Level level, BlockPos partPos) {
+        return OWNERSHIP.remove(makeKey(level, partPos));
+    }
+
+    /**
+     * 获取指定维度的所有认领记录。
+     * 用于方块破坏事件中查找受影响的控制器。
+     *
+     * @param level 所在世界
+     * @return partPos → controllerPos 映射的快照
+     */
+    public static Map<BlockPos, BlockPos> getOwnersInDimension(Level level) {
+        String prefix = level.dimension().location() + "|";
+        Map<BlockPos, BlockPos> result = new HashMap<>();
+        for (Map.Entry<String, BlockPos> entry : OWNERSHIP.entrySet()) {
+            if (entry.getKey().startsWith(prefix)) {
+                // 解析 "dim|partX,partY,partZ" → BlockPos
+                String[] parts = entry.getKey().substring(prefix.length()).split(",");
+                BlockPos partPos = new BlockPos(
+                        Integer.parseInt(parts[0]),
+                        Integer.parseInt(parts[1]),
+                        Integer.parseInt(parts[2]));
+                result.put(partPos, entry.getValue());
+            }
+        }
+        return result;
     }
 
     /**

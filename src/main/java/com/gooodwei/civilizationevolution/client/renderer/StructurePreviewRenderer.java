@@ -47,9 +47,15 @@ import java.util.*;
  *   <li><b>红色调</b> — 放错了方块类型</li>
  * </ul>
  *
- * <p>生命周期由 {@link PreviewState} 管理，
- * {@link ClientTickEvent.Post} 检查过期和距离，
- * {@link RenderLevelStageEvent.Stage#AFTER_TRANSLUCENT_BLOCKS} 执行渲染。
+ * <h3>视野盒过滤</h3>
+ * <p>仅渲染玩家周围由客户端配置文件设定的半径内的预览方块，
+ * 由 {@link PreviewState#getVisibleBlocks(Vec3)} 动态过滤。
+ * 避免超大结构渲染全部位置造成客户端帧率崩溃。
+ *
+ * <h3>生命周期</h3>
+ * <p>预览持久化，不再定时取消。{@link ClientTickEvent.Post} 仅检测世界变化
+ * （跨维度/重进世界），不检查过期或距离。手动关闭由服务端
+ * {@code StructurePreviewPayload} 空列表触发。
  */
 @EventBusSubscriber(value = Dist.CLIENT)
 public final class StructurePreviewRenderer {
@@ -61,6 +67,9 @@ public final class StructurePreviewRenderer {
 
     /** 位置状态枚举 */
     private enum Status { CORRECT, MISSING, WRONG }
+
+    /** 上一 tick 的客户端世界引用，用于检测跨维度/重进世界 */
+    private static ClientLevel lastLevel;
 
     /**
      * partType → 代表方块状态缓存。
@@ -121,24 +130,18 @@ public final class StructurePreviewRenderer {
         }
     }
 
-    // ==================== 每客户端 tick：过期与距离检查 ====================
+    // ==================== 每客户端 tick：世界变化检测 ====================
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        if (!PreviewState.isActive()) return;
-
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
-        if (level == null) return;
 
-        if (level.getGameTime() > PreviewState.getExpireTick()) {
-            PreviewState.stop();
-            return;
-        }
-
-        if (PreviewState.isTooFar()) {
+        // 检测世界变化（跨维度 / 重进世界）→ 停止预览
+        if (lastLevel != null && level != lastLevel) {
             PreviewState.stop();
         }
+        lastLevel = level;
     }
 
     // ==================== 世界渲染 ====================
@@ -152,7 +155,8 @@ public final class StructurePreviewRenderer {
         ClientLevel level = mc.level;
         if (level == null) return;
 
-        List<PreviewBlockInfo> blocks = PreviewState.getBlocks();
+        // 获取当前视野盒内的可见预览方块（以玩家位置为中心 11³）
+        List<PreviewBlockInfo> blocks = PreviewState.getVisibleBlocks(event.getCamera().getPosition());
         BlockPos controllerPos = PreviewState.getControllerPos();
         if (blocks.isEmpty()) return;
 

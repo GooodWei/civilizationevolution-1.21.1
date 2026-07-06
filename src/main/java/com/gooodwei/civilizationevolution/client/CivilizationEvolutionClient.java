@@ -1,6 +1,7 @@
 package com.gooodwei.civilizationevolution.client;
 
 import com.gooodwei.civilizationevolution.CivilizationEvolution;
+import com.gooodwei.civilizationevolution.client.config.ClientConfig;
 import com.gooodwei.civilizationevolution.network.NetworkHandler;
 import com.gooodwei.civilizationevolution.server.registry.BlockRegistry;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -40,10 +41,13 @@ public class CivilizationEvolutionClient {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
 
-    /** 客户端初始化完成事件：输出玩家名和日志，注册方块渲染类型 */
+    /** 客户端初始化完成事件：输出玩家名和日志，加载客户端配置，注册方块渲染类型 */
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         CivilizationEvolution.LOGGER.info("HELLO FROM CLIENT SETUP");
+
+        // 加载客户端配置文件（首次启动自动生成默认配置）
+        event.enqueueWork(ClientConfig::init);
 
         // 控制器方块注册 cutout 渲染类型，使玻璃外壳正确处理透明像素
         event.enqueueWork(() -> {

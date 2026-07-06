@@ -63,4 +63,19 @@ public class VillageMillBlock extends AbstractMachineBlock{
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
+
+    /**
+     * 控制器被破坏时，调用 BE 的结构破坏处理（弹出物品、释放零件认领）。
+     */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos,
+                             BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock())) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof VillageMillBlockEntity mill) {
+                mill.onStructurePartBroken(pos);
+            }
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    }
 }
